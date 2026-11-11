@@ -31,7 +31,7 @@ Homestead.yaml
 # Dependencies and build output
 /node_modules
 /vendor
-/public/build
 /public/hot
 /public/storage
 /storage/pail
+# public/build is committed so shared hosts without Node can deploy
