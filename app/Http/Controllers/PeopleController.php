@@ -1,0 +1,71 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\DirectMessage;
+use App\Models\SupportTicket;
+use App\Models\User;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
+
+class PeopleController extends Controller
+{
+    public function show(User $person): View
+    {
+        abort_if($person->status !== 'active' && $person->id !== auth()->id(), 404);
+
+        $person->load(['roles:id,name', 'department:id,name']);
+
+        $openCases = SupportTicket::query()
+            ->where('assigned_to', $person->id)
+            ->whereNotIn('status', ['resolved', 'closed'])
+            ->latest('reported_at')
+            ->limit(8)
+            ->get(['id', 'ticket_number', 'subject', 'status', 'priority']);
+
+        $thread = DirectMessage::query()
+            ->where(function ($query) use ($person) {
+                $query->where(function ($inner) use ($person) {
+                    $inner->where('sender_id', auth()->id())->where('recipient_id', $person->id);
+                })->orWhere(function ($inner) use ($person) {
+                    $inner->where('sender_id', $person->id)->where('recipient_id', auth()->id());
+                });
+            })
+            ->with(['sender:id,name', 'recipient:id,name'])
+            ->latest()
+            ->limit(12)
+            ->get()
+            ->sortBy('created_at')
+            ->values();
+
+        return view('people.show', [
+            'title' => $person->name,
+            'person' => $person,
+            'openCases' => $openCases,
+            'thread' => $thread,
+        ]);
+    }
+
+    public function message(Request $request, User $person): RedirectResponse
+    {
+        abort_if($person->id === auth()->id(), 422, 'You cannot message yourself.');
+        abort_if($person->status !== 'active', 404);
+
+        $data = $request->validate([
+            'subject' => ['required', 'string', 'min:2', 'max:180'],
+            'body' => ['required', 'string', 'min:2', 'max:4000'],
+        ]);
+
+        $message = DirectMessage::query()->create([
+            'sender_id' => auth()->id(),
+            'recipient_id' => $person->id,
+            'subject' => $data['subject'],
+            'body' => $data['body'],
+        ]);
+
+        return redirect()
+            ->route('messages.show', $message)
+            ->with('status', 'Message sent to '.$person->name.'.');
+    }
+}

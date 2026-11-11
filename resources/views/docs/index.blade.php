@@ -1,0 +1,45 @@
+@extends('layouts.app')
+
+@section('content')
+    <section class="pg-record pg-docs-hero">
+        <div class="pg-record-icon" aria-hidden="true"><i data-lucide="book-open"></i></div>
+        <div class="pg-record-title">
+            <div class="pg-object">Help</div>
+            <h1>Documentation</h1>
+            <p>Step-by-step templates for cases, notes, ownership, duplicates, escalations and the Assistant.</p>
+        </div>
+    </section>
+
+    <form class="pg-docs-search mb-3" method="get" action="{{ route('docs.index') }}">
+        <label class="visually-hidden" for="docs-q">Search documentation</label>
+        <input class="form-control" id="docs-q" name="q" value="{{ $term }}" placeholder="Search guides — create case, duplicate, SLA…">
+        <button class="btn btn-pg" type="submit">Search</button>
+    </form>
+
+    <div class="pg-card table-responsive">
+        <table class="pg-table pg-docs-table">
+            <thead>
+                <tr>
+                    <th>Guide</th>
+                    <th>Audience</th>
+                    <th>Summary</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse ($docs as $doc)
+                    <tr>
+                        <td>
+                            <a href="{{ route('docs.show', $doc['slug']) }}">{{ $doc['title'] }}</a>
+                        </td>
+                        <td class="pg-docs-audience">{{ $doc['audience'] }}</td>
+                        <td class="text-muted">{{ $doc['summary'] }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="3" class="text-muted">No guides matched “{{ $term }}”.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+@endsection
