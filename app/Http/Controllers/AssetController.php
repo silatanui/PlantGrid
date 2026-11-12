@@ -8,6 +8,7 @@ use App\Models\AssetCategory;
 use App\Models\AssetStatusHistory;
 use App\Models\Department;
 use App\Models\Location;
+use App\Models\SupportTicket;
 use App\Models\User;
 use App\Models\Vendor;
 use App\Services\AuditLogger;
@@ -87,9 +88,9 @@ class AssetController extends Controller
         return redirect()->route('assets.show', $asset)->with('status', 'Asset '.$asset->asset_tag.' was registered.');
     }
 
-    public function show(Asset $asset)
+    public function show(Request $request, Asset $asset)
     {
-        $this->guard($asset);
+        $this->guardShow($request, $asset);
         $asset->load([
             'category', 'vendor', 'department', 'location',
             'assignments.user', 'assignments.department', 'assignments.assigner',
@@ -99,8 +100,13 @@ class AssetController extends Controller
         return view('assets.show', [
             'title' => $asset->asset_tag,
             'asset' => $asset,
-            'users' => User::query()->where('status', 'active')->orderBy('name')->get(),
-            'departments' => Department::query()->orderBy('name')->get(),
+            'users' => $request->user()->hasPermission('assets.update')
+                ? User::query()->where('status', 'active')->orderBy('name')->get()
+                : collect(),
+            'departments' => $request->user()->hasPermission('assets.update')
+                ? Department::query()->orderBy('name')->get()
+                : collect(),
+            'caseLinkedOnly' => ! $request->user()->hasPermission('assets.view'),
         ]);
     }
 
@@ -261,6 +267,26 @@ class AssetController extends Controller
     {
         abort_unless(
             Asset::query()->visibleTo(auth()->user())->whereKey($asset->id)->exists(),
+            403
+        );
+    }
+
+    private function guardShow(Request $request, Asset $asset): void
+    {
+        $user = $request->user();
+
+        if ($user->hasPermission('assets.view')
+            && Asset::query()->visibleTo($user)->whereKey($asset->id)->exists()) {
+            return;
+        }
+
+        // Case partners / requesters can open the linked device record from a mention
+        // without needing the full Assets register permission.
+        abort_unless(
+            SupportTicket::query()
+                ->visibleTo($user)
+                ->where('asset_id', $asset->id)
+                ->exists(),
             403
         );
     }

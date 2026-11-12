@@ -47,6 +47,28 @@ class PeopleController extends Controller
         ]);
     }
 
+    public function updateContact(Request $request, User $person): RedirectResponse
+    {
+        abort_unless((int) $person->id === (int) $request->user()->id, 403);
+
+        $data = $request->validate([
+            'job_title' => ['nullable', 'string', 'max:120'],
+            'phone' => ['nullable', 'string', 'max:40'],
+            'mobile' => ['nullable', 'string', 'max:40'],
+            'extension' => ['nullable', 'string', 'max:20'],
+            'address' => ['nullable', 'string', 'max:180'],
+            'city' => ['nullable', 'string', 'max:80'],
+            'postal_code' => ['nullable', 'string', 'max:24'],
+            'country' => ['nullable', 'string', 'max:80'],
+        ]);
+
+        $person->update($data);
+
+        return redirect()
+            ->route('people.show', $person)
+            ->with('status', 'Your contact details were saved.');
+    }
+
     public function message(Request $request, User $person): RedirectResponse
     {
         abort_if($person->id === auth()->id(), 422, 'You cannot message yourself.');

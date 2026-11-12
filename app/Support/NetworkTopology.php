@@ -70,7 +70,7 @@ class NetworkTopology
                 ],
                 'types' => [
                     ['key' => 'firewall', 'label' => 'Firewall', 'accent' => '#032d60'],
-                    ['key' => 'switch', 'label' => 'Switch', 'accent' => '#0176d3'],
+                    ['key' => 'switch', 'label' => 'Switch', 'accent' => '#005058'],
                     ['key' => 'wireless_access_point', 'label' => 'Access point', 'accent' => '#dd7a01'],
                     ['key' => 'router', 'label' => 'Router', 'accent' => '#032d60'],
                 ],
@@ -255,7 +255,7 @@ class NetworkTopology
     {
         return match ($type) {
             'firewall', 'router' => '#032d60',
-            'switch' => '#0176d3',
+            'switch' => '#005058',
             'wireless_access_point' => '#dd7a01',
             default => '#706e6b',
         };

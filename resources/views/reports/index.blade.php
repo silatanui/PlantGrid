@@ -6,9 +6,12 @@
             <h1 class="pg-page-title">Reports</h1>
             <p class="pg-page-lead">{{ $catalog[$selected]['label'] }} · {{ $total }} rows. The table shows the first 50.</p>
         </div>
-        @if ($canExport)
-            <a class="btn btn-pg" href="{{ route('reports.export', ['report' => $selected]) }}">Export CSV</a>
-        @endif
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-pg-line" href="{{ route('performance.index') }}">Worker performance</a>
+            @if ($canExport)
+                <a class="btn btn-pg" href="{{ route('reports.export', ['report' => $selected]) }}">Export CSV</a>
+            @endif
+        </div>
     </div>
     <div class="d-flex flex-wrap gap-2 mb-3">
         @foreach ($catalog as $key => $report)

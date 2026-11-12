@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="512" height="512" viewBox="0 0 512 512"
+     role="img" aria-labelledby="pg-favicon-title pg-favicon-desc">
+  <title id="pg-favicon-title">PlantGrid favicon</title>
+  <desc id="pg-favicon-desc">A bold white geometric P monogram on a brand-coloured square.</desc>
+  <rect width="512" height="512" fill="currentColor"/>
+  <path fill="#FFFFFF" fill-rule="evenodd" d="
+    M132 404 L132 108
+    L318 108
+    C414 108 464 157 464 239
+    C464 322 412 369 318 369
+    L218 369
+    L218 404 Z
+    M218 291
+    L310 291
+    C354 291 377 274 377 239
+    C377 204 354 186 310 186
+    L218 186 Z"/>
+</svg>

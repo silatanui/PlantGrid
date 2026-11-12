@@ -33,10 +33,11 @@
                 <tr>
                     <td>
                         <a href="{{ route('people.show', $person) }}">{{ $person->name }}</a>
-                        <div class="text-muted small">{{ $person->roleLabel() }} · {{ $person->email }}</div>
+                        <div class="text-muted small">{{ $person->job_title ?: $person->roleLabel() }} · {{ $person->email }}</div>
+                        <div class="text-muted small">{{ $person->contactLine() }}</div>
                     </td>
                     <td class="text-end">
-                        <a class="btn btn-sm btn-pg" href="{{ route('people.show', $person) }}#contact">Contact</a>
+                        <a class="btn btn-sm btn-pg" href="{{ route('people.show', $person) }}#contact-details">Contact</a>
                     </td>
                 </tr>
             @empty

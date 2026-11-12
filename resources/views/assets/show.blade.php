@@ -5,6 +5,9 @@
         <div>
             <h1 class="pg-page-title">{{ $asset->asset_tag }}</h1>
             <p class="pg-page-lead">{{ $asset->name }}</p>
+            @if (!empty($caseLinkedOnly))
+                <p class="pg-page-lead mb-0">Opened from a case. Your role can view this linked device, but not the full Assets register.</p>
+            @endif
         </div>
         <div class="d-flex gap-2">
             @if (auth()->user()->hasPermission('assets.update'))
@@ -20,6 +23,7 @@
     </div>
     <div class="row g-3">
         <div class="col-lg-7">
+            @include('partials.device-media', ['media' => \App\Support\DeviceMedia::forAsset($asset)])
             <section class="pg-card pg-card-pad mb-3">
                 <h2 class="pg-section-title">Record</h2>
                 <dl class="pg-kv">

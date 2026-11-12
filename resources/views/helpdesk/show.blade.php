@@ -81,6 +81,12 @@
                         <dt>Resolution</dt><dd class="pg-rich-note">{!! \App\Support\RichText::render($ticket->resolution_notes) !!}</dd>
                     @endif
                 </dl>
+                @if ($ticket->asset)
+                    @include('partials.device-media', [
+                        'media' => \App\Support\DeviceMedia::forAsset($ticket->asset->loadMissing('category')),
+                        'compact' => true,
+                    ])
+                @endif
             </section>
             <section
                 class="pg-card pg-card-pad mb-3"
@@ -157,16 +163,74 @@
                     @else
                         <input type="hidden" name="visibility" value="requester_visible">
                     @endif
-                    <label class="form-label" for="attachment">Attachment</label>
-                    <input class="form-control mb-2" id="attachment" name="attachment" type="file">
-                    <button class="btn btn-pg" type="submit" data-notes-submit>Post note</button>
+                    <div class="pg-attach-composer" data-attach-composer>
+                        <label class="pg-attach-drop" for="attachment">
+                            <input class="pg-attach-input" id="attachment" name="attachment" type="file" accept=".pdf,.png,.jpg,.jpeg,.txt,.doc,.docx,image/*" data-attach-input>
+                            <span class="pg-attach-drop-copy">
+                                <i data-lucide="image-plus"></i>
+                                <strong>Add a photo or file</strong>
+                                <span>PNG, JPG, PDF or Word · up to 5 MB</span>
+                            </span>
+                        </label>
+                        <div class="pg-attach-pending" data-attach-pending hidden>
+                            <div class="pg-attach-pending-media" data-attach-pending-media></div>
+                            <div class="pg-attach-pending-meta">
+                                <strong data-attach-pending-name></strong>
+                                <span data-attach-pending-size></span>
+                            </div>
+                            <button class="btn btn-sm btn-pg-line" type="button" data-attach-clear>Remove</button>
+                        </div>
+                    </div>
+                    <button class="btn btn-pg mt-2" type="submit" data-notes-submit>Post note</button>
                 </form>
+
                 @if ($ticket->attachments->isNotEmpty())
-                    <ul class="mt-3 mb-0">
-                        @foreach ($ticket->attachments as $attachment)
-                            <li><a href="{{ route('helpdesk.attachment', [$ticket, $attachment]) }}">{{ $attachment->original_name }}</a></li>
-                        @endforeach
-                    </ul>
+                    <section class="pg-media-feed" aria-label="Attachments">
+                        <h3 class="pg-section-title">Shared media</h3>
+                        <div class="pg-media-grid">
+                            @foreach ($ticket->attachments as $attachment)
+                                <article class="pg-media-post">
+                                    <header class="pg-media-post-head">
+                                        <span class="pg-media-avatar" aria-hidden="true">{{ strtoupper(substr($attachment->uploader->name ?? 'U', 0, 1)) }}</span>
+                                        <div>
+                                            <strong>{{ $attachment->uploader->name ?? 'PlantGrid user' }}</strong>
+                                            <div class="text-muted small">
+                                                Shared {{ $attachment->kindLabel() }}
+                                                · {{ \App\Support\Format::date($attachment->created_at) }}
+                                            </div>
+                                        </div>
+                                    </header>
+                                    @if ($attachment->isImage())
+                                        <a
+                                            class="pg-media-frame"
+                                            href="{{ route('helpdesk.attachment.preview', [$ticket, $attachment]) }}"
+                                            target="_blank"
+                                            rel="noopener"
+                                        >
+                                            <img
+                                                src="{{ route('helpdesk.attachment.preview', [$ticket, $attachment]) }}"
+                                                alt="{{ $attachment->original_name }}"
+                                                loading="lazy"
+                                            >
+                                        </a>
+                                    @else
+                                        <div class="pg-media-file">
+                                            <i data-lucide="file-text"></i>
+                                            <div>
+                                                <strong>{{ $attachment->original_name }}</strong>
+                                                <span>{{ $attachment->humanSize() }}</span>
+                                            </div>
+                                        </div>
+                                    @endif
+                                    <footer class="pg-media-post-foot">
+                                        <span class="pg-mono">{{ $attachment->original_name }}</span>
+                                        <span>{{ $attachment->humanSize() }}</span>
+                                        <a href="{{ route('helpdesk.attachment', [$ticket, $attachment]) }}">Download</a>
+                                    </footer>
+                                </article>
+                            @endforeach
+                        </div>
+                    </section>
                 @endif
             </section>
         </div>

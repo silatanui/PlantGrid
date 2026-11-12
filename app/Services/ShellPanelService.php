@@ -40,6 +40,7 @@ class ShellPanelService
 
     private function shortcuts(User $user): array
     {
+        // Keep shortcuts to actions only — module destinations live under Modules.
         $items = [];
 
         if ($user->hasPermission('tickets.create')) {
@@ -52,25 +53,12 @@ class ShellPanelService
 
         if ($user->hasAnyPermission(['tickets.view.own', 'tickets.view.department', 'tickets.view.all'])) {
             $items[] = [
-                'label' => $user->isEmployeeRequester() ? 'My cases' : 'Case queue',
+                'label' => $user->isEmployeeRequester() ? 'My open cases' : 'Open queue',
                 'route' => 'helpdesk.index',
-                'icon' => 'life-buoy',
-            ];
-        }
-
-        if ($user->hasPermission('assets.view')) {
-            $items[] = [
-                'label' => 'Assets',
-                'route' => 'assets.index',
-                'icon' => 'boxes',
-            ];
-        }
-
-        if ($user->hasPermission('monitoring.view')) {
-            $items[] = [
-                'label' => 'Monitoring',
-                'route' => 'monitoring.index',
-                'icon' => 'activity',
+                'icon' => 'folder-open',
+                'params' => $user->isEmployeeRequester()
+                    ? ['scope' => 'mine', 'status' => 'open']
+                    : ['status' => 'open'],
             ];
         }
 

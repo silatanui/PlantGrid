@@ -14,6 +14,7 @@ class DashboardController extends Controller
         return view('dashboard.index', [
             'title' => 'Dashboard',
             'cards' => $dashboard->cards($user),
+            'quickLinks' => $dashboard->quickLinks($user),
             'notices' => $dashboard->notices($user),
             'charts' => $dashboard->charts($user),
             'activity' => $user->hasPermission('audit.view') ? $dashboard->activity() : collect(),

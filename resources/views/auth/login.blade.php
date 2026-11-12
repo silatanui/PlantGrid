@@ -2,17 +2,17 @@
 
 @section('content')
     @php
-        $defaultEmail = old('email', 'grace.wanjiku@northridge.example');
+        $defaultEmail = old('email', 'amina.okello@northridge.example');
         $accounts = [
             [
-                'key' => 'employee',
-                'name' => 'Grace Wanjiku',
-                'label' => 'General Employee',
-                'email' => 'grace.wanjiku@northridge.example',
-                'blurb' => 'Open and track your own cases. No ICT admin tools.',
-                'access' => 'Self-service',
+                'key' => 'admin',
+                'name' => 'Amina Okello',
+                'label' => 'System Administrator',
+                'email' => 'amina.okello@northridge.example',
+                'blurb' => 'Best starting point: users, settings, cases, assets and plant-wide controls.',
+                'access' => 'Preferred',
                 'featured' => true,
-                'initials' => 'GW',
+                'initials' => 'AO',
             ],
             [
                 'key' => 'manager',
@@ -23,16 +23,6 @@
                 'access' => 'Full console',
                 'featured' => true,
                 'initials' => 'DM',
-            ],
-            [
-                'key' => 'admin',
-                'name' => 'Amina Okello',
-                'label' => 'System Administrator',
-                'email' => 'amina.okello@northridge.example',
-                'blurb' => 'User administration, configuration and plant-wide controls.',
-                'access' => 'Admin',
-                'featured' => false,
-                'initials' => 'AO',
             ],
             [
                 'key' => 'tech',
@@ -55,6 +45,16 @@
                 'initials' => 'PK',
             ],
             [
+                'key' => 'employee',
+                'name' => 'Grace Wanjiku',
+                'label' => 'General Employee',
+                'email' => 'grace.wanjiku@northridge.example',
+                'blurb' => 'Open and track your own cases. No ICT admin tools.',
+                'access' => 'Self-service',
+                'featured' => false,
+                'initials' => 'GW',
+            ],
+            [
                 'key' => 'auditor',
                 'name' => 'Helen Achieng',
                 'label' => 'Auditor',
@@ -72,7 +72,7 @@
         <aside class="pg-auth-visual" aria-hidden="false">
             <div class="pg-auth-visual-top">
                 <a class="pg-auth-brand" href="{{ route('home') }}" aria-label="PlantGrid home">
-                    <img src="{{ asset('images/logo-lockup.png') }}?v={{ @filemtime(public_path('images/logo-lockup.png')) ?: 1 }}" alt="PlantGrid">
+                    @include('partials.brand-logo', ['class' => 'pg-logo pg-logo-auth', 'title' => 'PlantGrid'])
                 </a>
                 <p class="pg-auth-plant">Northridge Processing · demo plant</p>
             </div>
@@ -117,14 +117,14 @@
                     <i data-lucide="key-round"></i>
                     <div>
                         <strong>Password for every account</strong>
-                        <code class="pg-mono">PlantGrid-Demo</code>
+                        <span class="pg-auth-password-value">PlantGrid-Demo</span>
                     </div>
                 </div>
 
                 <div class="pg-auth-section">
                     <div class="pg-auth-section-label">
                         <span>Quick start</span>
-                        <span>Recommended</span>
+                        <span>Preferred · Admin first</span>
                     </div>
                     <div class="pg-persona-grid" role="group" aria-label="Recommended demonstration roles">
                         @foreach ($featured as $persona)
@@ -140,32 +140,6 @@
                                     <span class="pg-persona-blurb">{{ $persona['blurb'] }}</span>
                                 </span>
                                 <span class="pg-persona-access">{{ $persona['access'] }}</span>
-                            </button>
-                        @endforeach
-                    </div>
-                </div>
-
-                <div class="pg-auth-section">
-                    <div class="pg-auth-section-label">
-                        <span>More demonstration roles</span>
-                        <span>{{ count($more) }} accounts</span>
-                    </div>
-                    <div class="pg-account-list" role="group" aria-label="More demonstration roles">
-                        @foreach ($more as $persona)
-                            <button
-                                class="pg-account-row {{ $defaultEmail === $persona['email'] ? 'active' : '' }}"
-                                type="button"
-                                data-demo-email="{{ $persona['email'] }}"
-                            >
-                                <span class="pg-persona-avatar" aria-hidden="true">{{ $persona['initials'] }}</span>
-                                <span class="pg-account-meta">
-                                    <span class="pg-account-title">
-                                        <strong>{{ $persona['label'] }}</strong>
-                                        <em>{{ $persona['name'] }}</em>
-                                    </span>
-                                    <span class="pg-mono">{{ $persona['email'] }}</span>
-                                </span>
-                                <span class="pg-account-tag">{{ $persona['access'] }}</span>
                             </button>
                         @endforeach
                     </div>
@@ -202,12 +176,42 @@
                     </p>
                 </div>
 
-                <p class="pg-auth-back">
+                <div class="pg-auth-section pg-auth-section-more">
+                    <div class="pg-auth-section-label">
+                        <span>More demonstration roles</span>
+                        <span>{{ count($more) }} accounts</span>
+                    </div>
+                    <div class="pg-account-list" role="group" aria-label="More demonstration roles">
+                        @foreach ($more as $persona)
+                            <button
+                                class="pg-account-row {{ $defaultEmail === $persona['email'] ? 'active' : '' }}"
+                                type="button"
+                                data-demo-email="{{ $persona['email'] }}"
+                            >
+                                <span class="pg-persona-avatar" aria-hidden="true">{{ $persona['initials'] }}</span>
+                                <span class="pg-account-meta">
+                                    <span class="pg-account-title">
+                                        <strong>{{ $persona['label'] }}</strong>
+                                        <em>{{ $persona['name'] }}</em>
+                                    </span>
+                                    <span class="pg-account-email">{{ $persona['email'] }}</span>
+                                </span>
+                                <span class="pg-account-tag">{{ $persona['access'] }}</span>
+                            </button>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div class="pg-auth-foot-row">
                     <a href="{{ route('home') }}">
                         <i data-lucide="arrow-left"></i>
                         Back to PlantGrid home
                     </a>
-                </p>
+                    @include('partials.theme-menu', [
+                        'align' => 'end',
+                        'buttonClass' => 'pg-theme-menu-toggle pg-theme-menu-toggle--auth',
+                    ])
+                </div>
             </section>
         </main>
     </div>

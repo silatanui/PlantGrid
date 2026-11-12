@@ -27,7 +27,6 @@ class HelpdeskController extends Controller
         if ($employeeView && $scope === 'queue') {
             $scope = 'mine';
         }
-        $viewMode = $request->input('view') === 'board' ? 'board' : 'list';
         $sort = TableSort::from(
             $request,
             ['ticket_number', 'subject', 'priority', 'status', 'reported_at'],
@@ -52,14 +51,7 @@ class HelpdeskController extends Controller
             });
         $sort->apply($query);
 
-        $tickets = $viewMode === 'board'
-            ? $query->limit(120)->get()
-            : $query->paginate(25)->withQueryString();
-
-        $stages = ['new', 'assigned', 'in_progress', 'pending', 'resolved', 'closed'];
-        $columns = $viewMode === 'board'
-            ? collect($stages)->mapWithKeys(fn (string $status) => [$status => $tickets->where('status', $status)->values()])
-            : collect();
+        $tickets = $query->paginate(25)->withQueryString();
 
         $pageTitle = match (true) {
             $scope === 'mine' && $statusFilter === 'open' => 'My open cases',
@@ -80,10 +72,8 @@ class HelpdeskController extends Controller
             'departments' => Department::query()->orderBy('name')->get(),
             'scope' => $scope,
             'statusFilter' => $statusFilter,
-            'viewMode' => $viewMode,
-            'columns' => $columns,
             'employeeView' => $employeeView,
-            'filters' => $request->only(['q', 'status', 'priority', 'department', 'scope', 'view', 'sort', 'direction']),
+            'filters' => $request->only(['q', 'status', 'priority', 'department', 'scope', 'sort', 'direction']),
             'sort' => $sort,
         ]);
     }
@@ -132,7 +122,7 @@ class HelpdeskController extends Controller
     public function show(Request $request, SupportTicket $ticket, TicketService $tickets)
     {
         $this->visible($request, $ticket);
-        $ticket->load(['requester', 'assignee', 'partners', 'department', 'category', 'asset.location', 'application', 'histories.changer', 'attachments.uploader', 'duplicateOf']);
+        $ticket->load(['requester', 'assignee', 'partners', 'department', 'category', 'asset.category', 'asset.location', 'application', 'histories.changer', 'attachments.uploader', 'duplicateOf']);
         $canSeeInternal = $request->user()->hasAnyPermission(['tickets.update', 'audit.view'])
             || $ticket->isPartner($request->user());
         $comments = $ticket->comments()->with('author')->latest()
@@ -362,6 +352,22 @@ class HelpdeskController extends Controller
         abort_unless($attachment->support_ticket_id === $ticket->id, 404);
 
         return Storage::disk('local')->download($attachment->storage_path, $attachment->original_name);
+    }
+
+    public function preview(Request $request, SupportTicket $ticket, TicketAttachment $attachment)
+    {
+        $this->visible($request, $ticket);
+        abort_unless($attachment->support_ticket_id === $ticket->id, 404);
+        abort_unless($attachment->isImage(), 404);
+
+        $path = Storage::disk('local')->path($attachment->storage_path);
+        abort_unless(is_file($path), 404);
+
+        return response()->file($path, [
+            'Content-Type' => $attachment->mime_type ?: 'image/png',
+            'Content-Disposition' => 'inline; filename="'.$attachment->original_name.'"',
+            'Cache-Control' => 'private, max-age=3600',
+        ]);
     }
 
     private function visible(Request $request, SupportTicket $ticket): void

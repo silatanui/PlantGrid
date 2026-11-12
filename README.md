@@ -4,6 +4,10 @@ PlantGrid is a demonstration platform for manufacturing ICT operations: assets, 
 
 The sample organisation is **Northridge Processing**, a fictional plant. Monitoring results and backup runs are simulated. The application does not control factory equipment or scan a live network.
 
+## Independent portfolio project
+
+PlantGrid is an original educational / portfolio project by Tanui Sila Kipngetich. It is **not affiliated with, endorsed by, or a product of Salesforce or any other CRM vendor**. The product name, logo, colour system, and layout are PlantGrid’s own. Concepts such as cases, assets, and role-based consoles are general software ideas; this codebase was written from scratch for demonstration purposes and is not a commercial clone or alternative product.
+
 ## Local address
 
 http://localhost/PlantGrid
@@ -16,7 +20,12 @@ This machine has PHP 8.2, so the application uses Laravel 12. Laravel 13 needs P
 
 Password for every account: `PlantGrid-Demo`
 
+Preferred starting account:
+
 - amina.okello@northridge.example — System Administrator
+
+Other roles:
+
 - daniel.mwangi@northridge.example — ICT Manager
 - faith.cheruiyot@northridge.example — ICT Technician
 - peter.kamau@northridge.example — Department Manager
@@ -35,12 +44,12 @@ C:\xampp\php\php.exe artisan migrate --seed
 
 ## Frontend
 
-System UI fonts, Bootstrap 5, Chart.js and Lucide are bundled with Vite. The production bundle is built for the `/PlantGrid/` path.
+Outfit, Bootstrap 5, Chart.js and Lucide are bundled with Vite. The production bundle is built for the `/PlantGrid/` path and written straight to `PLANTGRID_PUBLIC_PATH` (`C:\xampp\htdocs\PlantGrid`) when that env value is set.
 
 ```
 npm run build
 ```
 
-Copy `public\build` to `C:\xampp\htdocs\PlantGrid\build` after each build. The brand images belong in `public\images` and in the htdocs images folder.
+Brand images belong in the htdocs `images` folder (and can be mirrored under `public\images` in the app tree).
 
-Typography uses the system UI font stack for a traditional enterprise console look.
+Typography uses Outfit with a PlantGrid industrial teal palette for the manufacturing ICT console look.

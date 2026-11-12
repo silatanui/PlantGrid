@@ -94,7 +94,7 @@ class AiContextService
             'All network devices active?: '.($devices->where('status', '!=', 'active')->isEmpty() ? 'YES' : 'NO'),
             'Open monitoring alerts: '.$alerts->count(),
             'Scheduled/in-progress maintenance: '.$maintenanceDue->count(),
-            'People directory size: '.$people->count().' (demo contacts: name, email, role, department; no phone numbers stored)',
+            'People directory size: '.$people->count().' (demo contacts: name, email, job title, phone, mobile, extension, address, role, department)',
             '',
             'People directory (name · email · role · department · status):',
             ...$people->map(fn (User $person) => $this->personLine($person))->all(),
@@ -332,9 +332,12 @@ class AiContextService
     private function personLine(User $person): string
     {
         return sprintf(
-            '- %s · %s · %s · %s · %s',
+            '- %s · %s · %s · %s · %s · %s · %s · %s',
             $person->name,
+            $person->job_title ?: 'n/a',
             $person->email,
+            $person->contactLine(),
+            $person->fullAddress(),
             $person->roleLabel(),
             $person->department?->name ?? 'n/a',
             Labels::status((string) $person->status)

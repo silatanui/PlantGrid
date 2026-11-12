@@ -8,7 +8,7 @@
             <li class="nav-item"><a class="nav-link {{ $tab === $key ? 'active' : '' }}" href="{{ route('network.index', ['tab' => $key]) }}">{{ $label }}</a></li>
         @endforeach
     </ul>
-    <style>.nav-pills .nav-link { border: 1px solid #c9c9c9; border-radius: 0; color: #181818; background: #fff; } .nav-pills .nav-link.active { background: #0176d3; border-color: #0176d3; color: #fff; }</style>
+    <style>.nav-pills .nav-link { border: 1px solid var(--pg-border); border-radius: var(--pg-radius); color: var(--pg-text); background: #fff; } .nav-pills .nav-link.active { background: var(--pg-navy); border-color: var(--pg-navy); color: #fff; }</style>
 
     @if ($tab === 'devices')
         <div class="pg-card table-responsive mb-3">

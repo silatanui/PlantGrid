@@ -27,43 +27,46 @@ class DashboardService
 
         if ($user->hasPermission('assets.view')) {
             $assets = Asset::query()->visibleTo($user);
-            $cards[] = $this->card('ICT assets', (clone $assets)->count(), (clone $assets)->where('status', 'active')->count().' active');
-            $cards[] = $this->card('Needs maintenance', (clone $assets)->where('status', 'under_maintenance')->count(), 'Assets under maintenance');
+            $underMaintenance = (clone $assets)->where('status', 'under_maintenance')->count();
+            $cards[] = $this->card('ICT assets', (clone $assets)->count(), (clone $assets)->where('status', 'active')->count().' active', 'boxes', route('assets.index'));
+            $cards[] = $this->card('Needs maintenance', $underMaintenance, 'Assets under maintenance', 'wrench', route('assets.index', ['status' => 'under_maintenance']), $underMaintenance > 0 ? 'warning' : null);
         }
 
         if ($user->hasAnyPermission(['tickets.view.own', 'tickets.view.department', 'tickets.view.all'])) {
             $tickets = SupportTicket::query()->visibleTo($user);
             $openCount = (clone $tickets)->open()->count();
             if ($user->isEmployeeRequester()) {
-                $cards[] = $this->card('My open cases', $openCount, 'Requests you opened that are still open');
-                $cards[] = $this->card(
-                    'Waiting on ICT',
-                    (clone $tickets)->open()->whereIn('status', ['new', 'assigned', 'in_progress', 'pending'])->count(),
-                    'Your cases with ICT staff'
-                );
+                $waiting = (clone $tickets)->open()->whereIn('status', ['new', 'assigned', 'in_progress', 'pending'])->count();
+                $cards[] = $this->card('My open cases', $openCount, 'Requests you opened that are still open', 'life-buoy', route('helpdesk.index', ['scope' => 'mine']), $openCount > 0 ? 'warning' : null);
+                $cards[] = $this->card('Waiting on ICT', $waiting, 'Your cases with ICT staff', 'clock', route('helpdesk.index', ['scope' => 'mine']));
             } else {
-                $cards[] = $this->card('Open tickets', $openCount, 'Not resolved or closed');
                 $criticalTickets = (clone $tickets)->open()->where('priority', 'critical')->count();
                 $criticalProduction = $user->hasPermission('production.view')
                     ? ProductionIncident::query()->where('status', 'open')->where('severity', 'critical')->count()
                     : 0;
-                $cards[] = $this->card('Critical incidents', $criticalTickets + $criticalProduction, 'Open critical tickets and production incidents');
+                $criticalTotal = $criticalTickets + $criticalProduction;
+                $cards[] = $this->card('Open tickets', $openCount, 'Not resolved or closed', 'life-buoy', route('helpdesk.index', ['status' => 'open']), $openCount > 0 ? 'warning' : null);
+                $cards[] = $this->card('Critical incidents', $criticalTotal, 'Open critical tickets and production incidents', 'alert-triangle', route('helpdesk.index', ['priority' => 'critical', 'status' => 'open']), $criticalTotal > 0 ? 'critical' : null);
             }
         }
 
         if ($user->hasPermission('network.view')) {
-            $cards[] = $this->card('Network devices', NetworkDevice::query()->count(), 'Documented devices');
+            $cards[] = $this->card('Network devices', NetworkDevice::query()->count(), 'Documented devices', 'network', route('network.index'));
         }
 
         if ($user->hasPermission('servers.view')) {
-            $cards[] = $this->card('Servers', Server::query()->count(), 'Simulated production records');
+            $cards[] = $this->card('Servers', Server::query()->count(), 'Simulated production records', 'server', route('servers.index'));
         }
 
         if ($user->hasPermission('production.view')) {
+            $prodMaint = ProductionEquipment::query()->where('status', 'under_maintenance')->count();
             $cards[] = $this->card(
                 'Equipment in maintenance',
-                ProductionEquipment::query()->where('status', 'under_maintenance')->count(),
-                'Production equipment'
+                $prodMaint,
+                'Production equipment',
+                'factory',
+                route('production.index'),
+                $prodMaint > 0 ? 'warning' : null
             );
         }
 
@@ -71,18 +74,54 @@ class DashboardService
             $latest = BackupPlan::query()->with(['runs' => fn ($query) => $query->latest('started_at')->limit(1)])->get();
             $successful = $latest->filter(fn ($plan) => optional($plan->runs->first())->result === 'successful')->count();
             $failed = $latest->filter(fn ($plan) => optional($plan->runs->first())->result === 'failed')->count();
-            $cards[] = $this->card('Backup results', $successful.' / '.$failed, 'Latest simulated success / failure');
+            $cards[] = $this->card('Backup results', $successful.' / '.$failed, 'Latest simulated success / failure', 'hard-drive', route('backups.index'), $failed > 0 ? 'warning' : null);
         }
 
         if ($user->hasPermission('monitoring.view')) {
+            $activeAlerts = MonitoringAlert::query()->whereIn('status', ['open', 'acknowledged'])->count();
             $cards[] = $this->card(
                 'Active alerts',
-                MonitoringAlert::query()->whereIn('status', ['open', 'acknowledged'])->count(),
-                'Simulated monitoring'
+                $activeAlerts,
+                'Simulated monitoring',
+                'activity',
+                route('monitoring.index'),
+                $activeAlerts > 0 ? 'critical' : null
             );
         }
 
         return $cards;
+    }
+
+    /**
+     * @return list<array{label: string, route: string, icon: string}>
+     */
+    public function quickLinks(User $user): array
+    {
+        $links = [];
+
+        if ($user->hasAnyPermission(['tickets.view.own', 'tickets.view.department', 'tickets.view.all'])) {
+            $links[] = ['label' => $user->isEmployeeRequester() ? 'My cases' : 'Cases', 'route' => 'helpdesk.index', 'icon' => 'life-buoy'];
+        }
+        if ($user->hasPermission('tickets.create')) {
+            $links[] = ['label' => 'New case', 'route' => 'helpdesk.create', 'icon' => 'plus'];
+        }
+        if ($user->hasPermission('assets.view')) {
+            $links[] = ['label' => 'Assets', 'route' => 'assets.index', 'icon' => 'boxes'];
+        }
+        if ($user->hasPermission('network.view')) {
+            $links[] = ['label' => 'Network', 'route' => 'network.index', 'icon' => 'network'];
+        }
+        if ($user->hasPermission('production.view')) {
+            $links[] = ['label' => 'Production', 'route' => 'production.index', 'icon' => 'factory'];
+        }
+        if ($user->hasPermission('monitoring.view')) {
+            $links[] = ['label' => 'Monitoring', 'route' => 'monitoring.index', 'icon' => 'activity'];
+        }
+        if ($user->hasPermission('reports.view')) {
+            $links[] = ['label' => 'Performance', 'route' => 'performance.index', 'icon' => 'gauge'];
+        }
+
+        return array_slice($links, 0, 6);
     }
 
     public function notices(User $user): array
@@ -270,9 +309,9 @@ class DashboardService
 
         return SupportTicket::query()
             ->visibleTo($user)
-            ->with(['requester'])
+            ->with(['requester', 'assignee', 'asset'])
             ->latest('reported_at')
-            ->limit(4)
+            ->limit(5)
             ->get();
     }
 
@@ -342,9 +381,9 @@ class DashboardService
         ];
     }
 
-    private function card(string $label, mixed $value, string $hint): array
+    private function card(string $label, mixed $value, string $hint, ?string $icon = null, ?string $href = null, ?string $tone = null): array
     {
-        return compact('label', 'value', 'hint');
+        return compact('label', 'value', 'hint', 'icon', 'href', 'tone');
     }
 
     private function doughnut(array $labels, array $values): array

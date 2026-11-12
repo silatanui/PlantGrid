@@ -50,7 +50,7 @@ class AiAgentService
                 'type' => 'function',
                 'function' => [
                     'name' => 'propose_take_ownership',
-                    'description' => 'Propose assigning an existing open case to the current user (Salesforce-style take ownership). Use when the user asks to take, accept, claim, or own a case.',
+                    'description' => 'Propose assigning an existing open case to the current user. Use when the user asks to take, accept, claim, or own a case.',
                     'parameters' => [
                         'type' => 'object',
                         'properties' => [

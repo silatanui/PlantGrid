@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Department;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\DemoContact;
 use Illuminate\Database\Seeder;
 
 class TeamMembersSeeder extends Seeder
@@ -71,6 +72,7 @@ class TeamMembersSeeder extends Seeder
                     'department_id' => $department->id,
                     'status' => 'active',
                     'email_verified_at' => now(),
+                    ...DemoContact::for($email, $departmentCode, $roleName),
                 ]
             );
 

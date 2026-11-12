@@ -40,6 +40,8 @@ use App\Models\Vendor;
 use App\Models\Vlan;
 use App\Monitoring\Contracts\MonitoringProvider;
 use App\Monitoring\MetricCollectionService;
+use App\Support\DemoContact;
+use App\Support\DeviceMedia;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -51,6 +53,7 @@ class DatabaseSeeder extends Seeder
         [$departments, $locations] = $this->organisation();
         $users = $this->users($departments, $roles);
         $this->call(TeamMembersSeeder::class);
+        $this->call(UserContactSeeder::class);
         $categories = $this->categories();
         $vendors = $this->vendors();
         $assets = $this->assets($categories, $vendors, $departments, $locations, $users);
@@ -197,6 +200,7 @@ class DatabaseSeeder extends Seeder
                 'department_id' => $departments[$department]->id,
                 'status' => 'active',
                 'email_verified_at' => now(),
+                ...DemoContact::for($email, $department, $role),
             ]);
             $user->roles()->sync([$roles[$role]->id]);
             $users[$key] = $user;
@@ -263,6 +267,7 @@ class DatabaseSeeder extends Seeder
 
         $assets = [];
         foreach ($rows as $row) {
+            $media = DeviceMedia::profile($row[4], $row[5], $row[2], $row[1]);
             $asset = Asset::query()->create([
                 'asset_tag' => $row[0],
                 'name' => $row[1],
@@ -277,6 +282,10 @@ class DatabaseSeeder extends Seeder
                 'warranty_expiry' => $row[9] === 'retired' ? '2025-03-12' : '2027-03-12',
                 'condition' => $row[10],
                 'status' => $row[9],
+                'specifications' => array_merge(
+                    ['image_key' => $media['key'], 'summary' => $media['summary']],
+                    $media['specs']
+                ),
                 'notes' => 'Fictional demonstration record for Northridge Processing.',
                 'created_by' => $users['admin']->id,
             ]);

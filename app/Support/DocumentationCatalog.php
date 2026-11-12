@@ -40,7 +40,7 @@ class DocumentationCatalog
             [
                 'slug' => 'take-ownership',
                 'title' => 'How to take ownership of a case',
-                'summary' => 'Assign an open case to yourself in one step, similar to Accept / Take Ownership in Salesforce.',
+                'summary' => 'Assign an open case to yourself in one step when you are ready to own the work.',
                 'audience' => 'ICT technicians and managers',
                 'keywords' => ['take ownership', 'accept case', 'assign myself', 'owner', 'claim'],
                 'sections' => [
@@ -219,6 +219,28 @@ class DocumentationCatalog
                     [
                         'heading' => 'On a case record',
                         'body' => 'In Update status → Technician, online staff are marked with “Online” so you can prefer people who are available.',
+                    ],
+                ],
+                'screenshots' => [],
+            ],
+            [
+                'slug' => 'worker-performance',
+                'title' => 'How to read worker performance',
+                'summary' => 'Use the Performance board to compare ICT case throughput (CPM), open load, resolution time, and SLA quality.',
+                'audience' => 'ICT managers and supervisors',
+                'keywords' => ['performance', 'CPM', 'cases per month', 'SLA', 'workload', 'leaderboard', 'productivity'],
+                'sections' => [
+                    [
+                        'heading' => 'Open the board',
+                        'body' => "1. Open Performance under Assurance (or Worker performance from Reports).\n2. You need reports.view. Export CSV needs reports.export.\n3. Set the date range, department, role, or person, then Apply.",
+                    ],
+                    [
+                        'heading' => 'What the metrics mean',
+                        'body' => "• Open — cases currently assigned and not resolved/closed.\n• Intake — assigned cases reported in the selected range.\n• Resolved / CPM — finished work and Cases Per Month (resolved ÷ months in range).\n• Avg h — average hours from reported_at to resolved_at.\n• SLA % — share of resolved cases finished on or before sla_due_at without a breach.\n• Reopen % — closed/resolved cases that later moved back to an open status.",
+                    ],
+                    [
+                        'heading' => 'How to use it well',
+                        'body' => "• Compare similar roles (for example ICT Technician with ICT Technician).\n• Pair CPM with SLA and reopen so speed is not rewarded without quality.\n• Use Overloaded (open above the threshold) to rebalance intake before coaching on throughput.\n• Click a worker for a six-month resolved trend and their live open queue.",
                     ],
                 ],
                 'screenshots' => [],

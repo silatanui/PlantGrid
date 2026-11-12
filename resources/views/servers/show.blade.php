@@ -3,6 +3,7 @@
 @section('content')
     <h1 class="pg-page-title">{{ $server->hostname }}</h1>
     <p class="pg-page-lead">{{ $server->server_role }} · {{ str_replace('_', ' ', $server->environment) }}</p>
+    @include('partials.device-media', ['media' => \App\Support\DeviceMedia::forServer($server->loadMissing('asset.category'))])
     <section class="pg-card pg-card-pad my-3">
         <dl class="pg-kv">
             <dt>Status</dt><dd>{!! \App\Support\Labels::badge($server->status) !!}</dd>

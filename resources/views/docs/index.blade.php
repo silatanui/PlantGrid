@@ -1,12 +1,14 @@
 @extends('layouts.app')
 
 @section('content')
-    <section class="pg-record pg-docs-hero">
-        <div class="pg-record-icon" aria-hidden="true"><i data-lucide="book-open"></i></div>
-        <div class="pg-record-title">
+    <section class="pg-object-home">
+        <div class="pg-object-icon pg-object-icon--docs" aria-hidden="true">
+            <i data-lucide="book-open"></i>
+        </div>
+        <div class="pg-object-home-copy">
             <div class="pg-object">Help</div>
-            <h1>Documentation</h1>
-            <p>Step-by-step templates for cases, notes, ownership, duplicates, escalations and the Assistant.</p>
+            <h1 class="pg-page-title">Documentation</h1>
+            <p class="pg-page-lead">Step-by-step templates for cases, notes, ownership, duplicates, escalations and the Assistant.</p>
         </div>
     </section>
 

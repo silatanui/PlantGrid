@@ -3,6 +3,7 @@
 @section('content')
     <h1 class="pg-page-title">{{ $device->hostname }}</h1>
     <p class="pg-page-lead">{{ \App\Support\Labels::status($device->device_type) }} · documented record</p>
+    @include('partials.device-media', ['media' => \App\Support\DeviceMedia::forNetworkDevice($device->loadMissing('asset.category'))])
     <section class="pg-card pg-card-pad mt-3">
         <dl class="pg-kv">
             <dt>Status</dt><dd>{!! \App\Support\Labels::badge($device->status) !!}</dd>

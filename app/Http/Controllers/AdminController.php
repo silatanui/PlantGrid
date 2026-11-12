@@ -95,6 +95,14 @@ class AdminController extends Controller
             'password' => ['required', Password::min(8)],
             'department_id' => ['nullable', 'exists:departments,id'],
             'role_id' => ['required', 'exists:roles,id'],
+            'job_title' => ['nullable', 'string', 'max:120'],
+            'phone' => ['nullable', 'string', 'max:40'],
+            'mobile' => ['nullable', 'string', 'max:40'],
+            'extension' => ['nullable', 'string', 'max:20'],
+            'address' => ['nullable', 'string', 'max:180'],
+            'city' => ['nullable', 'string', 'max:80'],
+            'postal_code' => ['nullable', 'string', 'max:24'],
+            'country' => ['nullable', 'string', 'max:80'],
         ]);
 
         $user = User::query()->create([
@@ -104,6 +112,14 @@ class AdminController extends Controller
             'department_id' => $data['department_id'] ?? null,
             'status' => 'active',
             'email_verified_at' => now(),
+            'job_title' => $data['job_title'] ?? null,
+            'phone' => $data['phone'] ?? null,
+            'mobile' => $data['mobile'] ?? null,
+            'extension' => $data['extension'] ?? null,
+            'address' => $data['address'] ?? null,
+            'city' => $data['city'] ?? null,
+            'postal_code' => $data['postal_code'] ?? null,
+            'country' => $data['country'] ?? 'Kenya (demo)',
         ]);
         $user->roles()->sync([$data['role_id']]);
         $audit->log('user.created', 'user', $user->id, [], ['email' => $user->email, 'role_id' => $data['role_id']]);

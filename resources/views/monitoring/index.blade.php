@@ -1,8 +1,16 @@
 @extends('layouts.app')
 
 @section('content')
-    <h1 class="pg-page-title">Monitoring</h1>
-    <p class="pg-page-lead">All readings on this page are simulated. The active scenario is <strong>{{ $scenario }}</strong>.</p>
+    <section class="pg-object-home">
+        <div class="pg-object-icon pg-object-icon--monitoring" aria-hidden="true">
+            <i data-lucide="activity"></i>
+        </div>
+        <div class="pg-object-home-copy">
+            <div class="pg-object">Monitoring</div>
+            <h1 class="pg-page-title">Monitoring</h1>
+            <p class="pg-page-lead">All readings on this page are simulated. The active scenario is <strong>{{ $scenario }}</strong>.</p>
+        </div>
+    </section>
     <div class="pg-alert pg-alert-{{ $banner['tone'] }}">{{ $banner['text'] }}</div>
 
     @if (auth()->user()->hasPermission('monitoring.manage'))

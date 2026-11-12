@@ -8,6 +8,9 @@ import { initLiveNotes } from './live-notes';
 import { initPresence } from './presence';
 import { initLiveInbox } from './live-inbox';
 import { initFormatToolbars } from './format-toolbar';
+import { initTheme } from './theme';
+import { initWorkspaceTabs } from './workspace-tabs';
+import { initAttachPreview } from './attach-preview';
 
 Chart.register(...registerables);
 Chart.defaults.font.family = 'system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
@@ -16,6 +19,7 @@ Chart.defaults.borderColor = '#C9C9C9';
 
 document.addEventListener('DOMContentLoaded', () => {
     const refreshIcons = () => createIcons({ icons });
+    initTheme();
     refreshIcons();
     initAiAssistant(refreshIcons);
     initGlobalSearch();
@@ -24,6 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initPresence();
     initLiveInbox();
     initFormatToolbars();
+    initWorkspaceTabs(refreshIcons);
+    initAttachPreview(refreshIcons);
 
     const emailInput = document.querySelector('#email');
     const demoButtons = () => document.querySelectorAll('[data-demo-email]');
@@ -129,11 +135,50 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    const themeColor = (name, fallback) => {
+        const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+        return value || fallback;
+    };
+
+    const paintChartColors = (value, palette) => {
+        if (Array.isArray(value)) {
+            return value.map((item) => paintChartColors(item, palette));
+        }
+        if (typeof value !== 'string') {
+            return value;
+        }
+        return palette[value] || value;
+    };
+
+    const bindChartTickCallbacks = (options) => {
+        if (!options?.scales) {
+            return;
+        }
+        Object.values(options.scales).forEach((scale) => {
+            if (scale?.ticks?.callback === '__pct') {
+                scale.ticks.callback = (tickValue) => `${tickValue}%`;
+            }
+        });
+    };
+
     document.querySelectorAll('[data-chart]').forEach((node) => {
         const canvas = node.querySelector('canvas');
         if (!canvas || !node.dataset.chart) {
             return;
         }
+
+        const accent = themeColor('--pg-navy', '#7d259d');
+        const soft = themeColor('--pg-teal-soft', '#f3e9f7');
+        const muted = themeColor('--pg-muted', '#5a6773');
+        const warning = themeColor('--pg-warning', '#b54708');
+        const success = themeColor('--pg-success', '#0b8f9c');
+        const palette = {
+            'pg-accent': accent,
+            'pg-accent-soft': soft,
+            'pg-muted': muted,
+            'pg-warning': warning,
+            'pg-success': success,
+        };
 
         const config = JSON.parse(node.dataset.chart);
         config.options = {
@@ -141,6 +186,15 @@ document.addEventListener('DOMContentLoaded', () => {
             maintainAspectRatio: false,
             ...(config.options || {}),
         };
+        bindChartTickCallbacks(config.options);
+        config.data?.datasets?.forEach((dataset) => {
+            if (dataset.backgroundColor !== undefined) {
+                dataset.backgroundColor = paintChartColors(dataset.backgroundColor, palette);
+            }
+            if (dataset.borderColor !== undefined) {
+                dataset.borderColor = paintChartColors(dataset.borderColor, palette);
+            }
+        });
         new Chart(canvas, config);
     });
 
@@ -444,7 +498,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const boxes = nodes.map((node) => {
                 const point = positions[node.id] || { x: 40, y: 40 };
-                const accent = node.accent || '#0176d3';
+                const accent = node.accent || '#005058';
                 const alertClass = node.alert ? ' is-alert' : '';
                 const location = node.location ? ` · ${node.location}` : '';
                 const alertTag = node.alert

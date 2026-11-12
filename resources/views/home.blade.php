@@ -8,6 +8,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/favicon-32x32.png') }}?v={{ @filemtime(public_path('images/favicon-32x32.png')) ?: 1 }}">
     <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('images/favicon-48x48.png') }}?v={{ @filemtime(public_path('images/favicon-48x48.png')) ?: 1 }}">
     <link rel="apple-touch-icon" href="{{ asset('images/apple-touch-icon.png') }}?v={{ @filemtime(public_path('images/apple-touch-icon.png')) ?: 1 }}">
+    @include('partials.theme-boot')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="pg-home">
@@ -15,7 +16,7 @@
 
     <header class="pg-home-bar" data-home-bar>
         <a class="pg-home-brand" href="{{ route('home') }}" aria-label="PlantGrid home">
-            <img src="{{ asset('images/logo-lockup.png') }}?v={{ @filemtime(public_path('images/logo-lockup.png')) ?: 1 }}" alt="PlantGrid, Manufacturing Technology Management" width="220" height="40">
+            @include('partials.brand-logo', ['class' => 'pg-logo pg-logo-home', 'title' => 'PlantGrid, Manufacturing Technology Management'])
         </a>
         <nav class="pg-home-nav" aria-label="Page">
             <a href="#product">Product</a>
@@ -25,6 +26,9 @@
             <a href="#about">About</a>
         </nav>
         <div class="pg-home-bar-actions">
+            @include('partials.theme-menu', [
+                'buttonClass' => 'pg-theme-menu-toggle pg-theme-menu-toggle--home',
+            ])
             @auth
                 <a class="btn btn-sm btn-pg" href="{{ route('dashboard') }}">Open dashboard</a>
             @else
@@ -243,9 +247,10 @@
 
                     <div class="pg-home-demo-accounts">
                         <h3>Demonstration accounts</h3>
+                        <p class="pg-home-note mb-2">Start with the System Administrator for the fullest console.</p>
                         <table class="pg-home-accounts">
                             <tbody>
-                                <tr><th>System Administrator</th><td class="pg-mono">amina.okello@northridge.example</td></tr>
+                                <tr><th>System Administrator <span class="text-muted">(preferred)</span></th><td class="pg-mono">amina.okello@northridge.example</td></tr>
                                 <tr><th>ICT Manager</th><td class="pg-mono">daniel.mwangi@northridge.example</td></tr>
                                 <tr><th>ICT Technician</th><td class="pg-mono">faith.cheruiyot@northridge.example</td></tr>
                                 <tr><th>Department Manager</th><td class="pg-mono">peter.kamau@northridge.example</td></tr>
@@ -270,6 +275,7 @@
                     <p>
                         PlantGrid is a portfolio website made to show product thinking, careful interface craft
                         and practical ICT operations design in a setting close to real manufacturing technology work.
+                        It is an independent educational project and is not affiliated with or endorsed by any third-party CRM vendor.
                     </p>
                     <p>
                         I wanted to prove that an operations product can stay clear without noise: strong brand presence,

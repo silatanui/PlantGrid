@@ -23,7 +23,38 @@ class User extends Authenticatable
         'status',
         'last_login_at',
         'last_seen_at',
+        'job_title',
+        'phone',
+        'mobile',
+        'extension',
+        'address',
+        'city',
+        'postal_code',
+        'country',
     ];
+
+    public function contactLine(): string
+    {
+        $parts = array_filter([
+            $this->phone ? 'Desk '.$this->phone : null,
+            $this->mobile ? 'Mobile '.$this->mobile : null,
+            $this->extension ? 'Ext '.$this->extension : null,
+        ]);
+
+        return $parts !== [] ? implode(' · ', $parts) : 'No phone on file';
+    }
+
+    public function fullAddress(): string
+    {
+        $parts = array_filter([
+            $this->address,
+            $this->city,
+            $this->postal_code,
+            $this->country,
+        ]);
+
+        return $parts !== [] ? implode(', ', $parts) : 'No address on file';
+    }
 
     protected $hidden = [
         'password',

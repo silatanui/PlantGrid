@@ -14,7 +14,7 @@
             <div class="pg-rail-label">Shortcuts</div>
             <div class="pg-rail-shortcuts">
                 @foreach ($leftPanel['shortcuts'] as $item)
-                    <a href="{{ route($item['route']) }}">
+                    <a href="{{ route($item['route'], $item['params'] ?? []) }}">
                         <i data-lucide="{{ $item['icon'] }}"></i>
                         <span>{{ $item['label'] }}</span>
                     </a>

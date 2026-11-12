@@ -18,6 +18,7 @@ use App\Http\Controllers\MonitoringController;
 use App\Http\Controllers\NetworkController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PeopleController;
+use App\Http\Controllers\PerformanceController;
 use App\Http\Controllers\PresenceController;
 use App\Http\Controllers\ProductionController;
 use App\Http\Controllers\ReportController;
@@ -53,12 +54,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/mentions/suggest', [MentionController::class, 'suggest'])->name('mentions.suggest');
 
     Route::get('/people/{person}', [PeopleController::class, 'show'])->name('people.show');
+    Route::put('/people/{person}/contact', [PeopleController::class, 'updateContact'])->name('people.contact');
     Route::post('/people/{person}/message', [PeopleController::class, 'message'])->name('people.message');
 
     Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');
     Route::post('/messages', [MessageController::class, 'store'])->name('messages.store');
     Route::get('/messages/{message}', [MessageController::class, 'show'])->name('messages.show');
     Route::post('/workspace/tabs/close', [WorkspaceTabController::class, 'destroy'])->name('workspace.tabs.close');
+    Route::post('/workspace/tabs/reorder', [WorkspaceTabController::class, 'reorder'])->name('workspace.tabs.reorder');
 
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
@@ -84,13 +87,16 @@ Route::middleware('auth')->group(function () {
         Route::get('/assets/export', [AssetController::class, 'export'])->name('assets.export');
         Route::get('/assets/create', [AssetController::class, 'create'])->middleware('permission:assets.create')->name('assets.create');
         Route::post('/assets', [AssetController::class, 'store'])->middleware('permission:assets.create')->name('assets.store');
-        Route::get('/assets/{asset}', [AssetController::class, 'show'])->name('assets.show');
         Route::get('/assets/{asset}/edit', [AssetController::class, 'edit'])->middleware('permission:assets.update')->name('assets.edit');
         Route::put('/assets/{asset}', [AssetController::class, 'update'])->middleware('permission:assets.update')->name('assets.update');
         Route::post('/assets/{asset}/retire', [AssetController::class, 'retire'])->middleware('permission:assets.retire')->name('assets.retire');
         Route::post('/assets/{asset}/assign', [AssetController::class, 'assign'])->middleware('permission:assets.update')->name('assets.assign');
         Route::post('/assets/{asset}/return', [AssetController::class, 'returnAssignment'])->middleware('permission:assets.update')->name('assets.return');
     });
+
+    // Detail is authorised in the controller so case partners can open a linked
+    // device without Assets register permission. Keep after /assets/create.
+    Route::get('/assets/{asset}', [AssetController::class, 'show'])->name('assets.show');
 
     Route::middleware('permission:network.view')->group(function () {
         Route::get('/network', [NetworkController::class, 'index'])->name('network.index');
@@ -114,7 +120,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/helpdesk/my-tickets', function () {
             return redirect()->route('helpdesk.index', array_filter([
                 'scope' => 'mine',
-                'view' => request('view'),
                 'status' => request('status'),
                 'priority' => request('priority'),
                 'q' => request('q'),
@@ -123,7 +128,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/helpdesk/assigned', function () {
             return redirect()->route('helpdesk.index', array_filter([
                 'scope' => 'assigned',
-                'view' => request('view'),
                 'status' => request('status'),
                 'priority' => request('priority'),
                 'q' => request('q'),
@@ -141,6 +145,7 @@ Route::middleware('auth')->group(function () {
         Route::put('/helpdesk/{ticket}/comments/{comment}', [HelpdeskController::class, 'updateComment'])->name('helpdesk.comment.update');
         Route::delete('/helpdesk/{ticket}/comments/{comment}', [HelpdeskController::class, 'deleteComment'])->name('helpdesk.comment.destroy');
         Route::get('/helpdesk/{ticket}/attachments/{attachment}', [HelpdeskController::class, 'download'])->name('helpdesk.attachment');
+        Route::get('/helpdesk/{ticket}/attachments/{attachment}/preview', [HelpdeskController::class, 'preview'])->name('helpdesk.attachment.preview');
     });
 
     Route::middleware('permission:maintenance.view')->group(function () {
@@ -182,6 +187,8 @@ Route::middleware('auth')->group(function () {
     Route::middleware('permission:reports.view')->group(function () {
         Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
         Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
+        Route::get('/performance', [PerformanceController::class, 'index'])->name('performance.index');
+        Route::get('/performance/export', [PerformanceController::class, 'export'])->name('performance.export');
     });
 
     Route::middleware('permission:users.view')->group(function () {

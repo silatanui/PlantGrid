@@ -16,6 +16,7 @@
                 <tr>
                     <x-sort-th column="name" label="Name" :sort="$sort" route-name="admin.index" />
                     <x-sort-th column="email" label="Email" :sort="$sort" route-name="admin.index" />
+                    <th>Phone</th>
                     <th>Department</th>
                     <th>Role</th>
                     <th>Presence</th>
@@ -26,8 +27,21 @@
             <tbody>
             @foreach ($users as $person)
                 <tr>
-                    <td>{{ $person->name }}</td>
+                    <td>
+                        <a href="{{ route('people.show', $person) }}">{{ $person->name }}</a>
+                        @if ($person->job_title)
+                            <div class="text-muted small">{{ $person->job_title }}</div>
+                        @endif
+                    </td>
                     <td class="pg-mono">{{ $person->email }}</td>
+                    <td class="small">
+                        @if ($person->phone || $person->mobile)
+                            <div>{{ $person->phone ?: '—' }}</div>
+                            <div class="text-muted">{{ $person->mobile }}</div>
+                        @else
+                            <span class="text-muted">-</span>
+                        @endif
+                    </td>
                     <td>{{ $person->department->code ?? '-' }}</td>
                     <td>{{ $person->roles->pluck('name')->join(', ') }}</td>
                     <td>
@@ -75,6 +89,14 @@
                 <div class="col-md-2"><label class="form-label" for="role_id">Role</label>
                     <select class="form-select" id="role_id" name="role_id">@foreach ($roles as $role)<option value="{{ $role->id }}">{{ $role->name }}</option>@endforeach</select>
                 </div>
+                <div class="col-md-3"><label class="form-label" for="job_title">Job title</label><input class="form-control" id="job_title" name="job_title"></div>
+                <div class="col-md-3"><label class="form-label" for="phone">Desk phone</label><input class="form-control" id="phone" name="phone"></div>
+                <div class="col-md-3"><label class="form-label" for="mobile">Mobile</label><input class="form-control" id="mobile" name="mobile"></div>
+                <div class="col-md-3"><label class="form-label" for="extension">Extension</label><input class="form-control pg-mono" id="extension" name="extension"></div>
+                <div class="col-md-5"><label class="form-label" for="address">Address</label><input class="form-control" id="address" name="address"></div>
+                <div class="col-md-2"><label class="form-label" for="city">City</label><input class="form-control" id="city" name="city" value="Northridge"></div>
+                <div class="col-md-2"><label class="form-label" for="postal_code">Postal code</label><input class="form-control pg-mono" id="postal_code" name="postal_code"></div>
+                <div class="col-md-3"><label class="form-label" for="country">Country</label><input class="form-control" id="country" name="country" value="Kenya (demo)"></div>
             </div>
             <button class="btn btn-pg mt-3" type="submit">Create user</button>
         </form>

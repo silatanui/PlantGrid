@@ -8,6 +8,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/favicon-32x32.png') }}?v={{ @filemtime(public_path('images/favicon-32x32.png')) ?: 1 }}">
     <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('images/favicon-48x48.png') }}?v={{ @filemtime(public_path('images/favicon-48x48.png')) ?: 1 }}">
     <link rel="apple-touch-icon" href="{{ asset('images/apple-touch-icon.png') }}?v={{ @filemtime(public_path('images/apple-touch-icon.png')) ?: 1 }}">
+    @include('partials.theme-boot')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body
@@ -24,7 +25,7 @@
         <div class="pg-appbar">
             <div class="pg-appbar-brand">
                 <a class="pg-brand" href="{{ route('dashboard') }}" aria-label="PlantGrid home">
-                    <img src="{{ asset('images/logo-lockup.png') }}?v={{ @filemtime(public_path('images/logo-lockup.png')) ?: 1 }}" alt="PlantGrid, Manufacturing Technology Management">
+                    @include('partials.brand-logo', ['class' => 'pg-logo pg-logo-app', 'title' => 'PlantGrid, Manufacturing Technology Management'])
                 </a>
                 <div class="pg-plant-chip" title="Demonstration plant">
                     <span class="pg-plant-chip-name">{{ $plantName }}</span>
@@ -167,15 +168,20 @@
                     @endif
 
                     <div class="dropdown">
-                        <button class="pg-user" type="button" data-bs-toggle="dropdown" aria-label="Account menu">
+                        <button class="pg-user" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-label="Account menu">
                             <span class="pg-avatar">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</span>
                             <span class="pg-user-copy">
                                 <span class="pg-user-name">{{ auth()->user()->name }}</span>
                                 <span class="pg-user-role">{{ auth()->user()->roleLabel() }}</span>
                             </span>
                         </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
+                        <ul class="dropdown-menu dropdown-menu-end pg-account-menu">
                             <li><h6 class="dropdown-header">{{ auth()->user()->email }}</h6></li>
+                            <li class="px-3 py-2">
+                                <div class="pg-theme-menu-head">Appearance</div>
+                                <p class="pg-theme-menu-lead mb-2">Theme accent and dashboard background for this browser.</p>
+                                @include('partials.theme-picker')
+                            </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <form method="post" action="{{ route('logout') }}">
@@ -189,72 +195,81 @@
             </div>
         </div>
 
-        <div class="pg-navrow">
+        <div class="pg-navrow {{ ($workspaceTabs ?? collect())->isNotEmpty() ? 'has-workspace-tabs' : '' }}">
             <nav class="pg-tabs" aria-label="Primary">
                 @foreach ($primaryNavigation as $item)
                     <a class="{{ request()->routeIs($item['pattern']) ? 'active' : '' }}" href="{{ route($item['route']) }}">
                         <i data-lucide="{{ $item['icon'] }}"></i>
                         <span>{{ $item['label'] }}</span>
+                        @if (($item['route'] ?? '') === 'messages.index' && ($headerMessageCount ?? 0) > 0)
+                            <em class="pg-nav-count">{{ $headerMessageCount }}</em>
+                        @endif
                     </a>
                 @endforeach
             </nav>
 
-            <div class="pg-workspace-strip" aria-label="Workspace">
-                @if (auth()->user()->hasAnyPermission(['tickets.view.own', 'tickets.view.department', 'tickets.view.all']))
-                    <a
-                        class="pg-workspace-pin {{ request()->routeIs('helpdesk.*') && request('status') === 'open' ? 'active' : '' }}"
-                        href="{{ $openCasesHref }}"
-                        title="Open cases"
-                    >
-                        <i data-lucide="folder-open"></i>
-                        <span>Open cases</span>
-                    </a>
-                @endif
-
-                <a
-                    class="pg-workspace-pin {{ request()->routeIs('messages.*') ? 'active' : '' }}"
-                    href="{{ route('messages.index') }}"
-                    title="Messages"
+            {{-- Record tabs only: cases/contacts/assets/docs articles — not module links already in primary nav --}}
+            @if (($workspaceTabs ?? collect())->isNotEmpty())
+                <div
+                    class="pg-workspace-strip"
+                    aria-label="Open records"
+                    data-workspace-tabs
+                    data-reorder-url="{{ route('workspace.tabs.reorder') }}"
+                    data-csrf="{{ csrf_token() }}"
                 >
-                    <i data-lucide="message-square"></i>
-                    <span>Messages</span>
-                    @if (($headerMessageCount ?? 0) > 0)
-                        <em>{{ $headerMessageCount }}</em>
-                    @endif
-                </a>
-
-                @if (($workspaceTabs ?? collect())->isNotEmpty())
-                    <div class="pg-workspace-tabs" role="tablist" aria-label="Open records">
-                        @foreach ($workspaceTabs as $tab)
-                            @php
-                                $tabActive = $workspaceTabService->isActive($tab, request());
-                            @endphp
-                            <div class="pg-workspace-tab {{ $tabActive ? 'active' : '' }}" role="presentation">
-                                <a
-                                    href="{{ $tab['url'] }}"
-                                    role="tab"
-                                    aria-selected="{{ $tabActive ? 'true' : 'false' }}"
-                                    title="{{ ($tab['meta'] ?? '').' · '.$tab['label'] }}"
+                    <div class="pg-workspace-tabs" role="tablist">
+                        <div class="pg-workspace-tabs-track" data-workspace-tab-track>
+                            @foreach ($workspaceTabs as $tab)
+                                @php
+                                    $tabActive = $workspaceTabService->isActive($tab, request());
+                                @endphp
+                                <div
+                                    class="pg-workspace-tab {{ $tabActive ? 'active' : '' }}"
+                                    role="presentation"
+                                    draggable="true"
+                                    data-tab-key="{{ $tab['key'] }}"
+                                    title="Drag to reorder · {{ ($tab['meta'] ?? '').' · '.$tab['label'] }}"
                                 >
-                                    <i data-lucide="{{ $tab['icon'] ?? 'file' }}"></i>
-                                    <span class="pg-workspace-tab-meta">{{ $tab['meta'] ?? '' }}</span>
-                                    <strong>{{ $tab['label'] }}</strong>
-                                </a>
-                                <form method="post" action="{{ route('workspace.tabs.close') }}" class="pg-workspace-tab-close">
-                                    @csrf
-                                    <input type="hidden" name="key" value="{{ $tab['key'] }}">
-                                    @if ($tabActive)
-                                        <input type="hidden" name="was_active" value="1">
-                                    @endif
-                                    <button type="submit" aria-label="Close {{ $tab['label'] }}" title="Close">
-                                        <i data-lucide="x"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        @endforeach
+                                    <a
+                                        href="{{ $tab['url'] }}"
+                                        role="tab"
+                                        aria-selected="{{ $tabActive ? 'true' : 'false' }}"
+                                        title="{{ ($tab['meta'] ?? '').' · '.$tab['label'] }}"
+                                    >
+                                        <i data-lucide="{{ $tab['icon'] ?? 'file' }}"></i>
+                                        <span class="pg-workspace-tab-meta">{{ $tab['meta'] ?? '' }}</span>
+                                        <strong>{{ $tab['label'] }}</strong>
+                                    </a>
+                                    <form method="post" action="{{ route('workspace.tabs.close') }}" class="pg-workspace-tab-close">
+                                        @csrf
+                                        <input type="hidden" name="key" value="{{ $tab['key'] }}">
+                                        @if ($tabActive)
+                                            <input type="hidden" name="was_active" value="1">
+                                        @endif
+                                        <button type="submit" aria-label="Close {{ $tab['label'] }}" title="Close tab">
+                                            <i data-lucide="x"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            @endforeach
+                        </div>
+                        <div class="pg-workspace-more" data-workspace-more hidden>
+                            <button
+                                type="button"
+                                class="pg-workspace-more-toggle"
+                                data-workspace-more-toggle
+                                aria-expanded="false"
+                                aria-haspopup="true"
+                                title="More open tabs"
+                            >
+                                <span>More</span>
+                                <i data-lucide="chevron-down"></i>
+                            </button>
+                            <div class="pg-workspace-more-menu" data-workspace-more-menu hidden></div>
+                        </div>
                     </div>
-                @endif
-            </div>
+                </div>
+            @endif
         </div>
     </header>
     <div class="pg-workspace">

@@ -16,6 +16,15 @@ class WorkspaceTabController extends Controller
 
         $tabs->close($data['key']);
 
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'redirect' => $request->boolean('was_active')
+                    ? optional($tabs->all()->last())['url'] ?? route('dashboard')
+                    : null,
+            ]);
+        }
+
         if (! $request->boolean('was_active')) {
             return back();
         }
@@ -25,5 +34,21 @@ class WorkspaceTabController extends Controller
         return $remaining
             ? redirect($remaining['url'])
             : redirect()->route('dashboard');
+    }
+
+    public function reorder(Request $request, WorkspaceTabService $tabs)
+    {
+        $data = $request->validate([
+            'keys' => ['required', 'array', 'min:1'],
+            'keys.*' => ['required', 'string', 'max:120'],
+        ]);
+
+        $tabs->reorder($data['keys']);
+
+        if ($request->expectsJson()) {
+            return response()->json(['ok' => true]);
+        }
+
+        return back();
     }
 }

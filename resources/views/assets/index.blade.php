@@ -1,18 +1,22 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
-        <div>
+    <section class="pg-object-home">
+        <div class="pg-object-icon pg-object-icon--assets" aria-hidden="true">
+            <i data-lucide="boxes"></i>
+        </div>
+        <div class="pg-object-home-copy">
+            <div class="pg-object">Assets</div>
             <h1 class="pg-page-title">ICT assets</h1>
             <p class="pg-page-lead">Computers, servers, network gear and production devices in the fictional register.</p>
         </div>
-        <div class="d-flex gap-2">
-            <a class="btn btn-pg-line" href="{{ route('assets.export', request()->query()) }}">Export CSV</a>
+        <div class="pg-object-home-actions">
+            <a class="btn btn-sm btn-pg-line" href="{{ route('assets.export', request()->query()) }}">Export CSV</a>
             @if (auth()->user()->hasPermission('assets.create'))
-                <a class="btn btn-pg" href="{{ route('assets.create') }}">Register asset</a>
+                <a class="btn btn-sm btn-pg" href="{{ route('assets.create') }}">Register asset</a>
             @endif
         </div>
-    </div>
+    </section>
     <form class="pg-filters mb-3" method="get">
         <div>
             <label class="form-label" for="q">Search</label>
@@ -63,9 +67,20 @@
             </thead>
             <tbody>
             @forelse ($assets as $asset)
+                @php $media = \App\Support\DeviceMedia::forAsset($asset); @endphp
                 <tr>
                     <td class="pg-mono"><a href="{{ route('assets.show', $asset) }}">{{ $asset->asset_tag }}</a></td>
-                    <td>{{ $asset->name }}</td>
+                    <td>
+                        <div class="pg-asset-row">
+                            @if ($media['image'])
+                                <img class="pg-asset-thumb" src="{{ $media['image'] }}" alt="" loading="lazy">
+                            @endif
+                            <div>
+                                <a href="{{ route('assets.show', $asset) }}">{{ $asset->name }}</a>
+                                <div class="text-muted small">{{ $asset->manufacturer }} {{ $asset->model }}</div>
+                            </div>
+                        </div>
+                    </td>
                     <td>{{ $asset->category->name ?? '-' }}</td>
                     <td>{{ $asset->department->code ?? '-' }}</td>
                     <td>{{ $asset->location->name ?? '-' }}</td>

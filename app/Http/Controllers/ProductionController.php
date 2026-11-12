@@ -40,18 +40,57 @@ class ProductionController extends Controller
             $equipmentSort->apply($equipmentQuery);
         }
 
-        $incidentQuery = ProductionIncident::query()->with(['system', 'equipment', 'ticket']);
+        $incidentQuery = ProductionIncident::query()->with([
+            'system',
+            'equipment.asset',
+            'ticket.requester',
+            'ticket.assignee',
+        ]);
         if ($sortingIncidents) {
             $incidentSort->apply($incidentQuery);
         } else {
             $incidentQuery->latest('reported_at');
         }
 
+        $systems = ProductionSystem::query()
+            ->with(['department', 'vendor', 'owner'])
+            ->withCount([
+                'equipment',
+                'incidents as open_incidents_count' => fn ($query) => $query->whereIn('status', ['open', 'investigating']),
+            ])
+            ->orderBy('name')
+            ->get();
+
+        $equipment = $equipmentQuery->get();
+        $incidents = $incidentQuery->limit(20)->get();
+
+        $openIncidents = ProductionIncident::query()->whereIn('status', ['open', 'investigating']);
+        $assetIds = ProductionEquipment::query()->whereNotNull('asset_id')->pluck('asset_id');
+        $relatedCases = SupportTicket::query()
+            ->with(['asset', 'assignee', 'requester'])
+            ->visibleTo($request->user())
+            ->where(function ($query) use ($assetIds, $incidents) {
+                $query->whereIn('id', $incidents->pluck('support_ticket_id')->filter())
+                    ->orWhereIn('asset_id', $assetIds);
+            })
+            ->open()
+            ->latest('reported_at')
+            ->limit(8)
+            ->get();
+
         return view('production.index', [
             'title' => 'Production systems',
-            'systems' => ProductionSystem::query()->with(['department', 'vendor', 'owner'])->orderBy('name')->get(),
-            'equipment' => $equipmentQuery->get(),
-            'incidents' => $incidentQuery->limit(20)->get(),
+            'systems' => $systems,
+            'equipment' => $equipment,
+            'incidents' => $incidents,
+            'relatedCases' => $relatedCases,
+            'summary' => [
+                'systems' => $systems->count(),
+                'equipment' => $equipment->count(),
+                'under_maintenance' => $equipment->where('status', 'under_maintenance')->count(),
+                'open_incidents' => (clone $openIncidents)->count(),
+                'downtime_minutes' => (int) (clone $openIncidents)->sum('downtime_minutes'),
+            ],
             'departments' => Department::query()->orderBy('name')->get(),
             'vendors' => Vendor::query()->orderBy('name')->get(),
             'assets' => Asset::query()->orderBy('asset_tag')->get(),
@@ -64,11 +103,34 @@ class ProductionController extends Controller
 
     public function show(ProductionSystem $system)
     {
-        $system->load(['department', 'vendor', 'owner', 'equipment.asset', 'incidents.ticket']);
+        $system->load([
+            'department',
+            'vendor',
+            'owner',
+            'equipment.asset',
+            'equipment.location',
+            'incidents.ticket.requester',
+            'incidents.ticket.assignee',
+            'incidents.equipment.asset',
+        ]);
+
+        $assetIds = $system->equipment->pluck('asset_id')->filter();
+        $relatedCases = SupportTicket::query()
+            ->with(['asset', 'assignee', 'requester'])
+            ->visibleTo(auth()->user())
+            ->where(function ($query) use ($system, $assetIds) {
+                $query->whereIn('id', $system->incidents->pluck('support_ticket_id')->filter())
+                    ->orWhereIn('asset_id', $assetIds);
+            })
+            ->latest('reported_at')
+            ->limit(10)
+            ->get();
 
         return view('production.show', [
             'title' => $system->name,
             'system' => $system,
+            'relatedCases' => $relatedCases,
+            'openIncidents' => $system->incidents->whereIn('status', ['open', 'investigating'])->values(),
         ]);
     }
 

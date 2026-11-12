@@ -91,8 +91,8 @@ class SearchController extends Controller
                 'items' => $results['people']->map(fn (User $person) => [
                     'id' => $person->id,
                     'title' => $person->name,
-                    'subtitle' => $person->roleLabel().' · '.$person->email,
-                    'meta' => $person->department?->name ?: 'Contact',
+                    'subtitle' => ($person->job_title ?: $person->roleLabel()).' · '.$person->email,
+                    'meta' => $person->mobile ?: ($person->phone ?: ($person->department?->name ?: 'Contact')),
                     'url' => route('people.show', $person),
                 ])->values(),
             ];
@@ -202,6 +202,12 @@ class SearchController extends Controller
                 ->where(function ($query) use ($like) {
                     $query->where('name', 'like', $like)
                         ->orWhere('email', 'like', $like)
+                        ->orWhere('job_title', 'like', $like)
+                        ->orWhere('phone', 'like', $like)
+                        ->orWhere('mobile', 'like', $like)
+                        ->orWhere('extension', 'like', $like)
+                        ->orWhere('address', 'like', $like)
+                        ->orWhere('city', 'like', $like)
                         ->orWhereHas('roles', fn ($roleQuery) => $roleQuery->where('name', 'like', $like))
                         ->orWhereHas('department', fn ($deptQuery) => $deptQuery->where('name', 'like', $like));
                 })
