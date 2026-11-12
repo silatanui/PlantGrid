@@ -454,13 +454,8 @@
                             </div>
                         @endif
                         <label class="form-label" for="resolution_notes">Resolution / next-step notes</label>
-                        <p class="text-muted small mb-1">Required when moving the case forward. Explain what was done or why the next step is needed.</p>
+                        <p class="text-muted small mb-1">Required when moving the case forward. Explain what was done or why the next step is needed. Use <strong>Add a note</strong> above for ICT discussion posts.</p>
                         <textarea class="form-control mb-2" id="resolution_notes" name="resolution_notes" rows="3" data-ai-assist data-mentions data-format-toolbar placeholder="What was done, and why this next step is needed…" data-step-evidence>{{ old('resolution_notes', $ticket->resolution_notes) }}</textarea>
-                        <label class="form-label" for="internal_note">Internal note</label>
-                        <p class="text-muted small mb-1">Required when moving forward. ICT-only record of why this step was taken.</p>
-                        <textarea class="form-control mb-2" id="internal_note" name="internal_note" rows="3" data-ai-assist data-mentions data-format-toolbar placeholder="Internal note for partners…" data-step-evidence>{{ old('internal_note') }}</textarea>
-                        <label class="form-label" for="note">History note (optional)</label>
-                        <input class="form-control mb-2" id="note" name="note" value="{{ old('note') }}">
                         @if ($ticket->asset_id)
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="record_maintenance" id="record_maintenance" value="1">

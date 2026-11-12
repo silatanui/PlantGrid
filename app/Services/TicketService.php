@@ -227,23 +227,18 @@ class TicketService
         $needsStepEvidence = $previous !== $status
             && ! ($previous === 'resolved' && $status === 'closed');
 
-        if ($needsStepEvidence) {
-            if (blank($options['resolution_notes'] ?? null)) {
-                throw ValidationException::withMessages([
-                    'resolution_notes' => 'Add a resolution note explaining this next step.',
-                ]);
-            }
-            if (blank($options['internal_note'] ?? null)) {
-                throw ValidationException::withMessages([
-                    'internal_note' => 'Add an internal note explaining why this next step is needed.',
-                ]);
-            }
+        if ($needsStepEvidence && blank($options['resolution_notes'] ?? null)) {
+            throw ValidationException::withMessages([
+                'resolution_notes' => 'Add a resolution note explaining this next step.',
+            ]);
         }
 
         return DB::transaction(function () use ($ticket, $user, $status, $options, $previous, $needsStepEvidence) {
             $previousAssignee = $ticket->assigned_to;
             $ticket->status = $status;
-            $historyNote = $options['note'] ?? null;
+            $historyNote = filled($options['note'] ?? null)
+                ? $options['note']
+                : ($options['resolution_notes'] ?? null);
 
             if ($status === 'assigned' || ($status === 'in_progress' && ! empty($options['assigned_to']))) {
                 if (empty($options['assigned_to']) && $status === 'assigned') {
@@ -331,15 +326,6 @@ class TicketService
 
             if ($previous !== $status) {
                 $this->notifications->caseUpdated($fresh, $user, $previous, $status, $exclude);
-            }
-
-            if ($needsStepEvidence && filled($options['internal_note'] ?? null)) {
-                $this->comment(
-                    $fresh,
-                    $user,
-                    trim((string) $options['internal_note']),
-                    'internal'
-                );
             }
 
             return $fresh->fresh(['assignee', 'partners', 'comments']);

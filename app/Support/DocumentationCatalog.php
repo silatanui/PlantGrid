@@ -74,7 +74,7 @@ class DocumentationCatalog
                     ],
                     [
                         'heading' => 'Steps',
-                        'body' => "1. Open the case and scroll to Notes.\n2. Write the note. Use @ to mention people and # or asset/case IDs to link records.\n3. Choose Internal ICT note or Visible to requester.\n4. Attach a file if needed, then Post note.\n5. Case partners (requester, owner, @mentioned people, and manually added partners) get in-app notifications. @mentions get a dedicated “You were mentioned” alert. Internal notes notify ICT partners only.\n6. Only the author can Edit a note. The author or a System Administrator can Delete it.",
+                        'body' => "1. Open the case and scroll to Notes.\n2. Click Add a note to open the composer.\n3. Write the note. Use @ to mention people and # or asset/case IDs to link records.\n4. Choose Internal ICT note or Visible to requester.\n5. Attach a file if needed, then Post.\n6. Case partners (requester, owner, @mentioned people, and manually added partners) get in-app notifications. @mentions get a dedicated “You were mentioned” alert. Internal notes notify ICT partners only.\n7. Only the author can Edit a note. The author or a System Administrator can Delete it.",
                     ],
                     [
                         'heading' => 'Writing template',
@@ -98,7 +98,7 @@ class DocumentationCatalog
                     ],
                     [
                         'heading' => 'Steps',
-                        'body' => "1. Open the case that should be closed.\n2. Under Update status, choose Closed (duplicate).\n3. Enter the original case number (for example PG-2026-0146).\n4. Optionally add resolution or history notes.\n5. Save update. The case shows a Duplicate badge and links to the original.",
+                        'body' => "1. Open the case that should be closed.\n2. Under Update status, choose Closed (duplicate).\n3. Enter the original case number (for example PG-2026-0146).\n4. Add a resolution / next-step note if needed.\n5. Save update. The case shows a Duplicate badge and links to the original.",
                     ],
                     [
                         'heading' => 'Assistant option',
@@ -118,7 +118,7 @@ class DocumentationCatalog
                 'sections' => [
                     [
                         'heading' => 'Escalation checklist',
-                        'body' => "1. Confirm business impact (line down, safety, compliance, many users).\n2. Raise priority if the current level is too low.\n3. Assign or take ownership so someone is accountable.\n4. Move status to In progress or Pending with a clear history note.\n5. Add an internal note that states why it escalated and who was informed.\n6. Watch the SLA badge — critical cases have a 4-hour target.",
+                        'body' => "1. Confirm business impact (line down, safety, compliance, many users).\n2. Raise priority if the current level is too low.\n3. Assign or take ownership so someone is accountable.\n4. Move status to In progress or Pending with a clear resolution / next-step note.\n5. Use Add a note to post an ICT-only update that states why it escalated and who was informed.\n6. Watch the SLA badge — critical cases have a 4-hour target.",
                     ],
                     [
                         'heading' => 'Escalation note template',

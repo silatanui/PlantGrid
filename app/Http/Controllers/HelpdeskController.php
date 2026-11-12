@@ -329,7 +329,6 @@ class HelpdeskController extends Controller
             'status' => ['required', Rule::in(['assigned', 'in_progress', 'pending', 'resolved', 'closed'])],
             'assigned_to' => ['nullable', 'exists:users,id'],
             'resolution_notes' => ['nullable', 'string', 'max:5000'],
-            'internal_note' => ['nullable', 'string', 'max:4000'],
             'duplicate_of' => ['nullable', 'string', 'max:40'],
             'note' => ['nullable', 'string', 'max:2000'],
             'record_maintenance' => ['nullable', 'boolean'],

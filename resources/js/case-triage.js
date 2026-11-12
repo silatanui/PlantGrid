@@ -373,20 +373,15 @@ function currentDraft(root, suggestion) {
 }
 
 function fillUpdateForm(suggestion, root) {
-    const note = root.querySelector('[data-triage-note]')?.value || suggestion.internal_note || '';
     const resolution = root.querySelector('[data-triage-resolution]')?.value || suggestion.resolution_outline || '';
     const ownerId = root.querySelector('input[name="owner_id"]:checked')?.value
         || suggestion.owner?.id
         || '';
 
-    const internal = document.getElementById('internal_note');
     const resolutionField = document.getElementById('resolution_notes');
     const assigned = document.getElementById('assigned_to');
     const transfer = document.getElementById('transfer_to');
 
-    if (internal && note) {
-        internal.value = note;
-    }
     if (resolutionField && resolution) {
         resolutionField.value = resolution;
     }
