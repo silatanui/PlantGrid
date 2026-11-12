@@ -9,12 +9,7 @@
         <div class="pg-list-bar">
             <div>
                 <div class="pg-object">{{ $employeeView ? 'Self-service' : 'Cases' }}</div>
-                <h1 class="pg-page-title">
-                    @if ($scope === 'mine') My cases
-                    @elseif ($scope === 'assigned') Assigned to me
-                    @else Case queue
-                    @endif
-                </h1>
+                <h1 class="pg-page-title">{{ $title }}</h1>
                 <p class="pg-page-lead">
                     @if ($employeeView)
                         Report an ICT problem and follow the cases you opened. Assignment and closure are handled by ICT staff.
@@ -53,6 +48,7 @@
                 <label class="form-label" for="status">Status</label>
                 <select class="form-select" id="status" name="status">
                     <option value="">Any</option>
+                    <option value="open" @selected(($filters['status'] ?? '') === 'open')>Open (active)</option>
                     @foreach (['new', 'assigned', 'in_progress', 'pending', 'resolved', 'closed'] as $status)
                         <option value="{{ $status }}" @selected(($filters['status'] ?? '') === $status)>{{ \App\Support\Labels::status($status) }}</option>
                     @endforeach

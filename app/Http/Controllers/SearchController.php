@@ -70,9 +70,10 @@ class SearchController extends Controller
         }
 
         if ($results['tickets']->isNotEmpty()) {
+            $intent = SearchPages::caseListIntent($term);
             $groups[] = [
                 'type' => 'cases',
-                'label' => SearchPages::isMyCasesIntent($term) ? 'My cases' : 'Cases',
+                'label' => $intent['label'] ?? 'Cases',
                 'items' => $results['tickets']->map(fn (SupportTicket $ticket) => [
                     'id' => $ticket->id,
                     'title' => $ticket->ticket_number,
@@ -190,10 +191,10 @@ class SearchController extends Controller
         }
 
         $like = '%'.$term.'%';
-        $myCasesIntent = SearchPages::isMyCasesIntent($term);
+        $caseIntent = SearchPages::caseListIntent($term);
         $pages = SearchPages::search($user, $term, $limit);
 
-        $people = $myCasesIntent
+        $people = $caseIntent
             ? collect()
             : User::query()
                 ->with(['roles:id,name', 'department:id,name'])
@@ -208,7 +209,7 @@ class SearchController extends Controller
                 ->limit($limit)
                 ->get();
 
-        $assets = (! $myCasesIntent && $user->hasPermission('assets.view'))
+        $assets = (! $caseIntent && $user->hasPermission('assets.view'))
             ? Asset::query()->visibleTo($user)->where(function ($query) use ($like) {
                 $query->where('asset_tag', 'like', $like)
                     ->orWhere('name', 'like', $like)
@@ -218,13 +219,15 @@ class SearchController extends Controller
 
         $tickets = collect();
         if ($user->hasAnyPermission(['tickets.view.own', 'tickets.view.department', 'tickets.view.all'])) {
-            if ($myCasesIntent) {
-                $tickets = SupportTicket::query()
-                    ->visibleTo($user)
-                    ->where('requester_id', $user->id)
-                    ->latest('reported_at')
-                    ->limit($limit)
-                    ->get();
+            if ($caseIntent) {
+                $ticketsQuery = SupportTicket::query()->visibleTo($user);
+                if (($caseIntent['scope'] ?? 'mine') === 'assigned') {
+                    $ticketsQuery->where('assigned_to', $user->id);
+                } else {
+                    $ticketsQuery->where('requester_id', $user->id);
+                }
+                SearchPages::applyStatusFilter($ticketsQuery, $caseIntent['status'] ?? null);
+                $tickets = $ticketsQuery->latest('reported_at')->limit($limit)->get();
             } else {
                 $tickets = SupportTicket::query()->visibleTo($user)->where(function ($query) use ($like) {
                     $query->where('ticket_number', 'like', $like)
@@ -233,7 +236,7 @@ class SearchController extends Controller
             }
         }
 
-        $servers = (! $myCasesIntent && $user->hasPermission('servers.view'))
+        $servers = (! $caseIntent && $user->hasPermission('servers.view'))
             ? Server::query()->where(function ($query) use ($like) {
                 $query->where('hostname', 'like', $like)
                     ->orWhere('server_role', 'like', $like)
@@ -241,7 +244,7 @@ class SearchController extends Controller
             })->orderBy('hostname')->limit($limit)->get()
             : collect();
 
-        $devices = (! $myCasesIntent && $user->hasPermission('network.view'))
+        $devices = (! $caseIntent && $user->hasPermission('network.view'))
             ? NetworkDevice::query()->where(function ($query) use ($like) {
                 $query->where('hostname', 'like', $like)
                     ->orWhere('management_ip', 'like', $like)
@@ -252,7 +255,7 @@ class SearchController extends Controller
             })->with('asset:id,asset_tag,name')->orderBy('hostname')->limit($limit)->get()
             : collect();
 
-        $docs = (! $myCasesIntent && $user->hasPermission('dashboard.view'))
+        $docs = (! $caseIntent && $user->hasPermission('dashboard.view'))
             ? DocumentationCatalog::search($term, $limit)
             : collect();
 

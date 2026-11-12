@@ -109,8 +109,24 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('permission:tickets.view.own,tickets.view.department,tickets.view.all')->group(function () {
         Route::get('/helpdesk', [HelpdeskController::class, 'index'])->name('helpdesk.index');
-        Route::get('/helpdesk/my-tickets', fn () => redirect()->route('helpdesk.index', array_filter(['scope' => 'mine', 'view' => request('view')])))->name('helpdesk.mine');
-        Route::get('/helpdesk/assigned', fn () => redirect()->route('helpdesk.index', array_filter(['scope' => 'assigned', 'view' => request('view')])))->name('helpdesk.assigned');
+        Route::get('/helpdesk/my-tickets', function () {
+            return redirect()->route('helpdesk.index', array_filter([
+                'scope' => 'mine',
+                'view' => request('view'),
+                'status' => request('status'),
+                'priority' => request('priority'),
+                'q' => request('q'),
+            ], fn ($value) => $value !== null && $value !== ''));
+        })->name('helpdesk.mine');
+        Route::get('/helpdesk/assigned', function () {
+            return redirect()->route('helpdesk.index', array_filter([
+                'scope' => 'assigned',
+                'view' => request('view'),
+                'status' => request('status'),
+                'priority' => request('priority'),
+                'q' => request('q'),
+            ], fn ($value) => $value !== null && $value !== ''));
+        })->name('helpdesk.assigned');
         Route::get('/helpdesk/create', [HelpdeskController::class, 'create'])->middleware('permission:tickets.create')->name('helpdesk.create');
         Route::post('/helpdesk', [HelpdeskController::class, 'store'])->middleware('permission:tickets.create')->name('helpdesk.store');
         Route::get('/helpdesk/{ticket}', [HelpdeskController::class, 'show'])->name('helpdesk.show');

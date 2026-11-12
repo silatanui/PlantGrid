@@ -64,7 +64,10 @@
         </table>
     </section>
 
-    @foreach ([(\App\Support\SearchPages::isMyCasesIntent($term) ? 'My cases' : 'Cases') => $tickets, 'Assets' => $assets, 'Servers' => $servers, 'Network devices' => $devices] as $heading => $items)
+    @php
+        $caseHeading = \App\Support\SearchPages::caseListIntent($term)['label'] ?? 'Cases';
+    @endphp
+    @foreach ([$caseHeading => $tickets, 'Assets' => $assets, 'Servers' => $servers, 'Network devices' => $devices] as $heading => $items)
         <section class="pg-card my-3">
             <div class="pg-card-pad"><h2 class="pg-section-title mb-0">{{ $heading }}</h2></div>
             <table class="pg-table">
@@ -74,7 +77,7 @@
                         <td>
                             @if ($heading === 'Assets')
                                 <a href="{{ route('assets.show', $item) }}">{{ $item->asset_tag }}</a> {{ $item->name }}
-                            @elseif ($heading === 'Cases' || $heading === 'My cases')
+                            @elseif (str_contains($heading, 'cases') || str_contains($heading, 'Cases') || $heading === 'Assigned to me')
                                 <a href="{{ route('helpdesk.show', $item) }}">{{ $item->ticket_number }}</a> {{ $item->subject }}
                                 <div class="text-muted small">{{ \App\Support\Labels::status((string) $item->status) }}</div>
                             @elseif ($heading === 'Servers')

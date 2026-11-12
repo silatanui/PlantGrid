@@ -11,6 +11,7 @@ use App\Models\TicketCategory;
 use App\Models\TicketComment;
 use App\Models\User;
 use App\Services\TicketService;
+use App\Support\SearchPages;
 use App\Support\TableSort;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -33,12 +34,14 @@ class HelpdeskController extends Controller
             'reported_at',
             'desc',
         );
+        $statusFilter = trim((string) $request->input('status', ''));
+
         $query = SupportTicket::query()
             ->visibleTo($request->user())
             ->with(['requester', 'assignee', 'department', 'category', 'asset'])
             ->when($scope === 'mine', fn ($query) => $query->where('requester_id', $request->user()->id))
             ->when($scope === 'assigned', fn ($query) => $query->where('assigned_to', $request->user()->id))
-            ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')))
+            ->when($statusFilter !== '', fn ($query) => SearchPages::applyStatusFilter($query, $statusFilter))
             ->when($request->filled('priority'), fn ($query) => $query->where('priority', $request->string('priority')))
             ->when($request->filled('department'), fn ($query) => $query->where('department_id', $request->integer('department')))
             ->when($request->filled('q'), function ($query) use ($request) {
@@ -58,11 +61,25 @@ class HelpdeskController extends Controller
             ? collect($stages)->mapWithKeys(fn (string $status) => [$status => $tickets->where('status', $status)->values()])
             : collect();
 
+        $pageTitle = match (true) {
+            $scope === 'mine' && $statusFilter === 'open' => 'My open cases',
+            $scope === 'mine' && $statusFilter === 'closed' => 'My closed cases',
+            $scope === 'mine' && $statusFilter === 'resolved' => 'My resolved cases',
+            $scope === 'mine' && $statusFilter === 'pending' => 'My pending cases',
+            $scope === 'mine' && $statusFilter === 'in_progress' => 'My in-progress cases',
+            $scope === 'mine' => 'My cases',
+            $scope === 'assigned' && $statusFilter === 'open' => 'Assigned open cases',
+            $scope === 'assigned' => 'Assigned to me',
+            $statusFilter === 'open' => 'Open case queue',
+            default => $employeeView ? 'My cases' : 'Cases',
+        };
+
         return view('helpdesk.index', [
-            'title' => $employeeView ? 'My cases' : 'Cases',
+            'title' => $pageTitle,
             'tickets' => $tickets,
             'departments' => Department::query()->orderBy('name')->get(),
             'scope' => $scope,
+            'statusFilter' => $statusFilter,
             'viewMode' => $viewMode,
             'columns' => $columns,
             'employeeView' => $employeeView,
