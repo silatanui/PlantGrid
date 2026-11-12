@@ -8,6 +8,7 @@ export function initWorkspaceTabs(refreshIcons = () => {}) {
     const more = root.querySelector('[data-workspace-more]');
     const moreButton = root.querySelector('[data-workspace-more-toggle]');
     const moreMenu = root.querySelector('[data-workspace-more-menu]');
+    const moreLabel = root.querySelector('[data-workspace-more-label]');
     const reorderUrl = root.dataset.reorderUrl;
     const csrf = root.dataset.csrf
         || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
@@ -20,6 +21,23 @@ export function initWorkspaceTabs(refreshIcons = () => {}) {
     let dragKey = null;
 
     const tabNodes = () => Array.from(track.querySelectorAll('[data-tab-key]'));
+
+    const updateMoreLabel = (count) => {
+        if (!moreLabel || !moreButton) {
+            return;
+        }
+        if (count <= 0) {
+            moreLabel.textContent = 'More tabs';
+            moreButton.title = 'Show open tabs that do not fit here';
+            moreButton.setAttribute('aria-label', 'Show open tabs that do not fit in this bar');
+            return;
+        }
+        moreLabel.textContent = count === 1 ? '1 more tab' : `${count} more tabs`;
+        moreButton.title = count === 1
+            ? '1 open tab is hidden because it does not fit in this bar'
+            : `${count} open tabs are hidden because they do not fit in this bar`;
+        moreButton.setAttribute('aria-label', moreButton.title);
+    };
 
     const persistOrder = () => {
         if (!reorderUrl) {
@@ -63,6 +81,7 @@ export function initWorkspaceTabs(refreshIcons = () => {}) {
         more.hidden = true;
         moreMenu.hidden = true;
         moreButton.setAttribute('aria-expanded', 'false');
+        updateMoreLabel(0);
 
         const tabs = tabNodes();
         if (tabs.length === 0) {
@@ -94,16 +113,25 @@ export function initWorkspaceTabs(refreshIcons = () => {}) {
             track.appendChild(active);
         }
 
+        if (overflow.length > 0) {
+            const hint = document.createElement('p');
+            hint.className = 'pg-workspace-more-hint';
+            hint.textContent = 'These open records did not fit in the tab bar:';
+            moreMenu.appendChild(hint);
+        }
+
         overflow.forEach((tab) => {
             tab.classList.add('is-overflow');
             tab.setAttribute('draggable', 'false');
             const item = document.createElement('div');
             item.className = 'pg-workspace-more-item';
+            item.setAttribute('role', 'menuitem');
             item.appendChild(tab);
             moreMenu.appendChild(item);
         });
 
         more.hidden = overflow.length === 0;
+        updateMoreLabel(overflow.length);
         refreshIcons();
     };
 
@@ -152,9 +180,15 @@ export function initWorkspaceTabs(refreshIcons = () => {}) {
     moreButton?.addEventListener('click', (event) => {
         event.preventDefault();
         event.stopPropagation();
+        if (moreMenu.children.length === 0) {
+            syncOverflow();
+        }
         const open = moreMenu.hidden;
         moreMenu.hidden = !open;
         moreButton.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (open) {
+            moreMenu.scrollTop = 0;
+        }
         refreshIcons();
     });
 

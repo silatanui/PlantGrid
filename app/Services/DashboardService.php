@@ -37,9 +37,10 @@ class DashboardService
             $tickets = SupportTicket::query()->visibleTo($user);
             $openCount = (clone $tickets)->open()->count();
             if ($user->isEmployeeRequester()) {
-                $waiting = (clone $tickets)->open()->whereIn('status', ['new', 'assigned', 'in_progress', 'pending'])->count();
-                $cards[] = $this->card('My open cases', $openCount, 'Requests you opened that are still open', 'life-buoy', route('helpdesk.index', ['scope' => 'mine']), $openCount > 0 ? 'warning' : null);
-                $cards[] = $this->card('Waiting on ICT', $waiting, 'Your cases with ICT staff', 'clock', route('helpdesk.index', ['scope' => 'mine']));
+                $myOpen = (clone $tickets)->involving($user)->open()->count();
+                $waiting = (clone $tickets)->involving($user)->open()->whereIn('status', ['new', 'assigned', 'in_progress', 'pending'])->count();
+                $cards[] = $this->card('My open cases', $myOpen, 'Cases you requested, own, or partner on that are still open', 'life-buoy', route('helpdesk.index', ['scope' => 'mine', 'status' => 'open']), $myOpen > 0 ? 'warning' : null);
+                $cards[] = $this->card('Waiting on ICT', $waiting, 'Your active cases with ICT staff', 'clock', route('helpdesk.index', ['scope' => 'mine', 'status' => 'open']));
             } else {
                 $criticalTickets = (clone $tickets)->open()->where('priority', 'critical')->count();
                 $criticalProduction = $user->hasPermission('production.view')

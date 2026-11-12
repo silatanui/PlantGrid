@@ -10,7 +10,11 @@
             <h1 class="pg-page-title">{{ $title }}</h1>
             <p class="pg-page-lead">
                 @if ($employeeView)
-                    Report an ICT problem and follow the cases you opened. Assignment and closure are handled by ICT staff.
+                    Report an ICT problem and follow cases you opened, own, or were added to as a partner.
+                @elseif ($scope === 'mine')
+                    Cases you requested, own, or partner on. Use Assigned to me for ownership-only work, or Queue for the full ICT list.
+                @elseif ($scope === 'assigned')
+                    Cases currently assigned to you as owner.
                 @else
                     Track packaging-floor and ICT requests from open through closure.
                 @endif

@@ -165,6 +165,38 @@ class HelpdeskAccessTest extends TestCase
             ->assertDontSee('Case queue', false);
     }
 
+    public function test_my_cases_includes_assigned_and_partner_cases(): void
+    {
+        $this->seed();
+
+        $faith = User::query()->where('email', 'faith.cheruiyot@northridge.example')->firstOrFail();
+        $owned = SupportTicket::query()
+            ->where('requester_id', '!=', $faith->id)
+            ->where('assigned_to', '!=', $faith->id)
+            ->firstOrFail();
+        $owned->forceFill([
+            'assigned_to' => $faith->id,
+            'status' => 'assigned',
+        ])->save();
+
+        $partnered = SupportTicket::query()
+            ->whereKeyNot($owned->id)
+            ->where('requester_id', '!=', $faith->id)
+            ->where(fn ($query) => $query->whereNull('assigned_to')->orWhere('assigned_to', '!=', $faith->id))
+            ->firstOrFail();
+        $partnered->forceFill([
+            'assigned_to' => null,
+            'status' => 'pending',
+        ])->save();
+        app(NotificationService::class)->syncPartners($partnered, [$faith->id], 'manual');
+
+        $this->actingAs($faith)
+            ->get(route('helpdesk.index', ['scope' => 'mine', 'status' => 'open']))
+            ->assertOk()
+            ->assertSee($owned->ticket_number)
+            ->assertSee($partnered->ticket_number);
+    }
+
     public function test_an_employee_can_open_a_ticket_for_their_department(): void
     {
         $this->seed();

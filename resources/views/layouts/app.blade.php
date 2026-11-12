@@ -260,12 +260,14 @@
                                 data-workspace-more-toggle
                                 aria-expanded="false"
                                 aria-haspopup="true"
-                                title="More open tabs"
+                                aria-label="Show open tabs that do not fit in this bar"
+                                title="Show open tabs that do not fit here"
                             >
-                                <span>More</span>
-                                <i data-lucide="chevron-down"></i>
+                                <i data-lucide="layers" aria-hidden="true"></i>
+                                <span data-workspace-more-label>More tabs</span>
+                                <i data-lucide="chevron-down" aria-hidden="true"></i>
                             </button>
-                            <div class="pg-workspace-more-menu" data-workspace-more-menu hidden></div>
+                            <div class="pg-workspace-more-menu" data-workspace-more-menu role="menu" aria-label="Overflow open tabs" hidden></div>
                         </div>
                     </div>
                 </div>

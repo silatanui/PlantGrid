@@ -127,6 +127,15 @@ class SupportTicket extends Model
         });
     }
 
+    public function scopeInvolving(Builder $query, User $user): Builder
+    {
+        return $query->where(function (Builder $inner) use ($user) {
+            $inner->where('requester_id', $user->id)
+                ->orWhere('assigned_to', $user->id)
+                ->orWhereHas('partners', fn (Builder $partners) => $partners->where('users.id', $user->id));
+        });
+    }
+
     public function scopeOpen(Builder $query): Builder
     {
         return $query->whereNotIn('status', ['resolved', 'closed']);

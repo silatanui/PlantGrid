@@ -22,28 +22,28 @@ class SearchPages
         return [
             [
                 'title' => 'My cases',
-                'summary' => 'All cases you opened and are following.',
-                'keywords' => ['my cases', 'my tickets', 'cases i opened', 'my requests', 'self service'],
+                'summary' => 'Cases you requested, own, or partner on.',
+                'keywords' => ['my cases', 'my tickets', 'cases i opened', 'my requests', 'self service', 'assigned to me'],
                 'url' => route('helpdesk.index', ['scope' => 'mine']),
                 'permission' => $ticketPermission,
             ],
             [
                 'title' => 'My open cases',
-                'summary' => 'Your cases that are still active (not resolved or closed).',
+                'summary' => 'Your active cases (requested, owned, or partnered) that are not resolved or closed.',
                 'keywords' => ['my open cases', 'my open tickets', 'open cases', 'active cases', 'my active cases'],
                 'url' => route('helpdesk.index', ['scope' => 'mine', 'status' => 'open']),
                 'permission' => $ticketPermission,
             ],
             [
                 'title' => 'My closed cases',
-                'summary' => 'Cases you opened that are closed.',
+                'summary' => 'Your closed cases (requested, owned, or partnered).',
                 'keywords' => ['my closed cases', 'my closed tickets', 'closed cases'],
                 'url' => route('helpdesk.index', ['scope' => 'mine', 'status' => 'closed']),
                 'permission' => $ticketPermission,
             ],
             [
                 'title' => 'My resolved cases',
-                'summary' => 'Cases you opened that are resolved and waiting for closure.',
+                'summary' => 'Your resolved cases waiting for closure.',
                 'keywords' => ['my resolved cases', 'my resolved tickets', 'resolved cases'],
                 'url' => route('helpdesk.index', ['scope' => 'mine', 'status' => 'resolved']),
                 'permission' => $ticketPermission,

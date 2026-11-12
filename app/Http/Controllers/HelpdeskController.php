@@ -39,7 +39,7 @@ class HelpdeskController extends Controller
         $query = SupportTicket::query()
             ->visibleTo($request->user())
             ->with(['requester', 'assignee', 'department', 'category', 'asset'])
-            ->when($scope === 'mine', fn ($query) => $query->where('requester_id', $request->user()->id))
+            ->when($scope === 'mine', fn ($query) => $query->involving($request->user()))
             ->when($scope === 'assigned', fn ($query) => $query->where('assigned_to', $request->user()->id))
             ->when($statusFilter !== '', fn ($query) => SearchPages::applyStatusFilter($query, $statusFilter))
             ->when($request->filled('priority'), fn ($query) => $query->where('priority', $request->string('priority')))
