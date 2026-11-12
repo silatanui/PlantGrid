@@ -115,7 +115,7 @@
                                     <span class="text-muted small" data-note-edited>· edited {{ \App\Support\Format::date($comment->updated_at) }}</span>
                                 @endif
                                 @if ($canEdit || $canDelete)
-                                    <span class="ms-auto d-inline-flex flex-wrap gap-1">
+                                    <span class="ms-auto d-inline-flex flex-wrap gap-1" data-note-actions>
                                         @if ($canEdit)
                                             <button class="btn btn-sm btn-pg-line" type="button" data-note-edit>Edit</button>
                                         @endif
@@ -134,12 +134,10 @@
                 </div>
                 <form class="mt-3" method="post" action="{{ route('helpdesk.comment', $ticket) }}" enctype="multipart/form-data" data-notes-form>
                     @csrf
-                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
-                        <label class="form-label mb-0" for="comment">Add a note</label>
-                        <div class="pg-ai-field-actions" data-ai-field-actions>
-                            <button class="btn btn-sm btn-pg-line" type="button" data-ai-action="refine" data-ai-target="comment">Refine with AI</button>
-                            <button class="btn btn-sm btn-pg-line" type="button" data-ai-action="paraphrase" data-ai-target="comment">Paraphrase</button>
-                        </div>
+                    <label class="form-label mb-1" for="comment">Add a note</label>
+                    <div class="pg-ai-field-actions" data-ai-field-actions hidden>
+                        <button class="btn btn-sm btn-pg-line" type="button" data-ai-action="refine" data-ai-target="comment">Refine with AI</button>
+                        <button class="btn btn-sm btn-pg-line" type="button" data-ai-action="paraphrase" data-ai-target="comment">Paraphrase</button>
                     </div>
                     <textarea class="form-control mb-1" id="comment" name="comment" rows="3" required data-ai-assist data-mentions data-format-toolbar placeholder="Write a note. Use the toolbar for bold/italic, @ for people, and # for cases, assets or hosts…"></textarea>
                     <p class="pg-mention-hint">Format with the toolbar (bold, italic, underline, lists). Tag people with <span class="pg-mono">@</span>, and cases/assets/hosts with <span class="pg-mono">#</span>.</p>

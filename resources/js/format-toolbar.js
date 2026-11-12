@@ -46,6 +46,7 @@ function toolbarHtml() {
             <button type="button" class="pg-format-btn" data-format="code" title="Code" aria-label="Code"><span class="pg-mono">&lt;/&gt;</span></button>
             <button type="button" class="pg-format-btn" data-format="bullet" title="Bullet list" aria-label="Bullet list">• List</button>
         </div>
+        <div class="pg-format-toolbar-extra" data-format-extra></div>
     `;
 }
 
@@ -84,6 +85,29 @@ function bindToolbar(toolbar, textarea) {
     });
 }
 
+function relocateAiActions(textarea, host) {
+    const extra = host.querySelector('[data-format-extra]');
+    if (!extra) {
+        return;
+    }
+
+    const targetId = textarea.id;
+    if (!targetId) {
+        return;
+    }
+
+    const scoped = textarea.closest('form, [data-note-editor], section, .pg-card') || document;
+    const ai = [...scoped.querySelectorAll('[data-ai-field-actions]')].find((node) =>
+        node.querySelector(`[data-ai-action][data-ai-target="${CSS.escape(targetId)}"]`)
+    );
+
+    if (ai) {
+        ai.hidden = false;
+        ai.classList.add('pg-format-ai-actions');
+        extra.appendChild(ai);
+    }
+}
+
 export function attachFormatToolbar(textarea) {
     if (!(textarea instanceof HTMLTextAreaElement) || textarea.dataset.formatToolbarReady === '1') {
         return;
@@ -95,6 +119,7 @@ export function attachFormatToolbar(textarea) {
     host.innerHTML = toolbarHtml();
     textarea.parentNode?.insertBefore(host, textarea);
     bindToolbar(host, textarea);
+    relocateAiActions(textarea, host);
 }
 
 export function initFormatToolbars(root = document) {

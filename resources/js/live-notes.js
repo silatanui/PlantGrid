@@ -13,13 +13,26 @@ function escapeHtml(value) {
         .replaceAll('"', '&quot;');
 }
 
+let statusTimer = null;
+
 function setStatus(node, message, isError = false) {
     if (!node) {
         return;
     }
+    if (statusTimer) {
+        window.clearTimeout(statusTimer);
+        statusTimer = null;
+    }
     node.hidden = !message;
     node.textContent = message || '';
     node.classList.toggle('is-error', Boolean(isError));
+    if (message && !isError) {
+        statusTimer = window.setTimeout(() => {
+            node.hidden = true;
+            node.textContent = '';
+            statusTimer = null;
+        }, 4000);
+    }
 }
 
 function noteActionsHtml(comment) {
@@ -158,7 +171,15 @@ export function initLiveNotes() {
         }
 
         const head = article.querySelector('.d-flex');
-        let actions = article.querySelector('[data-note-actions]');
+        // Remove any duplicate action groups left over from older markup.
+        const actionGroups = [...article.querySelectorAll('[data-note-actions]')];
+        const orphanButtons = [...article.querySelectorAll('button[data-note-edit], button[data-note-delete]')]
+            .map((button) => button.closest('span.ms-auto, [data-note-actions]'))
+            .filter(Boolean);
+        const allGroups = [...new Set([...actionGroups, ...orphanButtons])];
+        let actions = allGroups[0] || null;
+        allGroups.slice(1).forEach((group) => group.remove());
+
         if (comment.can_edit || comment.can_delete) {
             if (!actions) {
                 actions = document.createElement('span');
@@ -166,6 +187,8 @@ export function initLiveNotes() {
                 actions.dataset.noteActions = '';
                 head?.appendChild(actions);
             }
+            actions.dataset.noteActions = '';
+            actions.classList.add('ms-auto', 'd-inline-flex', 'flex-wrap', 'gap-1');
             actions.innerHTML = '';
             if (comment.can_edit) {
                 const editBtn = document.createElement('button');
@@ -323,9 +346,24 @@ export function initLiveNotes() {
         }
     };
 
+    // Clean duplicate Edit/Delete groups from notes updated before the fix.
+    list?.querySelectorAll('[data-note-id]').forEach((article) => {
+        const groups = [...article.querySelectorAll('button[data-note-edit], button[data-note-delete]')]
+            .map((button) => button.closest('span.ms-auto, [data-note-actions]'))
+            .filter(Boolean);
+        const unique = [...new Set(groups)];
+        if (unique.length > 1) {
+            const keep = unique.find((group) => group.hasAttribute('data-note-actions')) || unique[0];
+            keep.dataset.noteActions = '';
+            unique.filter((group) => group !== keep).forEach((group) => group.remove());
+        }
+    });
+
     list?.addEventListener('click', (event) => {
-        const editButton = event.target.closest('[data-note-edit]');
+        const editButton = event.target.closest('button[data-note-edit]');
         if (editButton) {
+            event.preventDefault();
+            event.stopPropagation();
             const article = editButton.closest('[data-note-id]');
             if (article) {
                 openEdit(article);

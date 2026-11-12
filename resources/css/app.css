@@ -400,15 +400,27 @@ a:hover { color: #014486; }
     display: inline;
 }
 .pg-format-host {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
     margin: 0 0 6px;
+    padding: 4px;
+    border: 1px solid var(--pg-border, #c9c9c9);
+    background: #f7f9fb;
 }
 .pg-format-toolbar {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
-    padding: 4px;
-    border: 1px solid var(--pg-border, #c9c9c9);
-    background: #f7f9fb;
+}
+.pg-format-toolbar-extra,
+.pg-format-ai-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-left: auto;
 }
 .pg-format-btn {
     min-width: 30px;
