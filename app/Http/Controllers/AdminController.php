@@ -50,7 +50,9 @@ class AdminController extends Controller
     {
         abort_unless($request->user()->hasPermission('users.view'), 403);
 
-        $online = $presence->onlineUsers();
+        $online = $presence->onlineUsers()
+            ->reject(fn ($person) => $person->id === $request->user()->id)
+            ->values();
         $assignableCases = $request->user()->hasPermission('tickets.assign')
             ? SupportTicket::query()
                 ->whereNotIn('status', ['resolved', 'closed'])
@@ -64,7 +66,7 @@ class AdminController extends Controller
             'online' => $online,
             'assignableCases' => $assignableCases,
             'canAssign' => $request->user()->hasPermission('tickets.assign'),
-            'onlineWindowMinutes' => PresenceService::ONLINE_MINUTES,
+            'onlineWindowSeconds' => PresenceService::ONLINE_SECONDS,
         ]);
     }
 

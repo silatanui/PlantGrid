@@ -210,7 +210,7 @@ class DocumentationCatalog
                 'sections' => [
                     [
                         'heading' => 'Where to look',
-                        'body' => "1. Open Online users from the top navigation or Administration.\n2. The radio icon in the app bar also shows who is online right now.\n3. A person counts as online if they used PlantGrid in the last 5 minutes.",
+                        'body' => "1. Open Online users from the top navigation or Administration.\n2. The radio icon in the app bar also shows who is online right now.\n3. Presence updates live: signed-in people send a heartbeat every few seconds, and they drop offline within about a minute after they leave or close the tab.",
                     ],
                     [
                         'heading' => 'Assign a case',

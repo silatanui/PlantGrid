@@ -7,11 +7,15 @@ use Illuminate\Support\Collection;
 
 class PresenceService
 {
-    public const ONLINE_MINUTES = 5;
+    /** How long after the last heartbeat a user still counts as online. */
+    public const ONLINE_SECONDS = 60;
+
+    /** Kept for older views/docs that still speak in minutes. */
+    public const ONLINE_MINUTES = 1;
 
     public function threshold()
     {
-        return now()->subMinutes(self::ONLINE_MINUTES);
+        return now()->subSeconds(self::ONLINE_SECONDS);
     }
 
     public function isOnline(User $user): bool

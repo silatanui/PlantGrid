@@ -12,7 +12,7 @@ class TrackLastSeen
     {
         $user = $request->user();
 
-        if ($user && ($user->last_seen_at === null || $user->last_seen_at->lt(now()->subMinute()))) {
+        if ($user && ($user->last_seen_at === null || $user->last_seen_at->lt(now()->subSeconds(20)))) {
             $user->forceFill(['last_seen_at' => now()])->saveQuietly();
         }
 

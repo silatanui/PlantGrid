@@ -5,6 +5,7 @@ import { initAiAssistant } from './ai-assistant';
 import { initGlobalSearch } from './global-search';
 import { initMentions } from './mentions';
 import { initLiveNotes } from './live-notes';
+import { initPresence } from './presence';
 
 Chart.register(...registerables);
 Chart.defaults.font.family = 'system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
@@ -18,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initGlobalSearch();
     initMentions();
     initLiveNotes();
+    initPresence();
 
     const emailInput = document.querySelector('#email');
     const demoButtons = () => document.querySelectorAll('[data-demo-email]');

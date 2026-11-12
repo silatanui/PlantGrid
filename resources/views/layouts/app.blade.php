@@ -10,7 +10,14 @@
     <link rel="apple-touch-icon" href="{{ asset('images/apple-touch-icon.png') }}?v={{ @filemtime(public_path('images/apple-touch-icon.png')) ?: 1 }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="pg-shell" data-mentions-url="{{ route('mentions.suggest') }}">
+<body
+    class="pg-shell"
+    data-mentions-url="{{ route('mentions.suggest') }}"
+    data-presence-heartbeat="{{ route('presence.heartbeat') }}"
+    @if (auth()->user()->hasPermission('users.view'))
+        data-presence-live="{{ route('presence.live') }}"
+    @endif
+>
     <a class="pg-skip" href="#content">Skip to content</a>
     <header class="pg-appbar">
         <div class="pg-appbar-brand">
@@ -67,8 +74,8 @@
 
             <div class="pg-appbar-actions">
                 @if (auth()->user()->hasPermission('users.view'))
-                    <div class="dropdown">
-                        <button class="pg-icon-btn" type="button" data-bs-toggle="dropdown" aria-label="Online users" title="Online users">
+                    <div class="dropdown" data-presence-header>
+                        <button class="pg-icon-btn" type="button" data-bs-toggle="dropdown" data-presence-count-host aria-label="Online users" title="Online users">
                             <i data-lucide="radio"></i>
                             @if (($headerOnlineCount ?? 0) > 0)
                                 <span class="pg-count">{{ $headerOnlineCount }}</span>
@@ -76,15 +83,17 @@
                         </button>
                         <div class="dropdown-menu dropdown-menu-end p-2" style="min-width: 280px;">
                             <div class="px-2 py-1 text-muted small">Online now</div>
-                            @forelse (($headerOnlineUsers ?? collect()) as $person)
-                                <a class="dropdown-item small" href="{{ route('people.show', $person) }}">
-                                    <span class="pg-online-dot" aria-hidden="true"></span>
-                                    <strong>{{ $person->name }}</strong>
-                                    <div class="text-muted">{{ $person->roleLabel() }}</div>
-                                </a>
-                            @empty
-                                <div class="dropdown-item-text small text-muted">No other users online.</div>
-                            @endforelse
+                            <div data-presence-header-list>
+                                @forelse (($headerOnlineUsers ?? collect()) as $person)
+                                    <a class="dropdown-item small" href="{{ route('people.show', $person) }}">
+                                        <span class="pg-online-dot" aria-hidden="true"></span>
+                                        <strong>{{ $person->name }}</strong>
+                                        <div class="text-muted">{{ $person->roleLabel() }}</div>
+                                    </a>
+                                @empty
+                                    <div class="dropdown-item-text small text-muted">No other users online.</div>
+                                @endforelse
+                            </div>
                             <div class="dropdown-divider"></div>
                             <a class="dropdown-item small" href="{{ route('admin.online') }}">Open online users</a>
                         </div>

@@ -17,6 +17,7 @@ use App\Http\Controllers\MonitoringController;
 use App\Http\Controllers\NetworkController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PeopleController;
+use App\Http\Controllers\PresenceController;
 use App\Http\Controllers\ProductionController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SearchController;
@@ -39,6 +40,10 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'destroy'])->name('logout');
+    Route::post('/presence/heartbeat', [PresenceController::class, 'heartbeat'])->name('presence.heartbeat');
+    Route::get('/presence/live', [PresenceController::class, 'live'])
+        ->middleware('permission:users.view')
+        ->name('presence.live');
     Route::get('/search', [SearchController::class, 'index'])->name('search');
     Route::get('/search/suggest', [SearchController::class, 'suggest'])->name('search.suggest');
     Route::get('/mentions/suggest', [MentionController::class, 'suggest'])->name('mentions.suggest');
