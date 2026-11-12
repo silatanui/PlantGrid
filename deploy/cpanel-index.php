@@ -6,10 +6,16 @@
  * Document root:  ~/plantgrid.tanuisila.dev
  * Laravel app:    ~/plantgrid_app
  *
- * After pull, install with:
+ * After every git pull that changes CSS/JS, sync the document root:
+ *   bash deploy/sync-public.sh
+ *
+ * Or manually:
  *   cp -a public/. ~/plantgrid.tanuisila.dev/
  *   cp deploy/cpanel-index.php ~/plantgrid.tanuisila.dev/index.php
  *   ln -sfn ../plantgrid_app/storage/app/public ~/plantgrid.tanuisila.dev/storage
+ *
+ * Skipping the sync leaves the site pointing at new /build/assets hashes that
+ * are not in the subdomain folder yet (blank / unstyled pages).
  */
 
 use Illuminate\Foundation\Application;
