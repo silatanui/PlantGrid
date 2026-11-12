@@ -4619,6 +4619,12 @@ a.pg-dash-kpi:hover {
     margin-top: 6px;
 }
 
+body.pg-home {
+    --bs-body-font-family: var(--pg-font-home);
+    --bs-font-sans-serif: var(--pg-font-home);
+    font-family: var(--pg-font-home);
+}
+
 .pg-home {
     --pg-home-ink: #101820;
     --pg-home-muted: #5b6570;
@@ -4639,6 +4645,13 @@ a.pg-dash-kpi:hover {
 }
 .pg-home * {
     line-height: 1em;
+}
+.pg-home,
+.pg-home :where(h1, h2, h3, h4, h5, h6, p, a, span, li, label, button, input, select, textarea, table, th, td, strong, em, small, figcaption, .btn) {
+    font-family: var(--pg-font-home);
+}
+.pg-home :where(.pg-mono, code, pre, kbd, samp) {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 .pg-home-bar {
     position: sticky;
@@ -4806,7 +4819,7 @@ a.pg-dash-kpi:hover {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-family: inherit;
+    font-family: var(--pg-font-home);
     font-weight: 600;
     line-height: 1.2;
     text-align: center;
