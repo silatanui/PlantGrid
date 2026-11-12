@@ -2,7 +2,28 @@
 
 @section('content')
     <h1 class="pg-page-title">Search</h1>
-    <p class="pg-page-lead">@if ($term === '') Type a person, tag, ticket number, hostname or name. @else Results for “{{ $term }}”. @endif</p>
+    <p class="pg-page-lead">@if ($term === '') Type a person, tag, ticket number, hostname, page name, or “My cases”. @else Results for “{{ $term }}”. @endif</p>
+
+    <section class="pg-card my-3">
+        <div class="pg-card-pad"><h2 class="pg-section-title mb-0">Pages</h2></div>
+        <table class="pg-table">
+            <tbody>
+            @forelse ($pages as $page)
+                <tr>
+                    <td>
+                        <a href="{{ $page['url'] }}">{{ $page['title'] }}</a>
+                        <div class="text-muted small">{{ $page['summary'] }}</div>
+                    </td>
+                    <td class="text-end">
+                        <a class="btn btn-sm btn-pg" href="{{ $page['url'] }}">Open</a>
+                    </td>
+                </tr>
+            @empty
+                <tr><td class="text-muted">No pages matched.</td></tr>
+            @endforelse
+            </tbody>
+        </table>
+    </section>
 
     <section class="pg-card my-3">
         <div class="pg-card-pad"><h2 class="pg-section-title mb-0">People</h2></div>
@@ -43,7 +64,7 @@
         </table>
     </section>
 
-    @foreach (['Cases' => $tickets, 'Assets' => $assets, 'Servers' => $servers, 'Network devices' => $devices] as $heading => $items)
+    @foreach ([(\App\Support\SearchPages::isMyCasesIntent($term) ? 'My cases' : 'Cases') => $tickets, 'Assets' => $assets, 'Servers' => $servers, 'Network devices' => $devices] as $heading => $items)
         <section class="pg-card my-3">
             <div class="pg-card-pad"><h2 class="pg-section-title mb-0">{{ $heading }}</h2></div>
             <table class="pg-table">
@@ -53,8 +74,9 @@
                         <td>
                             @if ($heading === 'Assets')
                                 <a href="{{ route('assets.show', $item) }}">{{ $item->asset_tag }}</a> {{ $item->name }}
-                            @elseif ($heading === 'Cases')
+                            @elseif ($heading === 'Cases' || $heading === 'My cases')
                                 <a href="{{ route('helpdesk.show', $item) }}">{{ $item->ticket_number }}</a> {{ $item->subject }}
+                                <div class="text-muted small">{{ \App\Support\Labels::status((string) $item->status) }}</div>
                             @elseif ($heading === 'Servers')
                                 <a class="pg-mono" href="{{ route('servers.show', $item) }}">{{ $item->hostname }}</a>
                             @else

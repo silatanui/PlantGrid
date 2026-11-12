@@ -9,6 +9,7 @@ use App\Models\SupportTicket;
 use App\Models\User;
 use App\Support\DocumentationCatalog;
 use App\Support\Labels;
+use App\Support\SearchPages;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -24,6 +25,7 @@ class SearchController extends Controller
         return view('search.index', [
             'title' => 'Search',
             'term' => $term,
+            'pages' => $results['pages'],
             'people' => $results['people'],
             'assets' => $results['assets'],
             'tickets' => $results['tickets'],
@@ -53,6 +55,34 @@ class SearchController extends Controller
         $results = $this->search($request->user(), $term, 6);
         $groups = [];
 
+        if ($results['pages']->isNotEmpty()) {
+            $groups[] = [
+                'type' => 'pages',
+                'label' => 'Pages',
+                'items' => $results['pages']->map(fn (array $page) => [
+                    'id' => $page['url'],
+                    'title' => $page['title'],
+                    'subtitle' => $page['summary'],
+                    'meta' => 'Open',
+                    'url' => $page['url'],
+                ])->values(),
+            ];
+        }
+
+        if ($results['tickets']->isNotEmpty()) {
+            $groups[] = [
+                'type' => 'cases',
+                'label' => SearchPages::isMyCasesIntent($term) ? 'My cases' : 'Cases',
+                'items' => $results['tickets']->map(fn (SupportTicket $ticket) => [
+                    'id' => $ticket->id,
+                    'title' => $ticket->ticket_number,
+                    'subtitle' => $ticket->subject,
+                    'meta' => Labels::status((string) $ticket->status),
+                    'url' => route('helpdesk.show', $ticket),
+                ])->values(),
+            ];
+        }
+
         if ($results['people']->isNotEmpty()) {
             $groups[] = [
                 'type' => 'people',
@@ -63,20 +93,6 @@ class SearchController extends Controller
                     'subtitle' => $person->roleLabel().' · '.$person->email,
                     'meta' => $person->department?->name ?: 'Contact',
                     'url' => route('people.show', $person),
-                ])->values(),
-            ];
-        }
-
-        if ($results['tickets']->isNotEmpty()) {
-            $groups[] = [
-                'type' => 'cases',
-                'label' => 'Cases',
-                'items' => $results['tickets']->map(fn (SupportTicket $ticket) => [
-                    'id' => $ticket->id,
-                    'title' => $ticket->ticket_number,
-                    'subtitle' => $ticket->subject,
-                    'meta' => Labels::status((string) $ticket->status),
-                    'url' => route('helpdesk.show', $ticket),
                 ])->values(),
             ];
         }
@@ -150,6 +166,7 @@ class SearchController extends Controller
 
     /**
      * @return array{
+     *     pages: Collection<int, array{title: string, summary: string, url: string}>,
      *     people: Collection<int, User>,
      *     assets: Collection<int, Asset>,
      *     tickets: Collection<int, SupportTicket>,
@@ -162,6 +179,7 @@ class SearchController extends Controller
     {
         if (! $user || $term === '') {
             return [
+                'pages' => collect(),
                 'people' => collect(),
                 'assets' => collect(),
                 'tickets' => collect(),
@@ -172,21 +190,25 @@ class SearchController extends Controller
         }
 
         $like = '%'.$term.'%';
+        $myCasesIntent = SearchPages::isMyCasesIntent($term);
+        $pages = SearchPages::search($user, $term, $limit);
 
-        $people = User::query()
-            ->with(['roles:id,name', 'department:id,name'])
-            ->where('status', 'active')
-            ->where(function ($query) use ($like) {
-                $query->where('name', 'like', $like)
-                    ->orWhere('email', 'like', $like)
-                    ->orWhereHas('roles', fn ($roleQuery) => $roleQuery->where('name', 'like', $like))
-                    ->orWhereHas('department', fn ($deptQuery) => $deptQuery->where('name', 'like', $like));
-            })
-            ->orderBy('name')
-            ->limit($limit)
-            ->get();
+        $people = $myCasesIntent
+            ? collect()
+            : User::query()
+                ->with(['roles:id,name', 'department:id,name'])
+                ->where('status', 'active')
+                ->where(function ($query) use ($like) {
+                    $query->where('name', 'like', $like)
+                        ->orWhere('email', 'like', $like)
+                        ->orWhereHas('roles', fn ($roleQuery) => $roleQuery->where('name', 'like', $like))
+                        ->orWhereHas('department', fn ($deptQuery) => $deptQuery->where('name', 'like', $like));
+                })
+                ->orderBy('name')
+                ->limit($limit)
+                ->get();
 
-        $assets = $user->hasPermission('assets.view')
+        $assets = (! $myCasesIntent && $user->hasPermission('assets.view'))
             ? Asset::query()->visibleTo($user)->where(function ($query) use ($like) {
                 $query->where('asset_tag', 'like', $like)
                     ->orWhere('name', 'like', $like)
@@ -194,14 +216,24 @@ class SearchController extends Controller
             })->orderBy('asset_tag')->limit($limit)->get()
             : collect();
 
-        $tickets = $user->hasAnyPermission(['tickets.view.own', 'tickets.view.department', 'tickets.view.all'])
-            ? SupportTicket::query()->visibleTo($user)->where(function ($query) use ($like) {
-                $query->where('ticket_number', 'like', $like)
-                    ->orWhere('subject', 'like', $like);
-            })->latest('reported_at')->limit($limit)->get()
-            : collect();
+        $tickets = collect();
+        if ($user->hasAnyPermission(['tickets.view.own', 'tickets.view.department', 'tickets.view.all'])) {
+            if ($myCasesIntent) {
+                $tickets = SupportTicket::query()
+                    ->visibleTo($user)
+                    ->where('requester_id', $user->id)
+                    ->latest('reported_at')
+                    ->limit($limit)
+                    ->get();
+            } else {
+                $tickets = SupportTicket::query()->visibleTo($user)->where(function ($query) use ($like) {
+                    $query->where('ticket_number', 'like', $like)
+                        ->orWhere('subject', 'like', $like);
+                })->latest('reported_at')->limit($limit)->get();
+            }
+        }
 
-        $servers = $user->hasPermission('servers.view')
+        $servers = (! $myCasesIntent && $user->hasPermission('servers.view'))
             ? Server::query()->where(function ($query) use ($like) {
                 $query->where('hostname', 'like', $like)
                     ->orWhere('server_role', 'like', $like)
@@ -209,7 +241,7 @@ class SearchController extends Controller
             })->orderBy('hostname')->limit($limit)->get()
             : collect();
 
-        $devices = $user->hasPermission('network.view')
+        $devices = (! $myCasesIntent && $user->hasPermission('network.view'))
             ? NetworkDevice::query()->where(function ($query) use ($like) {
                 $query->where('hostname', 'like', $like)
                     ->orWhere('management_ip', 'like', $like)
@@ -220,11 +252,12 @@ class SearchController extends Controller
             })->with('asset:id,asset_tag,name')->orderBy('hostname')->limit($limit)->get()
             : collect();
 
-        $docs = $user->hasPermission('dashboard.view')
+        $docs = (! $myCasesIntent && $user->hasPermission('dashboard.view'))
             ? DocumentationCatalog::search($term, $limit)
             : collect();
 
         return [
+            'pages' => $pages,
             'people' => $people,
             'assets' => $assets,
             'tickets' => $tickets,
