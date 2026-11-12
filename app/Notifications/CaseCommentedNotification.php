@@ -29,9 +29,11 @@ class CaseCommentedNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
+        $label = $this->comment->visibility === 'internal' ? 'internal note' : 'note';
+
         return (new MailMessage)
-            ->subject('New note on '.$this->ticket->ticket_number)
-            ->line($this->author->name.' added a note to '.$this->ticket->ticket_number.'.')
+            ->subject('New '.$label.' on '.$this->ticket->ticket_number)
+            ->line($this->author->name.' added a '.$label.' to '.$this->ticket->ticket_number.'.')
             ->line(str($this->comment->comment)->limit(160))
             ->action('Open case', route('helpdesk.show', $this->ticket));
     }
@@ -41,13 +43,16 @@ class CaseCommentedNotification extends Notification
      */
     public function toArray(object $notifiable): array
     {
+        $internal = $this->comment->visibility === 'internal';
+
         return [
-            'kind' => 'case_commented',
-            'title' => 'New case note',
+            'kind' => $internal ? 'case_internal_note' : 'case_commented',
+            'title' => $internal ? 'New internal note' : 'New case note',
             'body' => $this->ticket->ticket_number.' · '.$this->author->name,
             'url' => route('helpdesk.show', $this->ticket),
             'ticket_id' => $this->ticket->id,
             'ticket_number' => $this->ticket->ticket_number,
+            'comment_id' => $this->comment->id,
         ];
     }
 }

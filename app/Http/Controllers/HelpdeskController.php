@@ -115,7 +115,7 @@ class HelpdeskController extends Controller
     public function show(Request $request, SupportTicket $ticket, TicketService $tickets)
     {
         $this->visible($request, $ticket);
-        $ticket->load(['requester', 'assignee', 'department', 'category', 'asset.location', 'application', 'histories.changer', 'attachments.uploader', 'duplicateOf']);
+        $ticket->load(['requester', 'assignee', 'partners', 'department', 'category', 'asset.location', 'application', 'histories.changer', 'attachments.uploader', 'duplicateOf']);
         $canSeeInternal = $request->user()->hasAnyPermission(['tickets.update', 'audit.view']);
         $comments = $ticket->comments()->with('author')->latest()
             ->when(! $canSeeInternal, fn ($query) => $query->where('visibility', 'requester_visible'))
@@ -134,7 +134,28 @@ class HelpdeskController extends Controller
                 ->orderBy('name')
                 ->get(['id', 'name', 'last_seen_at', 'status']),
             'presence' => app(\App\Services\PresenceService::class),
+            'partnerCandidates' => User::query()
+                ->where('status', 'active')
+                ->whereNotIn('id', $ticket->partners->pluck('id')->all())
+                ->orderBy('name')
+                ->limit(80)
+                ->get(['id', 'name', 'email']),
         ]);
+    }
+
+    public function addPartner(Request $request, SupportTicket $ticket, \App\Services\NotificationService $notifications)
+    {
+        $this->visible($request, $ticket);
+        abort_unless($request->user()->hasPermission('tickets.assign'), 403);
+
+        $data = $request->validate([
+            'user_id' => ['required', 'exists:users,id'],
+        ]);
+
+        $partner = User::query()->whereKey($data['user_id'])->where('status', 'active')->firstOrFail();
+        $notifications->syncPartners($ticket, [$partner->id], 'manual');
+
+        return back()->with('status', $partner->name.' was added as a case partner.');
     }
 
     public function takeOwnership(Request $request, SupportTicket $ticket, TicketService $tickets)

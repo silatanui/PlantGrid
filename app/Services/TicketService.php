@@ -64,6 +64,11 @@ class TicketService
                 'sla_due_at' => optional($ticket->sla_due_at)?->toDateTimeString(),
             ]);
 
+            $mentioned = \App\Support\RichText::mentionedUsers(
+                ($data['description'] ?? '').' '.($data['subject'] ?? '')
+            )->pluck('id')->all();
+            $this->notifications->syncPartners($ticket, array_merge([$requester->id], $mentioned), 'requester');
+
             return $ticket;
         });
     }
@@ -164,9 +169,10 @@ class TicketService
                 'status' => $ticket->status,
             ]);
 
-            $this->notifications->caseAssigned($ticket->fresh(), $actor, $previousAssignee);
+            $fresh = $ticket->fresh();
+            $this->notifications->caseAssigned($fresh, $actor, $previousAssignee);
 
-            return $ticket->fresh(['assignee', 'department', 'category']);
+            return $ticket->fresh(['assignee', 'department', 'category', 'partners']);
         });
     }
 
@@ -252,11 +258,19 @@ class TicketService
                 'assigned_to' => $ticket->assigned_to,
             ]);
 
-            if ($ticket->assigned_to && (int) $ticket->assigned_to !== (int) ($previousAssignee ?? 0)) {
-                $this->notifications->caseAssigned($ticket->fresh(), $user, $previousAssignee);
+            $fresh = $ticket->fresh();
+            $exclude = [];
+
+            if ($fresh->assigned_to && (int) $fresh->assigned_to !== (int) ($previousAssignee ?? 0)) {
+                $this->notifications->caseAssigned($fresh, $user, $previousAssignee);
+                $exclude[] = (int) $fresh->assigned_to;
             }
 
-            return $ticket;
+            if ($previous !== $status) {
+                $this->notifications->caseUpdated($fresh, $user, $previous, $status, $exclude);
+            }
+
+            return $fresh;
         });
     }
 

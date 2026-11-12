@@ -74,7 +74,7 @@ class DocumentationCatalog
                     ],
                     [
                         'heading' => 'Steps',
-                        'body' => "1. Open the case and scroll to Notes.\n2. Write the note. Use @ to mention people and # or asset/case IDs to link records.\n3. Choose Internal ICT note or Visible to requester.\n4. Attach a file if needed, then Post note.\n5. Only the author can Edit a note. The author or a System Administrator can Delete it.",
+                        'body' => "1. Open the case and scroll to Notes.\n2. Write the note. Use @ to mention people and # or asset/case IDs to link records.\n3. Choose Internal ICT note or Visible to requester.\n4. Attach a file if needed, then Post note.\n5. Case partners (requester, owner, @mentioned people, and manually added partners) get in-app notifications. @mentions get a dedicated “You were mentioned” alert. Internal notes notify ICT partners only.\n6. Only the author can Edit a note. The author or a System Administrator can Delete it.",
                     ],
                     [
                         'heading' => 'Writing template',

@@ -11,6 +11,47 @@ use Illuminate\Support\Facades\Cache;
 
 class RichText
 {
+    /**
+     * Active users explicitly addressed in note text (@handle or @[Name](people:id)).
+     *
+     * @return \Illuminate\Support\Collection<int, User>
+     */
+    public static function mentionedUsers(?string $text)
+    {
+        $text = (string) $text;
+        if (trim($text) === '') {
+            return collect();
+        }
+
+        $ids = [];
+
+        if (preg_match_all('/@\[(.*?)\]\((?:people|user):(\d+)\)/u', $text, $structured)) {
+            foreach ($structured[2] as $id) {
+                $ids[] = (int) $id;
+            }
+        }
+
+        if (preg_match_all('/(^|[\s(>])@([a-z0-9._-]+)/iu', $text, $handles)) {
+            $people = self::peopleByHandle();
+            foreach ($handles[2] as $handle) {
+                $person = $people->get(mb_strtolower($handle));
+                if ($person) {
+                    $ids[] = (int) $person->id;
+                }
+            }
+        }
+
+        $ids = array_values(array_unique(array_filter($ids)));
+        if ($ids === []) {
+            return collect();
+        }
+
+        return User::query()
+            ->where('status', 'active')
+            ->whereIn('id', $ids)
+            ->get();
+    }
+
     public static function render(?string $text): string
     {
         $text = trim((string) $text);

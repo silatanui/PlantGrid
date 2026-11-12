@@ -113,6 +113,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/helpdesk/{ticket}', [HelpdeskController::class, 'show'])->name('helpdesk.show');
         Route::post('/helpdesk/{ticket}/take-ownership', [HelpdeskController::class, 'takeOwnership'])->name('helpdesk.take-ownership');
         Route::post('/helpdesk/{ticket}/transition', [HelpdeskController::class, 'transition'])->name('helpdesk.transition');
+        Route::post('/helpdesk/{ticket}/partners', [HelpdeskController::class, 'addPartner'])
+            ->middleware('permission:tickets.assign')
+            ->name('helpdesk.partners.store');
         Route::post('/helpdesk/{ticket}/comments', [HelpdeskController::class, 'comment'])->name('helpdesk.comment');
         Route::put('/helpdesk/{ticket}/comments/{comment}', [HelpdeskController::class, 'updateComment'])->name('helpdesk.comment.update');
         Route::delete('/helpdesk/{ticket}/comments/{comment}', [HelpdeskController::class, 'deleteComment'])->name('helpdesk.comment.destroy');

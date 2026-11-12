@@ -18,6 +18,16 @@
             <div><dt>SLA</dt><dd>{!! app(\App\Services\SlaService::class)->badge($ticket) !!}</dd></div>
             <div><dt>Requester</dt><dd>{{ $ticket->requester->name }}</dd></div>
             <div><dt>Owner</dt><dd>{{ $ticket->assignee->name ?? 'Unassigned' }}</dd></div>
+            <div>
+                <dt>Partners</dt>
+                <dd>
+                    @forelse (($ticket->partners ?? collect()) as $partner)
+                        <a href="{{ route('people.show', $partner) }}">{{ $partner->name }}</a>@if (! $loop->last), @endif
+                    @empty
+                        Requester and owner are added automatically; @mentions also join as partners.
+                    @endforelse
+                </dd>
+            </div>
             @if ($ticket->close_reason === 'duplicate' && $ticket->duplicateOf)
                 <div><dt>Duplicate of</dt><dd><a href="{{ route('helpdesk.show', $ticket->duplicateOf) }}">{{ $ticket->duplicateOf->ticket_number }}</a></dd></div>
             @endif
@@ -168,6 +178,36 @@
                     <form method="post" action="{{ route('helpdesk.take-ownership', $ticket) }}">
                         @csrf
                         <button class="btn btn-pg" type="submit">Take ownership</button>
+                    </form>
+                </section>
+            @endif
+            @if (auth()->user()->hasPermission('tickets.assign'))
+                <section class="pg-card pg-card-pad mb-3">
+                    <h2 class="pg-section-title">Partners</h2>
+                    <p class="text-muted small mb-2">
+                        Partners are notified about case updates, notes, and @mentions.
+                        Internal notes go only to ICT partners.
+                    </p>
+                    <ul class="mb-2">
+                        @forelse ($ticket->partners as $partner)
+                            <li>
+                                <a href="{{ route('people.show', $partner) }}">{{ $partner->name }}</a>
+                                <span class="text-muted small">· {{ $partner->pivot->source }}</span>
+                            </li>
+                        @empty
+                            <li class="text-muted">No partners yet.</li>
+                        @endforelse
+                    </ul>
+                    <form method="post" action="{{ route('helpdesk.partners.store', $ticket) }}">
+                        @csrf
+                        <label class="form-label" for="partner_user_id">Add partner</label>
+                        <select class="form-select mb-2" id="partner_user_id" name="user_id" required>
+                            <option value="">Select person…</option>
+                            @foreach ($partnerCandidates as $person)
+                                <option value="{{ $person->id }}">{{ $person->name }} · {{ $person->email }}</option>
+                            @endforeach
+                        </select>
+                        <button class="btn btn-sm btn-pg" type="submit">Add partner</button>
                     </form>
                 </section>
             @endif

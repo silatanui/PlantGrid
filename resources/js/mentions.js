@@ -91,7 +91,7 @@ export function initMentions(root = document) {
             const caret = textarea.selectionStart;
             const before = value.slice(0, mentionStart);
             const after = value.slice(caret);
-            const token = `${item.insert} `;
+            const token = `${item.token || item.insert} `;
             textarea.value = `${before}${token}${after}`;
             const next = before.length + token.length;
             textarea.focus();
