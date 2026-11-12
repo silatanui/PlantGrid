@@ -52,7 +52,7 @@ function noteArticleHtml(comment) {
             data-note-body="${escapeHtml(JSON.stringify(comment.comment))}"
             data-note-visibility="${escapeHtml(comment.visibility)}"
             data-note-update="${escapeHtml(comment.update_url)}"
-            data-note-delete="${escapeHtml(comment.delete_url || '')}"
+            data-note-delete-url="${escapeHtml(comment.delete_url || '')}"
             data-can-edit="${comment.can_edit ? '1' : '0'}"
             data-can-delete="${comment.can_delete ? '1' : '0'}"
         >
@@ -123,7 +123,7 @@ export function initLiveNotes() {
         article.dataset.noteBody = JSON.stringify(comment.comment);
         article.dataset.noteVisibility = comment.visibility;
         article.dataset.noteUpdate = comment.update_url;
-        article.dataset.noteDelete = comment.delete_url || '';
+        article.dataset.noteDeleteUrl = comment.delete_url || '';
         article.dataset.canEdit = comment.can_edit ? '1' : '0';
         article.dataset.canDelete = comment.can_delete ? '1' : '0';
 
@@ -284,7 +284,7 @@ export function initLiveNotes() {
     };
 
     const deleteNote = async (article) => {
-        if (article.dataset.canDelete !== '1' || !article.dataset.noteDelete) {
+        if (article.dataset.canDelete !== '1' || !article.dataset.noteDeleteUrl) {
             return;
         }
         if (!window.confirm('Delete this note? This cannot be undone.')) {
@@ -293,7 +293,7 @@ export function initLiveNotes() {
 
         setStatus(status, 'Deleting note…');
         try {
-            const response = await fetch(article.dataset.noteDelete, {
+            const response = await fetch(article.dataset.noteDeleteUrl, {
                 method: 'DELETE',
                 headers: {
                     Accept: 'application/json',
@@ -333,8 +333,10 @@ export function initLiveNotes() {
             return;
         }
 
-        const deleteButton = event.target.closest('[data-note-delete]');
+        const deleteButton = event.target.closest('button[data-note-delete]');
         if (deleteButton) {
+            event.preventDefault();
+            event.stopPropagation();
             const article = deleteButton.closest('[data-note-id]');
             if (article) {
                 deleteNote(article);

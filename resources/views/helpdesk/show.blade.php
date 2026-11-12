@@ -101,7 +101,7 @@
                             data-note-body="{{ json_encode($comment->comment) }}"
                             data-note-visibility="{{ $comment->visibility }}"
                             data-note-update="{{ route('helpdesk.comment.update', [$ticket, $comment]) }}"
-                            data-note-delete="{{ route('helpdesk.comment.destroy', [$ticket, $comment]) }}"
+                            data-note-delete-url="{{ route('helpdesk.comment.destroy', [$ticket, $comment]) }}"
                             data-can-edit="{{ $canEdit ? '1' : '0' }}"
                             data-can-delete="{{ $canDelete ? '1' : '0' }}"
                         >
