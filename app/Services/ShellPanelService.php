@@ -53,13 +53,22 @@ class ShellPanelService
 
         if ($user->hasAnyPermission(['tickets.view.own', 'tickets.view.department', 'tickets.view.all'])) {
             $items[] = [
-                'label' => $user->isEmployeeRequester() ? 'My open cases' : 'Open queue',
+                'label' => 'My open cases',
                 'route' => 'helpdesk.index',
                 'icon' => 'folder-open',
-                'params' => $user->isEmployeeRequester()
-                    ? ['scope' => 'mine', 'status' => 'open']
-                    : ['status' => 'open'],
+                'params' => ['scope' => 'mine', 'status' => 'open'],
+                'badge' => 'my_cases',
             ];
+
+            if (! $user->isEmployeeRequester()) {
+                $items[] = [
+                    'label' => 'New cases',
+                    'route' => 'helpdesk.index',
+                    'icon' => 'inbox',
+                    'params' => ['status' => 'new', 'unassigned' => 1],
+                    'badge' => 'new_cases',
+                ];
+            }
         }
 
         return $items;

@@ -3,41 +3,35 @@
 namespace App\Support;
 
 use App\Models\DirectMessage;
-use App\Models\MonitoringAlert;
 use App\Models\SupportTicket;
+use App\Models\SystemSetting;
 use App\Models\User;
 
 class NavBadges
 {
     /**
-     * Counts shown on the left rail / primary tabs (mirrors header live badges).
+     * Counts and status cues for the left rail / primary tabs.
      *
-     * @return array{cases: int, messages: int, notifications: int, alerts: int}
+     * @return array{my_cases: int, new_cases: int, messages: int, notifications: int, monitoring_status: string}
      */
     public static function for(User $user): array
     {
         return [
-            'cases' => self::cases($user),
+            'my_cases' => self::myCases($user),
+            'new_cases' => self::newCases($user),
             'messages' => DirectMessage::query()->unreadFor($user)->count(),
             'notifications' => $user->unreadNotifications()->count(),
-            'alerts' => self::alerts($user),
+            'monitoring_status' => self::monitoringStatus($user),
         ];
     }
 
-    public static function cases(User $user): int
+    /**
+     * Open cases under this person (requested, owned, or partner) — not resolved/closed.
+     */
+    public static function myCases(User $user): int
     {
         if (! $user->hasAnyPermission(['tickets.view.own', 'tickets.view.department', 'tickets.view.all'])) {
             return 0;
-        }
-
-        $visible = SupportTicket::query()->visibleTo($user);
-
-        if ($user->isEmployeeRequester()) {
-            return (clone $visible)->open()->count();
-        }
-
-        if ($user->hasPermission('tickets.assign')) {
-            return (clone $visible)->where('status', 'new')->whereNull('assigned_to')->count();
         }
 
         return SupportTicket::query()
@@ -46,14 +40,37 @@ class NavBadges
             ->count();
     }
 
-    public static function alerts(User $user): int
+    /**
+     * Unassigned new cases waiting in the ICT queue.
+     */
+    public static function newCases(User $user): int
     {
-        if (! $user->hasPermission('monitoring.view') || $user->isEmployeeRequester()) {
+        if ($user->isEmployeeRequester()) {
             return 0;
         }
 
-        return MonitoringAlert::query()
-            ->whereIn('status', ['open', 'acknowledged'])
+        if (! $user->hasAnyPermission(['tickets.view.department', 'tickets.view.all', 'tickets.assign'])) {
+            return 0;
+        }
+
+        return SupportTicket::query()
+            ->visibleTo($user)
+            ->where('status', 'new')
+            ->whereNull('assigned_to')
             ->count();
+    }
+
+    /**
+     * Simulated monitoring health: normal | degraded | outage.
+     */
+    public static function monitoringStatus(User $user): string
+    {
+        if (! $user->hasPermission('monitoring.view')) {
+            return 'hidden';
+        }
+
+        $scenario = SystemSetting::getValue('monitoring_scenario', 'normal') ?? 'normal';
+
+        return in_array($scenario, ['normal', 'degraded', 'outage'], true) ? $scenario : 'normal';
     }
 }

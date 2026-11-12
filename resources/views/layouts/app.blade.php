@@ -199,16 +199,12 @@
             <nav class="pg-tabs" aria-label="Primary">
                 @foreach ($primaryNavigation as $item)
                     @php
-                        $tabBadgeKey = match ($item['route'] ?? '') {
-                            'helpdesk.index' => 'cases',
-                            'messages.index' => 'messages',
-                            default => null,
-                        };
+                        $tabBadgeKey = $item['badge'] ?? null;
                         $tabBadgeCount = $tabBadgeKey ? (int) ($navBadges[$tabBadgeKey] ?? 0) : 0;
                     @endphp
                     <a
-                        class="{{ request()->routeIs($item['pattern']) ? 'active' : '' }}"
-                        href="{{ route($item['route']) }}"
+                        class="{{ \App\Support\Navigation::isActive($item) ? 'active' : '' }}"
+                        href="{{ route($item['route'], $item['params'] ?? []) }}"
                         @if ($tabBadgeKey) data-nav-badge="{{ $tabBadgeKey }}" @endif
                     >
                         <i data-lucide="{{ $item['icon'] }}"></i>

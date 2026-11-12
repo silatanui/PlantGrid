@@ -9,22 +9,13 @@
         </button>
     </div>
 
-    @php
-        $badgeForRoute = [
-            'helpdesk.index' => 'cases',
-            'helpdesk.create' => null,
-            'messages.index' => 'messages',
-            'monitoring.index' => 'alerts',
-        ];
-    @endphp
-
     @if (($leftPanel['shortcuts'] ?? []) !== [])
         <div class="pg-rail-section">
             <div class="pg-rail-label">Shortcuts</div>
             <div class="pg-rail-shortcuts">
                 @foreach ($leftPanel['shortcuts'] as $item)
                     @php
-                        $shortcutBadgeKey = ($item['route'] ?? '') === 'helpdesk.index' ? 'cases' : null;
+                        $shortcutBadgeKey = $item['badge'] ?? null;
                         $shortcutCount = $shortcutBadgeKey ? (int) ($navBadges[$shortcutBadgeKey] ?? 0) : 0;
                     @endphp
                     <a
@@ -49,18 +40,23 @@
                 <div class="pg-rail-group-title">{{ $heading }}</div>
                 @foreach ($items as $item)
                     @php
-                        $badgeKey = $badgeForRoute[$item['route'] ?? ''] ?? null;
+                        $badgeKey = $item['badge'] ?? null;
                         $badgeCount = $badgeKey ? (int) ($navBadges[$badgeKey] ?? 0) : 0;
+                        $statusKey = ($item['status'] ?? null) === 'monitoring' ? ($monitoringStatus ?? $navBadges['monitoring_status'] ?? 'hidden') : null;
+                        $isActive = \App\Support\Navigation::isActive($item);
                     @endphp
                     <a
-                        class="pg-rail-link {{ request()->routeIs($item['pattern']) ? 'active' : '' }}"
-                        href="{{ route($item['route']) }}"
+                        class="pg-rail-link {{ $isActive ? 'active' : '' }}"
+                        href="{{ route($item['route'], $item['params'] ?? []) }}"
                         @if ($badgeKey) data-nav-badge="{{ $badgeKey }}" @endif
+                        @if ($statusKey && $statusKey !== 'hidden') data-nav-status="monitoring" data-status="{{ $statusKey }}" @endif
                     >
                         <i data-lucide="{{ $item['icon'] }}"></i>
                         <span>{{ $item['label'] }}</span>
                         @if ($badgeCount > 0)
                             <em class="pg-nav-count">{{ $badgeCount }}</em>
+                        @elseif ($statusKey && $statusKey !== 'hidden')
+                            <i class="pg-nav-status pg-nav-status-{{ $statusKey }}" title="Simulated monitoring: {{ $statusKey }}" aria-label="Simulated monitoring {{ $statusKey }}"></i>
                         @endif
                     </a>
                 @endforeach

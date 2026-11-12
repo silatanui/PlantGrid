@@ -240,6 +240,23 @@ a:hover { color: var(--pg-navy-deep); }
     min-width: 18px;
     height: 16px;
 }
+.pg-nav-status {
+    margin-left: auto;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex: 0 0 auto;
+    box-shadow: 0 0 0 2px #fff;
+}
+.pg-nav-status-normal {
+    background: #1f9d55;
+}
+.pg-nav-status-degraded {
+    background: #d97706;
+}
+.pg-nav-status-outage {
+    background: var(--pg-critical, #d92d20);
+}
 
 .pg-workspace-strip {
     display: flex;

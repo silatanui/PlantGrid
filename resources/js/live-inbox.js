@@ -55,11 +55,30 @@ function setNavBadge(key, count) {
     });
 }
 
+function syncMonitoringStatus(status) {
+    const tone = ['normal', 'degraded', 'outage'].includes(status) ? status : 'normal';
+
+    document.querySelectorAll('[data-nav-status="monitoring"]').forEach((host) => {
+        host.dataset.status = tone;
+        let dot = host.querySelector('.pg-nav-status');
+        if (!dot) {
+            dot = document.createElement('i');
+            host.appendChild(dot);
+        }
+        dot.className = `pg-nav-status pg-nav-status-${tone}`;
+        dot.title = `Simulated monitoring: ${tone}`;
+        dot.setAttribute('aria-label', `Simulated monitoring ${tone}`);
+    });
+}
+
 function syncNavBadges(badges = {}) {
-    setNavBadge('cases', Number(badges.cases || 0));
+    setNavBadge('my_cases', Number(badges.my_cases || 0));
+    setNavBadge('new_cases', Number(badges.new_cases || 0));
     setNavBadge('messages', Number(badges.messages || 0));
     setNavBadge('notifications', Number(badges.notifications || 0));
-    setNavBadge('alerts', Number(badges.alerts || 0));
+    if (badges.monitoring_status && badges.monitoring_status !== 'hidden') {
+        syncMonitoringStatus(badges.monitoring_status);
+    }
 }
 
 function showToast(title, body, url) {

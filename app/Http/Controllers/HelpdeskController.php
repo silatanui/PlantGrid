@@ -42,6 +42,7 @@ class HelpdeskController extends Controller
             ->when($scope === 'mine', fn ($query) => $query->involving($request->user()))
             ->when($scope === 'assigned', fn ($query) => $query->where('assigned_to', $request->user()->id))
             ->when($statusFilter !== '', fn ($query) => SearchPages::applyStatusFilter($query, $statusFilter))
+            ->when($request->boolean('unassigned'), fn ($query) => $query->whereNull('assigned_to'))
             ->when($request->filled('priority'), fn ($query) => $query->where('priority', $request->string('priority')))
             ->when($request->filled('department'), fn ($query) => $query->where('department_id', $request->integer('department')))
             ->when($request->filled('q'), function ($query) use ($request) {
@@ -63,6 +64,7 @@ class HelpdeskController extends Controller
             $scope === 'mine' => 'My cases',
             $scope === 'assigned' && $statusFilter === 'open' => 'Assigned open cases',
             $scope === 'assigned' => 'Assigned to me',
+            $statusFilter === 'new' && $request->boolean('unassigned') => 'New cases',
             $statusFilter === 'open' => 'Open case queue',
             default => $employeeView ? 'My cases' : 'Cases',
         };
