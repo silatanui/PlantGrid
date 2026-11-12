@@ -23,9 +23,14 @@
     <div class="row g-3">
         <div class="col-lg-8">
             <section class="pg-card">
-                <div class="pg-message-thread pg-message-thread-tall">
+                <div
+                    class="pg-message-thread pg-message-thread-tall"
+                    data-live-thread
+                    data-live-thread-url="{{ route('inbox.thread', $counterpart) }}"
+                    data-initial-count="{{ $thread->count() }}"
+                >
                     @foreach ($thread as $item)
-                        <article class="pg-message-bubble {{ $item->sender_id === auth()->id() ? 'is-mine' : '' }}">
+                        <article class="pg-message-bubble {{ $item->sender_id === auth()->id() ? 'is-mine' : '' }}" data-message-id="{{ $item->id }}">
                             <header>
                                 <strong>{{ $item->sender_id === auth()->id() ? 'You' : $item->sender->name }}</strong>
                                 <span>{{ $item->created_at?->format('d M Y H:i') }}</span>

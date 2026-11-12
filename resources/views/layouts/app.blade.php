@@ -14,6 +14,7 @@
     class="pg-shell"
     data-mentions-url="{{ route('mentions.suggest') }}"
     data-presence-heartbeat="{{ route('presence.heartbeat') }}"
+    data-live-inbox-url="{{ route('inbox.live') }}"
     @if (auth()->user()->hasPermission('users.view'))
         data-presence-live="{{ route('presence.live') }}"
     @endif
@@ -100,23 +101,28 @@
                     </div>
                 @endif
 
-                <div class="dropdown">
-                    <button class="pg-icon-btn" type="button" data-bs-toggle="dropdown" aria-label="Notifications" title="Notifications">
+                <div class="dropdown" data-live-notifications data-initial-count="{{ $headerNotificationCount ?? 0 }}">
+                    <button class="pg-icon-btn" type="button" data-bs-toggle="dropdown" data-live-count-host aria-label="Notifications" title="Notifications">
                         <i data-lucide="bell"></i>
                         @if (($headerNotificationCount ?? 0) > 0)
                             <span class="pg-count">{{ $headerNotificationCount }}</span>
                         @endif
                     </button>
                     <div class="dropdown-menu dropdown-menu-end p-2" style="min-width: 300px;">
-                        <div class="px-2 py-1 text-muted small">Notifications</div>
-                        @forelse (($headerNotifications ?? collect()) as $note)
-                            @php $data = $note->data; @endphp
-                            <a class="dropdown-item small" href="{{ route('notifications.read', $note->id) }}">
-                                <strong>{{ $data['title'] ?? 'Update' }}</strong><br>{{ $data['body'] ?? '' }}
-                            </a>
-                        @empty
-                            <div class="dropdown-item-text small text-muted">No unread notifications.</div>
-                        @endforelse
+                        <div class="px-2 py-1 text-muted small d-flex justify-content-between align-items-center gap-2">
+                            <span>Notifications</span>
+                            <button class="btn btn-sm btn-pg-line py-0 px-1" type="button" data-live-enable-browser hidden>Enable desktop alerts</button>
+                        </div>
+                        <div data-live-notifications-list>
+                            @forelse (($headerNotifications ?? collect()) as $note)
+                                @php $data = $note->data; @endphp
+                                <a class="dropdown-item small" href="{{ route('notifications.read', $note->id) }}">
+                                    <strong>{{ $data['title'] ?? 'Update' }}</strong><br>{{ $data['body'] ?? '' }}
+                                </a>
+                            @empty
+                                <div class="dropdown-item-text small text-muted">No unread notifications.</div>
+                            @endforelse
+                        </div>
                         <div class="dropdown-divider"></div>
                         <form method="post" action="{{ route('notifications.read-all') }}">
                             @csrf
@@ -126,8 +132,8 @@
                     </div>
                 </div>
 
-                <div class="dropdown">
-                    <button class="pg-icon-btn" type="button" data-bs-toggle="dropdown" aria-label="Messages" title="Messages">
+                <div class="dropdown" data-live-messages data-initial-count="{{ $headerMessageCount ?? 0 }}">
+                    <button class="pg-icon-btn" type="button" data-bs-toggle="dropdown" data-live-count-host aria-label="Messages" title="Messages">
                         <i data-lucide="message-square"></i>
                         @if (($headerMessageCount ?? 0) > 0)
                             <span class="pg-count">{{ $headerMessageCount }}</span>
@@ -135,13 +141,15 @@
                     </button>
                     <div class="dropdown-menu dropdown-menu-end p-2" style="min-width: 300px;">
                         <div class="px-2 py-1 text-muted small">Direct messages</div>
-                        @forelse (($headerMessages ?? collect()) as $note)
-                            <a class="dropdown-item small" href="{{ route('messages.show', $note) }}">
-                                <strong>{{ $note->sender->name }}</strong><br>{{ $note->subject }}
-                            </a>
-                        @empty
-                            <div class="dropdown-item-text small text-muted">No unread messages.</div>
-                        @endforelse
+                        <div data-live-messages-list>
+                            @forelse (($headerMessages ?? collect()) as $note)
+                                <a class="dropdown-item small" href="{{ route('messages.show', $note) }}">
+                                    <strong>{{ $note->sender->name }}</strong><br>{{ $note->subject }}
+                                </a>
+                            @empty
+                                <div class="dropdown-item-text small text-muted">No unread messages.</div>
+                            @endforelse
+                        </div>
                         <div class="dropdown-divider"></div>
                         <a class="dropdown-item small" href="{{ route('messages.index') }}">Open inbox</a>
                     </div>

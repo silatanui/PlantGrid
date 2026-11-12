@@ -547,6 +547,53 @@ a:hover { color: #014486; }
     place-items: center;
     padding: 0 3px;
 }
+.pg-icon-btn.is-live-ping .pg-count {
+    animation: pg-live-ping 0.9s ease;
+}
+@keyframes pg-live-ping {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.35); }
+    100% { transform: scale(1); }
+}
+.pg-live-toasts {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 1080;
+    display: grid;
+    gap: 8px;
+    width: min(320px, calc(100vw - 24px));
+    pointer-events: none;
+}
+.pg-live-toast {
+    pointer-events: auto;
+    display: grid;
+    gap: 2px;
+    padding: 12px 14px;
+    background: #0b2a4a;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    text-decoration: none;
+    box-shadow: 0 10px 28px rgba(7, 18, 32, 0.28);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 220ms ease, transform 220ms ease;
+}
+.pg-live-toast.is-in {
+    opacity: 1;
+    transform: none;
+}
+.pg-live-toast strong {
+    font-size: 13px;
+}
+.pg-live-toast span {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.82);
+}
+.pg-live-toast:hover {
+    color: #fff;
+    background: #123a61;
+}
 
 .pg-user {
     display: flex;

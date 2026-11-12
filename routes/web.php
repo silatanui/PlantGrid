@@ -10,6 +10,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocsController;
 use App\Http\Controllers\HelpdeskController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\LiveInboxController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\MentionController;
 use App\Http\Controllers\MessageController;
@@ -44,6 +45,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/presence/live', [PresenceController::class, 'live'])
         ->middleware('permission:users.view')
         ->name('presence.live');
+    Route::get('/inbox/live', [LiveInboxController::class, 'feed'])->name('inbox.live');
+    Route::get('/inbox/thread/{person}', [LiveInboxController::class, 'thread'])->name('inbox.thread');
     Route::get('/search', [SearchController::class, 'index'])->name('search');
     Route::get('/search/suggest', [SearchController::class, 'suggest'])->name('search.suggest');
     Route::get('/mentions/suggest', [MentionController::class, 'suggest'])->name('mentions.suggest');
