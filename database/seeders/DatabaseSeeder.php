@@ -62,6 +62,7 @@ class DatabaseSeeder extends Seeder
         $applications = $this->applications($vendors, $departments);
         $tickets = $this->tickets($users, $departments, $assets, $applications);
         $this->call(MoreCasesSeeder::class);
+        $this->call(CaseNotesMediaSeeder::class);
         $systems = $this->production($departments, $vendors, $users, $assets, $locations, $tickets);
         $this->maintenance($users, $vendors, $assets, $servers, $systems['equipment']);
         $this->security($users);
