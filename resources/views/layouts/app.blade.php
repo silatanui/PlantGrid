@@ -198,11 +198,23 @@
         <div class="pg-navrow {{ ($workspaceTabs ?? collect())->isNotEmpty() ? 'has-workspace-tabs' : '' }}">
             <nav class="pg-tabs" aria-label="Primary">
                 @foreach ($primaryNavigation as $item)
-                    <a class="{{ request()->routeIs($item['pattern']) ? 'active' : '' }}" href="{{ route($item['route']) }}">
+                    @php
+                        $tabBadgeKey = match ($item['route'] ?? '') {
+                            'helpdesk.index' => 'cases',
+                            'messages.index' => 'messages',
+                            default => null,
+                        };
+                        $tabBadgeCount = $tabBadgeKey ? (int) ($navBadges[$tabBadgeKey] ?? 0) : 0;
+                    @endphp
+                    <a
+                        class="{{ request()->routeIs($item['pattern']) ? 'active' : '' }}"
+                        href="{{ route($item['route']) }}"
+                        @if ($tabBadgeKey) data-nav-badge="{{ $tabBadgeKey }}" @endif
+                    >
                         <i data-lucide="{{ $item['icon'] }}"></i>
                         <span>{{ $item['label'] }}</span>
-                        @if (($item['route'] ?? '') === 'messages.index' && ($headerMessageCount ?? 0) > 0)
-                            <em class="pg-nav-count">{{ $headerMessageCount }}</em>
+                        @if ($tabBadgeCount > 0)
+                            <em class="pg-nav-count">{{ $tabBadgeCount }}</em>
                         @endif
                     </a>
                 @endforeach

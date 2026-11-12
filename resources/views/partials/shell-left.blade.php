@@ -9,14 +9,33 @@
         </button>
     </div>
 
+    @php
+        $badgeForRoute = [
+            'helpdesk.index' => 'cases',
+            'helpdesk.create' => null,
+            'messages.index' => 'messages',
+            'monitoring.index' => 'alerts',
+        ];
+    @endphp
+
     @if (($leftPanel['shortcuts'] ?? []) !== [])
         <div class="pg-rail-section">
             <div class="pg-rail-label">Shortcuts</div>
             <div class="pg-rail-shortcuts">
                 @foreach ($leftPanel['shortcuts'] as $item)
-                    <a href="{{ route($item['route'], $item['params'] ?? []) }}">
+                    @php
+                        $shortcutBadgeKey = ($item['route'] ?? '') === 'helpdesk.index' ? 'cases' : null;
+                        $shortcutCount = $shortcutBadgeKey ? (int) ($navBadges[$shortcutBadgeKey] ?? 0) : 0;
+                    @endphp
+                    <a
+                        href="{{ route($item['route'], $item['params'] ?? []) }}"
+                        @if ($shortcutBadgeKey) data-nav-badge="{{ $shortcutBadgeKey }}" @endif
+                    >
                         <i data-lucide="{{ $item['icon'] }}"></i>
                         <span>{{ $item['label'] }}</span>
+                        @if ($shortcutCount > 0)
+                            <em class="pg-nav-count">{{ $shortcutCount }}</em>
+                        @endif
                     </a>
                 @endforeach
             </div>
@@ -29,9 +48,20 @@
             <div class="pg-rail-group">
                 <div class="pg-rail-group-title">{{ $heading }}</div>
                 @foreach ($items as $item)
-                    <a class="pg-rail-link {{ request()->routeIs($item['pattern']) ? 'active' : '' }}" href="{{ route($item['route']) }}">
+                    @php
+                        $badgeKey = $badgeForRoute[$item['route'] ?? ''] ?? null;
+                        $badgeCount = $badgeKey ? (int) ($navBadges[$badgeKey] ?? 0) : 0;
+                    @endphp
+                    <a
+                        class="pg-rail-link {{ request()->routeIs($item['pattern']) ? 'active' : '' }}"
+                        href="{{ route($item['route']) }}"
+                        @if ($badgeKey) data-nav-badge="{{ $badgeKey }}" @endif
+                    >
                         <i data-lucide="{{ $item['icon'] }}"></i>
                         <span>{{ $item['label'] }}</span>
+                        @if ($badgeCount > 0)
+                            <em class="pg-nav-count">{{ $badgeCount }}</em>
+                        @endif
                     </a>
                 @endforeach
             </div>

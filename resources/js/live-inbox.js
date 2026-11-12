@@ -33,6 +33,35 @@ function setBadge(button, count) {
     }
 }
 
+function setNavBadge(key, count) {
+    if (!key) {
+        return;
+    }
+
+    document.querySelectorAll(`[data-nav-badge="${key}"]`).forEach((host) => {
+        let badge = host.querySelector('.pg-nav-count');
+        if (count > 0) {
+            if (!badge) {
+                badge = document.createElement('em');
+                badge.className = 'pg-nav-count';
+                host.appendChild(badge);
+            }
+            badge.textContent = String(count);
+            host.classList.add('has-nav-badge');
+        } else if (badge) {
+            badge.remove();
+            host.classList.remove('has-nav-badge');
+        }
+    });
+}
+
+function syncNavBadges(badges = {}) {
+    setNavBadge('cases', Number(badges.cases || 0));
+    setNavBadge('messages', Number(badges.messages || 0));
+    setNavBadge('notifications', Number(badges.notifications || 0));
+    setNavBadge('alerts', Number(badges.alerts || 0));
+}
+
 function showToast(title, body, url) {
     let host = document.querySelector('[data-live-toasts]');
     if (!host) {
@@ -172,6 +201,12 @@ export function initLiveInbox() {
 
             setBadge(notificationsRoot?.querySelector('[data-live-count-host]'), notes.count);
             setBadge(messagesRoot?.querySelector('[data-live-count-host]'), msgs.count);
+            syncNavBadges(payload.badges || {
+                cases: 0,
+                messages: msgs.count,
+                notifications: notes.count,
+                alerts: 0,
+            });
             renderNotificationList(notificationsRoot, notes.items || []);
             renderMessageList(messagesRoot, msgs.items || []);
 

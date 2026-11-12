@@ -9,6 +9,7 @@ use App\Monitoring\Providers\SimulatedMonitoringProvider;
 use App\Services\PresenceService;
 use App\Services\ShellPanelService;
 use App\Services\WorkspaceTabService;
+use App\Support\NavBadges;
 use App\Support\Navigation;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\View;
@@ -61,6 +62,7 @@ class AppServiceProvider extends ServiceProvider
 
             $shell = app(ShellPanelService::class);
             $workspace = app(WorkspaceTabService::class);
+            $navBadges = NavBadges::for($user);
 
             $openCasesHref = $user->isEmployeeRequester()
                 ? route('helpdesk.index', ['scope' => 'mine', 'status' => 'open'])
@@ -69,12 +71,13 @@ class AppServiceProvider extends ServiceProvider
             $view->with([
                 'navigation' => Navigation::groups($user),
                 'primaryNavigation' => Navigation::primary($user),
+                'navBadges' => $navBadges,
                 'headerAlerts' => $alerts,
-                'headerAlertCount' => $alerts->count(),
+                'headerAlertCount' => $navBadges['alerts'],
                 'headerMessages' => $unreadMessages,
-                'headerMessageCount' => DirectMessage::query()->unreadFor($user)->count(),
+                'headerMessageCount' => $navBadges['messages'],
                 'headerNotifications' => $unreadNotifications,
-                'headerNotificationCount' => $user->unreadNotifications()->count(),
+                'headerNotificationCount' => $navBadges['notifications'],
                 'headerOnlineUsers' => $onlineUsers->take(6),
                 'headerOnlineCount' => $onlineUsers->count(),
                 'plantName' => \App\Models\SystemSetting::getValue('plant_name', 'Northridge Processing'),

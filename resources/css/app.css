@@ -231,6 +231,15 @@ a:hover { color: var(--pg-navy-deep); }
     place-items: center;
     line-height: 1;
 }
+.pg-rail-link .pg-nav-count,
+.pg-rail-shortcuts a .pg-nav-count {
+    margin-left: auto;
+    background: var(--pg-critical);
+    color: #fff;
+    border-radius: 0;
+    min-width: 18px;
+    height: 16px;
+}
 
 .pg-workspace-strip {
     display: flex;

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\DirectMessage;
 use App\Models\User;
 use App\Support\Format;
+use App\Support\NavBadges;
 use App\Support\RichText;
 use Illuminate\Http\Request;
 
@@ -22,10 +23,13 @@ class LiveInboxController extends Controller
             ->limit(8)
             ->get();
 
+        $badges = NavBadges::for($user);
+
         return response()->json([
             'server_time' => now()->toIso8601String(),
+            'badges' => $badges,
             'notifications' => [
-                'count' => $user->unreadNotifications()->count(),
+                'count' => $badges['notifications'],
                 'items' => $notifications->map(fn ($note) => [
                     'id' => $note->id,
                     'title' => data_get($note->data, 'title', 'Update'),
@@ -35,7 +39,7 @@ class LiveInboxController extends Controller
                 ])->values(),
             ],
             'messages' => [
-                'count' => DirectMessage::query()->unreadFor($user)->count(),
+                'count' => $badges['messages'],
                 'items' => $messages->map(fn (DirectMessage $message) => [
                     'id' => $message->id,
                     'subject' => $message->subject,
