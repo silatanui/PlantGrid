@@ -27,7 +27,6 @@ class MentionController extends Controller
 
         if (in_array($trigger, ['@', 'all'], true)) {
             $people = User::query()
-                ->with(['roles:id,name', 'department:id,name'])
                 ->where('status', 'active')
                 ->when($term !== '', function ($query) use ($like) {
                     $query->where(function ($inner) use ($like) {
@@ -37,15 +36,14 @@ class MentionController extends Controller
                 })
                 ->orderBy('name')
                 ->limit(8)
-                ->get();
+                ->get(['id', 'name', 'email']);
 
             foreach ($people as $person) {
-                $handle = strtok($person->email, '@') ?: $person->email;
+                $handle = strtok((string) $person->email, '@') ?: $person->email;
                 $items[] = [
                     'type' => 'people',
                     'label' => $person->name,
-                    'meta' => $person->roleLabel().' · '.$person->email,
-                    'token' => '@['.$person->name.'](people:'.$person->id.')',
+                    'meta' => '',
                     'insert' => '@'.$handle,
                     'url' => route('people.show', $person),
                 ];
@@ -63,14 +61,13 @@ class MentionController extends Controller
                 })
                 ->latest('reported_at')
                 ->limit(6)
-                ->get(['id', 'ticket_number', 'subject', 'status']);
+                ->get(['id', 'ticket_number', 'subject']);
 
             foreach ($tickets as $ticket) {
                 $items[] = [
                     'type' => 'case',
                     'label' => $ticket->ticket_number,
-                    'meta' => $ticket->subject,
-                    'token' => '@['.$ticket->ticket_number.'](case:'.$ticket->id.')',
+                    'meta' => '',
                     'insert' => $ticket->ticket_number,
                     'url' => route('helpdesk.show', $ticket),
                 ];
@@ -88,14 +85,13 @@ class MentionController extends Controller
                 })
                 ->orderBy('asset_tag')
                 ->limit(6)
-                ->get(['id', 'asset_tag', 'name', 'status']);
+                ->get(['id', 'asset_tag', 'name']);
 
             foreach ($assets as $asset) {
                 $items[] = [
                     'type' => 'asset',
                     'label' => $asset->asset_tag,
-                    'meta' => $asset->name,
-                    'token' => '@['.$asset->asset_tag.'](asset:'.$asset->id.')',
+                    'meta' => '',
                     'insert' => $asset->asset_tag,
                     'url' => route('assets.show', $asset),
                 ];
@@ -112,14 +108,13 @@ class MentionController extends Controller
                 })
                 ->orderBy('hostname')
                 ->limit(5)
-                ->get(['id', 'hostname', 'device_type', 'management_ip']);
+                ->get(['id', 'hostname']);
 
             foreach ($devices as $device) {
                 $items[] = [
                     'type' => 'device',
                     'label' => $device->hostname,
-                    'meta' => trim(($device->device_type ?: 'device').($device->management_ip ? ' · '.$device->management_ip : '')),
-                    'token' => '@['.$device->hostname.'](device:'.$device->id.')',
+                    'meta' => '',
                     'insert' => $device->hostname,
                     'url' => route('network.show', $device),
                 ];
@@ -136,14 +131,13 @@ class MentionController extends Controller
                 })
                 ->orderBy('hostname')
                 ->limit(5)
-                ->get(['id', 'hostname', 'server_role', 'status']);
+                ->get(['id', 'hostname']);
 
             foreach ($servers as $server) {
                 $items[] = [
                     'type' => 'server',
                     'label' => $server->hostname,
-                    'meta' => $server->server_role ?: 'Server',
-                    'token' => '@['.$server->hostname.'](server:'.$server->id.')',
+                    'meta' => '',
                     'insert' => $server->hostname,
                     'url' => route('servers.show', $server),
                 ];

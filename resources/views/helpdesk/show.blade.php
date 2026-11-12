@@ -38,7 +38,9 @@
             @php
                 $isCurrent = $ticket->status === $stage;
                 $isComplete = is_int($currentIndex) && $index < $currentIndex;
-                $canAdvance = in_array($stage, $transitions, true) && ! in_array($stage, ['assigned', 'resolved', 'closed'], true);
+                $canAdvance = auth()->user()->hasPermission('tickets.update')
+                    && in_array($stage, $transitions, true)
+                    && ! in_array($stage, ['assigned', 'resolved', 'closed'], true);
                 $stepClass = trim(($isComplete ? 'is-complete' : '').' '.($isCurrent ? 'is-current' : '').' '.($canAdvance ? 'is-available' : ''));
             @endphp
             <li class="{{ $stepClass }}">
@@ -269,16 +271,14 @@
                                 <p class="text-muted small mb-0">Required when closing as a duplicate. Enter the surviving case number.</p>
                             </div>
                         @endif
-                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
-                            <label class="form-label mb-0" for="resolution_notes">Resolution notes</label>
-                            <div class="pg-ai-field-actions" data-ai-field-actions>
-                                <button class="btn btn-sm btn-pg-line" type="button" data-ai-action="refine" data-ai-target="resolution_notes">Refine with AI</button>
-                                <button class="btn btn-sm btn-pg-line" type="button" data-ai-action="paraphrase" data-ai-target="resolution_notes">Paraphrase</button>
-                            </div>
-                        </div>
-                        <textarea class="form-control mb-2" id="resolution_notes" name="resolution_notes" rows="3" data-ai-assist data-mentions placeholder="Resolution notes. Use @people and case/asset tags…">{{ old('resolution_notes', $ticket->resolution_notes) }}</textarea>
-                        <label class="form-label" for="note">History note</label>
-                        <input class="form-control mb-2" id="note" name="note">
+                        <label class="form-label" for="resolution_notes">Resolution / next-step notes</label>
+                        <p class="text-muted small mb-1">Required when moving the case forward. Explain what was done or why the next step is needed.</p>
+                        <textarea class="form-control mb-2" id="resolution_notes" name="resolution_notes" rows="3" data-ai-assist data-mentions data-format-toolbar placeholder="What was done, and why this next step is needed…" data-step-evidence>{{ old('resolution_notes', $ticket->resolution_notes) }}</textarea>
+                        <label class="form-label" for="internal_note">Internal note</label>
+                        <p class="text-muted small mb-1">Required when moving forward. ICT-only record of why this step was taken.</p>
+                        <textarea class="form-control mb-2" id="internal_note" name="internal_note" rows="3" data-ai-assist data-mentions data-format-toolbar placeholder="Internal note for partners…" data-step-evidence>{{ old('internal_note') }}</textarea>
+                        <label class="form-label" for="note">History note (optional)</label>
+                        <input class="form-control mb-2" id="note" name="note" value="{{ old('note') }}">
                         @if ($ticket->asset_id)
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="record_maintenance" id="record_maintenance" value="1">
@@ -292,23 +292,29 @@
                         <button class="btn btn-pg" type="submit">Save update</button>
                     </form>
                 </section>
-                @if ($canCloseDuplicate)
-                    <script>
-                        (() => {
-                            const select = document.querySelector('[data-status-select]');
-                            const fields = document.querySelector('[data-duplicate-fields]');
-                            const input = document.getElementById('duplicate_of');
-                            if (!select || !fields) return;
-                            const sync = () => {
-                                const show = select.value === 'closed';
+                <script>
+                    (() => {
+                        const form = document.querySelector('[data-status-form]');
+                        const select = form?.querySelector('[data-status-select]');
+                        const evidence = form ? [...form.querySelectorAll('[data-step-evidence]')] : [];
+                        const fields = document.querySelector('[data-duplicate-fields]');
+                        const input = document.getElementById('duplicate_of');
+                        const current = @json($ticket->status);
+                        if (!select) return;
+                        const sync = () => {
+                            const next = select.value;
+                            const needsEvidence = next !== current && ! (current === 'resolved' && next === 'closed');
+                            evidence.forEach((field) => { field.required = needsEvidence; });
+                            if (fields) {
+                                const show = next === 'closed' && current !== 'resolved';
                                 fields.hidden = !show;
                                 if (input) input.required = show;
-                            };
-                            select.addEventListener('change', sync);
-                            sync();
-                        })();
-                    </script>
-                @endif
+                            }
+                        };
+                        select.addEventListener('change', sync);
+                        sync();
+                    })();
+                </script>
             @endif
             <section class="pg-card">
                 <div class="pg-card-pad"><h2 class="pg-section-title mb-0">Status history</h2></div>

@@ -116,7 +116,8 @@ class HelpdeskController extends Controller
     {
         $this->visible($request, $ticket);
         $ticket->load(['requester', 'assignee', 'partners', 'department', 'category', 'asset.location', 'application', 'histories.changer', 'attachments.uploader', 'duplicateOf']);
-        $canSeeInternal = $request->user()->hasAnyPermission(['tickets.update', 'audit.view']);
+        $canSeeInternal = $request->user()->hasAnyPermission(['tickets.update', 'audit.view'])
+            || $ticket->isPartner($request->user());
         $comments = $ticket->comments()->with('author')->latest()
             ->when(! $canSeeInternal, fn ($query) => $query->where('visibility', 'requester_visible'))
             ->get();
@@ -207,6 +208,7 @@ class HelpdeskController extends Controller
             'status' => ['required', Rule::in(['assigned', 'in_progress', 'pending', 'resolved', 'closed'])],
             'assigned_to' => ['nullable', 'exists:users,id'],
             'resolution_notes' => ['nullable', 'string', 'max:5000'],
+            'internal_note' => ['nullable', 'string', 'max:4000'],
             'duplicate_of' => ['nullable', 'string', 'max:40'],
             'note' => ['nullable', 'string', 'max:2000'],
             'record_maintenance' => ['nullable', 'boolean'],
@@ -231,7 +233,9 @@ class HelpdeskController extends Controller
             'attachment' => ['nullable', 'file', 'max:5120', 'mimes:pdf,png,jpg,jpeg,txt,doc,docx'],
         ]);
 
-        if ($data['visibility'] === 'internal' && ! $request->user()->hasPermission('tickets.update')) {
+        $canPostInternal = $request->user()->hasPermission('tickets.update')
+            || $ticket->isPartner($request->user());
+        if ($data['visibility'] === 'internal' && ! $canPostInternal) {
             $data['visibility'] = 'requester_visible';
         }
 
@@ -273,7 +277,9 @@ class HelpdeskController extends Controller
             'visibility' => ['required', Rule::in(['requester_visible', 'internal'])],
         ]);
 
-        if ($data['visibility'] === 'internal' && ! $request->user()->hasPermission('tickets.update')) {
+        $canPostInternal = $request->user()->hasPermission('tickets.update')
+            || $ticket->isPartner($request->user());
+        if ($data['visibility'] === 'internal' && ! $canPostInternal) {
             $data['visibility'] = 'requester_visible';
         }
 

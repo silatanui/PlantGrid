@@ -85,16 +85,21 @@ class TicketService
         ];
 
         $next = $map[$ticket->status] ?? [];
+        $isPartner = $ticket->isPartner($user);
+        $canWork = $user->hasPermission('tickets.update') || $isPartner;
+        $canResolve = $user->hasPermission('tickets.resolve') || $isPartner;
+        $canClose = $user->hasPermission('tickets.close') || $isPartner;
+        $canReopen = $user->hasPermission('tickets.reopen') || $isPartner;
 
-        return array_values(array_filter($next, function (string $status) use ($user, $ticket) {
+        return array_values(array_filter($next, function (string $status) use ($user, $ticket, $canWork, $canResolve, $canClose, $canReopen) {
             return match ($status) {
                 'assigned' => $user->hasPermission('tickets.assign'),
-                'resolved' => $user->hasPermission('tickets.resolve'),
-                'closed' => $user->hasPermission('tickets.close'),
+                'resolved' => $canResolve,
+                'closed' => $canClose,
                 'in_progress' => $ticket->status === 'resolved' || $ticket->status === 'closed'
-                    ? $user->hasPermission('tickets.reopen')
-                    : $user->hasPermission('tickets.update'),
-                'pending' => $user->hasPermission('tickets.update'),
+                    ? $canReopen
+                    : $canWork,
+                'pending' => $canWork,
                 default => false,
             };
         }));
@@ -218,19 +223,43 @@ class TicketService
             ]);
         }
 
-        return DB::transaction(function () use ($ticket, $user, $status, $options) {
-            $previous = $ticket->status;
+        $previous = $ticket->status;
+        $needsStepEvidence = $previous !== $status
+            && ! ($previous === 'resolved' && $status === 'closed');
+
+        if ($needsStepEvidence) {
+            if (blank($options['resolution_notes'] ?? null)) {
+                throw ValidationException::withMessages([
+                    'resolution_notes' => 'Add a resolution note explaining this next step.',
+                ]);
+            }
+            if (blank($options['internal_note'] ?? null)) {
+                throw ValidationException::withMessages([
+                    'internal_note' => 'Add an internal note explaining why this next step is needed.',
+                ]);
+            }
+        }
+
+        return DB::transaction(function () use ($ticket, $user, $status, $options, $previous, $needsStepEvidence) {
             $previousAssignee = $ticket->assigned_to;
             $ticket->status = $status;
             $historyNote = $options['note'] ?? null;
 
             if ($status === 'assigned' || ($status === 'in_progress' && ! empty($options['assigned_to']))) {
-                if (empty($options['assigned_to'])) {
+                if (empty($options['assigned_to']) && $status === 'assigned') {
                     throw ValidationException::withMessages([
                         'assigned_to' => 'Choose a technician before assigning this ticket.',
                     ]);
                 }
-                $ticket->assigned_to = $options['assigned_to'];
+                if (! empty($options['assigned_to'])) {
+                    $ticket->assigned_to = $options['assigned_to'];
+                }
+            }
+
+            if ($needsStepEvidence || $status === 'resolved') {
+                if (filled($options['resolution_notes'] ?? null)) {
+                    $ticket->resolution_notes = $options['resolution_notes'];
+                }
             }
 
             if ($status === 'resolved') {
@@ -304,7 +333,16 @@ class TicketService
                 $this->notifications->caseUpdated($fresh, $user, $previous, $status, $exclude);
             }
 
-            return $fresh;
+            if ($needsStepEvidence && filled($options['internal_note'] ?? null)) {
+                $this->comment(
+                    $fresh,
+                    $user,
+                    trim((string) $options['internal_note']),
+                    'internal'
+                );
+            }
+
+            return $fresh->fresh(['assignee', 'partners', 'comments']);
         });
     }
 
