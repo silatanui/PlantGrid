@@ -26,10 +26,13 @@ const publicDirectory = (() => {
     return 'public';
 })();
 
-const base = process.env.VITE_BASE || envValue('VITE_BASE') || '/PlantGrid/build/';
+// Relative URLs keep one build working on localhost/PlantGrid and the
+// production subdomain root (absolute /PlantGrid/... fonts 404 online).
+// Read from .env only so a stale shell VITE_BASE cannot break production builds.
+const base = envValue('VITE_BASE') || './';
 
 export default defineConfig({
-    // Local XAMPP serves assets from PLANTGRID_PUBLIC_PATH (htdocs/PlantGrid).
+    // Optional local override in .env: VITE_BASE=/PlantGrid/build/
     base,
     plugins: [
         laravel({
