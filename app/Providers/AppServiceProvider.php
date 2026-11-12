@@ -8,6 +8,7 @@ use App\Monitoring\Contracts\MonitoringProvider;
 use App\Monitoring\Providers\SimulatedMonitoringProvider;
 use App\Services\PresenceService;
 use App\Services\ShellPanelService;
+use App\Services\WorkspaceTabService;
 use App\Support\Navigation;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\View;
@@ -59,6 +60,11 @@ class AppServiceProvider extends ServiceProvider
                 : collect();
 
             $shell = app(ShellPanelService::class);
+            $workspace = app(WorkspaceTabService::class);
+
+            $openCasesHref = $user->isEmployeeRequester()
+                ? route('helpdesk.index', ['scope' => 'mine', 'status' => 'open'])
+                : route('helpdesk.index', ['status' => 'open']);
 
             $view->with([
                 'navigation' => Navigation::groups($user),
@@ -74,6 +80,9 @@ class AppServiceProvider extends ServiceProvider
                 'plantName' => \App\Models\SystemSetting::getValue('plant_name', 'Northridge Processing'),
                 'leftPanel' => $shell->left($user),
                 'rightPanel' => $shell->right($user),
+                'workspaceTabs' => $workspace->all(),
+                'workspaceTabService' => $workspace,
+                'openCasesHref' => $openCasesHref,
             ]);
         });
     }
