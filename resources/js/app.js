@@ -7,6 +7,7 @@ import { initMentions } from './mentions';
 import { initLiveNotes } from './live-notes';
 import { initPresence } from './presence';
 import { initLiveInbox } from './live-inbox';
+import { initFormatToolbars } from './format-toolbar';
 
 Chart.register(...registerables);
 Chart.defaults.font.family = 'system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
@@ -22,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initLiveNotes();
     initPresence();
     initLiveInbox();
+    initFormatToolbars();
 
     const emailInput = document.querySelector('#email');
     const demoButtons = () => document.querySelectorAll('[data-demo-email]');

@@ -141,8 +141,8 @@
                             <button class="btn btn-sm btn-pg-line" type="button" data-ai-action="paraphrase" data-ai-target="comment">Paraphrase</button>
                         </div>
                     </div>
-                    <textarea class="form-control mb-1" id="comment" name="comment" rows="3" required data-ai-assist data-mentions placeholder="Write a note. Use @ for people and # for cases, assets or hosts…"></textarea>
-                    <p class="pg-mention-hint">Tag people with <span class="pg-mono">@</span>, and cases/assets/hosts with <span class="pg-mono">#</span> or their IDs (for example <span class="pg-mono">@faith.cheruiyot</span>, <span class="pg-mono">PG-2026-0148</span>, <span class="pg-mono">PG-LBL-0142</span>).</p>
+                    <textarea class="form-control mb-1" id="comment" name="comment" rows="3" required data-ai-assist data-mentions data-format-toolbar placeholder="Write a note. Use the toolbar for bold/italic, @ for people, and # for cases, assets or hosts…"></textarea>
+                    <p class="pg-mention-hint">Format with the toolbar (bold, italic, underline, lists). Tag people with <span class="pg-mono">@</span>, and cases/assets/hosts with <span class="pg-mono">#</span>.</p>
                     @if ($canSeeInternal)
                         <div class="pg-note-visibility" role="group" aria-label="Note visibility">
                             <label class="pg-note-visibility-option">

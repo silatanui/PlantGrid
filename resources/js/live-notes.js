@@ -1,4 +1,5 @@
 import { initMentions } from './mentions';
+import { initFormatToolbars } from './format-toolbar';
 
 function csrfToken() {
     return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
@@ -209,7 +210,7 @@ export function initLiveNotes() {
         const visibility = article.dataset.noteVisibility || 'requester_visible';
         editor.innerHTML = `
             <label class="form-label" for="note-edit-${article.dataset.noteId}">Edit note</label>
-            <textarea class="form-control mb-1" id="note-edit-${article.dataset.noteId}" rows="4" data-mentions data-ai-assist required></textarea>
+            <textarea class="form-control mb-1" id="note-edit-${article.dataset.noteId}" rows="4" data-mentions data-ai-assist data-format-toolbar required></textarea>
             ${visibilityControls(canInternal, visibility)}
             <div class="d-flex flex-wrap gap-2">
                 <button class="btn btn-sm btn-pg" type="button" data-note-save>Save changes</button>
@@ -228,6 +229,7 @@ export function initLiveNotes() {
         if (textareaSeed) {
             textareaSeed.value = body;
         }
+        initFormatToolbars(editor);
         initMentions(editor);
 
         editor.querySelector('[data-note-cancel]')?.addEventListener('click', closeEditor);

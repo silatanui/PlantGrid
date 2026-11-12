@@ -143,7 +143,34 @@ class RichText
             $escaped
         ) ?? $escaped;
 
+        $escaped = self::applyInlineMarkup($escaped);
+
         return nl2br($escaped, false);
+    }
+
+    private static function applyInlineMarkup(string $text): string
+    {
+        // Order matters: longer markers before shorter ones.
+        $patterns = [
+            '/\*\*(.+?)\*\*/us' => '<strong>$1</strong>',
+            '/__(.+?)__/us' => '<u>$1</u>',
+            '/~~(.+?)~~/us' => '<s>$1</s>',
+            '/`(.+?)`/us' => '<code class="pg-inline-code">$1</code>',
+            '/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/us' => '<em>$1</em>',
+        ];
+
+        foreach ($patterns as $pattern => $replacement) {
+            $text = preg_replace($pattern, $replacement, $text) ?? $text;
+        }
+
+        // Simple bullet lines written as "- item"
+        $text = preg_replace(
+            '/^(\s*)- (.+)$/mu',
+            '$1<span class="pg-note-bullet">• $2</span>',
+            $text
+        ) ?? $text;
+
+        return $text;
     }
 
     private static function urlFor(string $type, int $id): ?string
