@@ -134,7 +134,6 @@ Route::middleware('auth')->group(function () {
         Route::post('/helpdesk/{ticket}/transfer', [HelpdeskController::class, 'transfer'])->name('helpdesk.transfer');
         Route::post('/helpdesk/{ticket}/transition', [HelpdeskController::class, 'transition'])->name('helpdesk.transition');
         Route::post('/helpdesk/{ticket}/partners', [HelpdeskController::class, 'addPartner'])
-            ->middleware('permission:tickets.assign')
             ->name('helpdesk.partners.store');
         Route::post('/helpdesk/{ticket}/comments', [HelpdeskController::class, 'comment'])->name('helpdesk.comment');
         Route::put('/helpdesk/{ticket}/comments/{comment}', [HelpdeskController::class, 'updateComment'])->name('helpdesk.comment.update');

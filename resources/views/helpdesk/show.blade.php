@@ -202,7 +202,13 @@
                     @endif
                 </section>
             @endif
-            @if (auth()->user()->hasPermission('tickets.assign') || ! empty($isCasePartner) || (! empty($canTransferOwnership)))
+            @php
+                $canManagePartners = auth()->user()->hasPermission('tickets.assign')
+                    || ! empty($isCasePartner)
+                    || ((int) $ticket->requester_id === (int) auth()->id())
+                    || ((int) $ticket->assigned_to === (int) auth()->id());
+            @endphp
+            @if ($canManagePartners)
                 <section class="pg-card pg-card-pad mb-3">
                     <h2 class="pg-section-title">Partners</h2>
                     <p class="text-muted small mb-2">

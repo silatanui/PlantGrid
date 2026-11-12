@@ -62,6 +62,41 @@ class HelpdeskAccessTest extends TestCase
         $this->assertSame($peter->id, $ticket->fresh()->assigned_to);
     }
 
+    public function test_a_case_partner_without_assign_permission_can_add_another_partner(): void
+    {
+        $this->seed();
+
+        $faith = User::query()->where('email', 'faith.cheruiyot@northridge.example')->firstOrFail();
+        $grace = User::query()->where('email', 'grace.wanjiku@northridge.example')->firstOrFail();
+        $ticket = SupportTicket::query()->firstOrFail();
+
+        app(NotificationService::class)->syncPartners($ticket, [$faith->id], 'manual');
+
+        $this->assertFalse($faith->hasPermission('tickets.assign'));
+
+        $this->actingAs($faith)
+            ->post(route('helpdesk.partners.store', $ticket), ['user_id' => $grace->id])
+            ->assertRedirect();
+
+        $this->assertTrue($ticket->fresh()->isPartner($grace));
+    }
+
+    public function test_a_non_partner_without_assign_permission_cannot_add_partners(): void
+    {
+        $this->seed();
+
+        $grace = User::query()->where('email', 'grace.wanjiku@northridge.example')->firstOrFail();
+        $peter = User::query()->where('email', 'peter.kamau@northridge.example')->firstOrFail();
+        $ticket = SupportTicket::query()
+            ->where('requester_id', '!=', $grace->id)
+            ->where(fn ($query) => $query->whereNull('assigned_to')->orWhere('assigned_to', '!=', $grace->id))
+            ->firstOrFail();
+
+        $this->actingAs($grace)
+            ->post(route('helpdesk.partners.store', $ticket), ['user_id' => $peter->id])
+            ->assertForbidden();
+    }
+
     public function test_an_employee_lands_on_my_cases_not_the_ict_queue(): void
     {
         $this->seed();

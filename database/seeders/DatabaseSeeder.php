@@ -50,6 +50,7 @@ class DatabaseSeeder extends Seeder
         $roles = $this->roles($permissions);
         [$departments, $locations] = $this->organisation();
         $users = $this->users($departments, $roles);
+        $this->call(TeamMembersSeeder::class);
         $categories = $this->categories();
         $vendors = $this->vendors();
         $assets = $this->assets($categories, $vendors, $departments, $locations, $users);

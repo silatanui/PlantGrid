@@ -176,6 +176,7 @@ class HelpdeskController extends Controller
         $user = $request->user();
         abort_unless(
             $user->hasPermission('tickets.assign')
+                || (int) $ticket->requester_id === (int) $user->id
                 || ($ticket->assigned_to && (int) $ticket->assigned_to === (int) $user->id)
                 || $ticket->isPartner($user),
             403
