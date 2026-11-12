@@ -60,6 +60,29 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
+        const storedCollapsed = (side) => localStorage.getItem(shellKey(side)) === '1';
+
+        const syncShellForViewport = () => {
+            // Narrow viewports force rails into overlay mode. Without a resize sync,
+            // that temporary collapsed class sticks when Chrome grows past the breakpoint
+            // and the desktop CSS then hides the sidebar with display:none.
+            closeOverlays();
+
+            if (desktopLeft()) {
+                shell.classList.toggle('pg-left-collapsed', storedCollapsed('left'));
+            } else {
+                shell.classList.add('pg-left-collapsed');
+            }
+
+            if (desktopRight()) {
+                shell.classList.toggle('pg-right-collapsed', storedCollapsed('right'));
+            } else {
+                shell.classList.add('pg-right-collapsed');
+            }
+
+            createIcons({ icons });
+        };
+
         const applyShellSide = (side, collapsed) => {
             shell.classList.toggle(`pg-${side}-collapsed`, collapsed);
             localStorage.setItem(shellKey(side), collapsed ? '1' : '0');
@@ -78,15 +101,9 @@ document.addEventListener('DOMContentLoaded', () => {
             createIcons({ icons });
         };
 
-        ['left', 'right'].forEach((side) => {
-            const stored = localStorage.getItem(shellKey(side));
-            const collapsed = stored === '1';
-            if ((side === 'left' && desktopLeft()) || (side === 'right' && desktopRight())) {
-                shell.classList.toggle(`pg-${side}-collapsed`, collapsed);
-            } else {
-                shell.classList.add(`pg-${side}-collapsed`);
-            }
-        });
+        syncShellForViewport();
+        window.matchMedia('(min-width: 1200px)').addEventListener('change', syncShellForViewport);
+        window.matchMedia('(min-width: 1400px)').addEventListener('change', syncShellForViewport);
 
         document.querySelectorAll('[data-shell-toggle]').forEach((button) => {
             button.addEventListener('click', () => {
