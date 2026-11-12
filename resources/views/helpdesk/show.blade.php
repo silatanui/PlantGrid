@@ -24,7 +24,7 @@
                     @forelse (($ticket->partners ?? collect()) as $partner)
                         <a href="{{ route('people.show', $partner) }}">{{ $partner->name }}</a>@if (! $loop->last), @endif
                     @empty
-                        Requester and owner are added automatically; @mentions also join as partners.
+                        -
                     @endforelse
                 </dd>
             </div>
