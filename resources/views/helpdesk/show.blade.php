@@ -169,22 +169,42 @@
             </section>
         </div>
         <div class="col-lg-5">
-            @if (! empty($canTakeOwnership))
+            @if (! empty($canTakeOwnership) || ! empty($canTransferOwnership))
                 <section class="pg-card pg-card-pad mb-3">
                     <h2 class="pg-section-title">Ownership</h2>
-                    <p class="text-muted small">Assign this case to yourself in one step.</p>
-                    <form method="post" action="{{ route('helpdesk.take-ownership', $ticket) }}">
-                        @csrf
-                        <button class="btn btn-pg" type="submit">Take ownership</button>
-                    </form>
+                    <p class="text-muted small">
+                        One owner at a time. Partners can claim an unassigned case; the owner can transfer it.
+                    </p>
+                    @if (! empty($canTakeOwnership))
+                        <form class="mb-2" method="post" action="{{ route('helpdesk.take-ownership', $ticket) }}">
+                            @csrf
+                            <button class="btn btn-pg" type="submit">Take ownership</button>
+                        </form>
+                    @endif
+                    @if (! empty($canTransferOwnership))
+                        <form method="post" action="{{ route('helpdesk.transfer', $ticket) }}">
+                            @csrf
+                            <label class="form-label" for="transfer_to">Transfer ownership</label>
+                            <select class="form-select mb-2" id="transfer_to" name="assigned_to" required>
+                                <option value="">Select person…</option>
+                                @foreach ($technicians as $technician)
+                                    @if ((int) $technician->id !== (int) auth()->id())
+                                        <option value="{{ $technician->id }}">
+                                            {{ $technician->name }}{{ isset($presence) && $presence->isOnline($technician) ? ' · Online' : '' }}
+                                        </option>
+                                    @endif
+                                @endforeach
+                            </select>
+                            <button class="btn btn-sm btn-pg" type="submit">Transfer case</button>
+                        </form>
+                    @endif
                 </section>
             @endif
-            @if (auth()->user()->hasPermission('tickets.assign'))
+            @if (auth()->user()->hasPermission('tickets.assign') || ! empty($isCasePartner) || (! empty($canTransferOwnership)))
                 <section class="pg-card pg-card-pad mb-3">
                     <h2 class="pg-section-title">Partners</h2>
                     <p class="text-muted small mb-2">
-                        Partners are notified about case updates, notes, and @mentions.
-                        Internal notes go only to ICT partners.
+                        Partners can open the case, get notes and @mentions, and claim ownership when it is unassigned.
                     </p>
                     <ul class="mb-2">
                         @forelse ($ticket->partners as $partner)
@@ -223,8 +243,8 @@
                                 </option>
                             @endforeach
                         </select>
-                        @if (auth()->user()->hasPermission('tickets.assign'))
-                            <label class="form-label" for="assigned_to">Technician</label>
+                        @if (! empty($canTransferOwnership) || auth()->user()->hasPermission('tickets.assign'))
+                            <label class="form-label" for="assigned_to">Owner</label>
                             <select class="form-select mb-2" id="assigned_to" name="assigned_to">
                                 <option value="">Unchanged</option>
                                 @foreach ($technicians as $technician)

@@ -110,25 +110,52 @@ class TicketService
             return false;
         }
 
-        return $user->hasAnyPermission(['tickets.assign', 'tickets.update']);
+        // Only one owner at a time: partners may claim an unassigned case.
+        if ($ticket->assigned_to) {
+            return false;
+        }
+
+        if ($user->hasPermission('tickets.assign')) {
+            return true;
+        }
+
+        return $ticket->isPartner($user);
+    }
+
+    public function canTransferOwnership(SupportTicket $ticket, User $user): bool
+    {
+        if (in_array($ticket->status, ['resolved', 'closed'], true)) {
+            return false;
+        }
+
+        if ($user->hasPermission('tickets.assign')) {
+            return true;
+        }
+
+        return $ticket->assigned_to && (int) $ticket->assigned_to === (int) $user->id;
     }
 
     public function takeOwnership(SupportTicket $ticket, User $user, ?string $note = null): SupportTicket
     {
         if (! $this->canTakeOwnership($ticket, $user)) {
             throw ValidationException::withMessages([
-                'assigned_to' => 'You cannot take ownership of this case.',
+                'assigned_to' => 'Only a case partner can take ownership when the case is unassigned.',
             ]);
         }
+
+        $this->notifications->syncPartners($ticket, [$user->id], 'ownership');
 
         return $this->assignTo($ticket, $user, $user, $note ?: $user->name.' took ownership of the case.');
     }
 
     public function assignTo(SupportTicket $ticket, User $assignee, User $actor, ?string $note = null): SupportTicket
     {
-        if (! $actor->hasPermission('tickets.assign')) {
+        $isSelfClaim = (int) $assignee->id === (int) $actor->id && $this->canTakeOwnership($ticket, $actor);
+        $canAssign = $actor->hasPermission('tickets.assign') || $this->canTransferOwnership($ticket, $actor) || $isSelfClaim;
+
+        if (! $canAssign) {
             throw ValidationException::withMessages([
-                'assigned_to' => 'You do not have permission to assign cases.',
+                'assigned_to' => 'Only the current owner or an assigner can transfer this case.',
             ]);
         }
 
@@ -144,6 +171,11 @@ class TicketService
             ]);
         }
 
+        // Non-admin transfers must stay among partners (new owner becomes partner).
+        if (! $actor->hasPermission('tickets.assign') && ! $ticket->isPartner($assignee) && (int) $assignee->id !== (int) $actor->id) {
+            $this->notifications->syncPartners($ticket, [$assignee->id], 'transfer');
+        }
+
         return DB::transaction(function () use ($ticket, $assignee, $actor, $note) {
             $previous = $ticket->status;
             $previousAssignee = $ticket->assigned_to;
@@ -152,6 +184,8 @@ class TicketService
                 $ticket->status = 'assigned';
             }
             $ticket->save();
+
+            $this->notifications->syncPartners($ticket, [$assignee->id, $actor->id], 'ownership');
 
             $this->history(
                 $ticket,

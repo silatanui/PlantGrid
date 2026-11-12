@@ -89,17 +89,42 @@ class SupportTicket extends Model
         return $this->belongsTo(self::class, 'duplicate_of_ticket_id');
     }
 
+    public function isPartner(User $user): bool
+    {
+        if ((int) $this->requester_id === (int) $user->id) {
+            return true;
+        }
+
+        if ($this->assigned_to && (int) $this->assigned_to === (int) $user->id) {
+            return true;
+        }
+
+        if ($this->relationLoaded('partners')) {
+            return $this->partners->contains('id', $user->id);
+        }
+
+        return $this->partners()->where('users.id', $user->id)->exists();
+    }
+
     public function scopeVisibleTo(Builder $query, User $user): Builder
     {
+        // Signed-in staff can open any case; the queue still prioritises role scope
+        // while always including cases they own, requested, or partner on.
         if ($user->hasPermission('tickets.view.all') || $user->hasPermission('audit.view')) {
             return $query;
         }
 
-        if ($user->hasPermission('tickets.view.department')) {
-            return $query->where('department_id', $user->department_id);
-        }
+        return $query->where(function (Builder $inner) use ($user) {
+            if ($user->hasPermission('tickets.view.department') && $user->department_id) {
+                $inner->where('department_id', $user->department_id);
+            } else {
+                $inner->where('requester_id', $user->id);
+            }
 
-        return $query->where('requester_id', $user->id);
+            $inner->orWhere('requester_id', $user->id)
+                ->orWhere('assigned_to', $user->id)
+                ->orWhereHas('partners', fn (Builder $partners) => $partners->where('users.id', $user->id));
+        });
     }
 
     public function scopeOpen(Builder $query): Builder

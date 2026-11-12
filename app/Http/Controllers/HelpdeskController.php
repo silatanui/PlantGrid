@@ -128,9 +128,18 @@ class HelpdeskController extends Controller
             'canSeeInternal' => $canSeeInternal,
             'transitions' => $tickets->allowedTransitions($ticket, $request->user()),
             'canTakeOwnership' => $tickets->canTakeOwnership($ticket, $request->user()),
+            'canTransferOwnership' => $tickets->canTransferOwnership($ticket, $request->user()),
+            'isCasePartner' => $ticket->isPartner($request->user()),
             'technicians' => User::query()
                 ->where('status', 'active')
-                ->whereHas('roles', fn ($query) => $query->whereIn('name', ['ICT Technician', 'ICT Manager', 'System Administrator']))
+                ->when(
+                    ! $request->user()->hasPermission('tickets.assign'),
+                    fn ($query) => $query->whereIn('id', $ticket->partners->pluck('id')->all() ?: [0])
+                )
+                ->when(
+                    $request->user()->hasPermission('tickets.assign'),
+                    fn ($query) => $query->whereHas('roles', fn ($roles) => $roles->whereIn('name', ['ICT Technician', 'ICT Manager', 'System Administrator', 'Department Manager']))
+                )
                 ->orderBy('name')
                 ->get(['id', 'name', 'last_seen_at', 'status']),
             'presence' => app(\App\Services\PresenceService::class),
@@ -146,7 +155,13 @@ class HelpdeskController extends Controller
     public function addPartner(Request $request, SupportTicket $ticket, \App\Services\NotificationService $notifications)
     {
         $this->visible($request, $ticket);
-        abort_unless($request->user()->hasPermission('tickets.assign'), 403);
+        $user = $request->user();
+        abort_unless(
+            $user->hasPermission('tickets.assign')
+                || ($ticket->assigned_to && (int) $ticket->assigned_to === (int) $user->id)
+                || $ticket->isPartner($user),
+            403
+        );
 
         $data = $request->validate([
             'user_id' => ['required', 'exists:users,id'],
@@ -164,6 +179,25 @@ class HelpdeskController extends Controller
         $tickets->takeOwnership($ticket, $request->user());
 
         return back()->with('status', 'You now own '.$ticket->ticket_number.'.');
+    }
+
+    public function transfer(Request $request, SupportTicket $ticket, TicketService $tickets)
+    {
+        $this->visible($request, $ticket);
+        $data = $request->validate([
+            'assigned_to' => ['required', 'exists:users,id'],
+            'note' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $assignee = User::query()->whereKey($data['assigned_to'])->where('status', 'active')->firstOrFail();
+        $tickets->assignTo(
+            $ticket,
+            $assignee,
+            $request->user(),
+            $data['note'] ?? $request->user()->name.' transferred ownership to '.$assignee->name.'.'
+        );
+
+        return back()->with('status', $ticket->ticket_number.' was transferred to '.$assignee->name.'.');
     }
 
     public function transition(Request $request, SupportTicket $ticket, TicketService $tickets)
@@ -308,9 +342,7 @@ class HelpdeskController extends Controller
 
     private function visible(Request $request, SupportTicket $ticket): void
     {
-        abort_unless(
-            SupportTicket::query()->visibleTo($request->user())->whereKey($ticket->id)->exists(),
-            403
-        );
+        // Any signed-in user may open a case. Ownership and edits stay controlled separately.
+        abort_unless($request->user() !== null, 403);
     }
 }

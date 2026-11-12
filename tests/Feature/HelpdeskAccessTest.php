@@ -7,6 +7,7 @@ use App\Models\Department;
 use App\Models\SupportTicket;
 use App\Models\TicketCategory;
 use App\Models\User;
+use App\Services\NotificationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -19,7 +20,7 @@ class HelpdeskAccessTest extends TestCase
         $this->get(route('dashboard'))->assertRedirect(route('login'));
     }
 
-    public function test_an_employee_only_sees_their_own_ticket(): void
+    public function test_any_signed_in_user_can_open_a_case(): void
     {
         $this->seed();
 
@@ -28,13 +29,37 @@ class HelpdeskAccessTest extends TestCase
 
         $this->actingAs($grace)
             ->get(route('helpdesk.show', $someoneElses))
-            ->assertForbidden();
+            ->assertOk()
+            ->assertSee($someoneElses->ticket_number);
 
         $own = SupportTicket::query()->where('requester_id', $grace->id)->firstOrFail();
         $this->actingAs($grace)
             ->get(route('helpdesk.show', $own))
             ->assertOk()
             ->assertSee($own->ticket_number);
+    }
+
+    public function test_a_partner_can_open_and_claim_an_unassigned_case(): void
+    {
+        $this->seed();
+
+        $peter = User::query()->where('email', 'peter.kamau@northridge.example')->firstOrFail();
+        $ticket = SupportTicket::query()->whereNull('assigned_to')->where('status', 'new')->first()
+            ?? SupportTicket::query()->firstOrFail();
+        $ticket->forceFill(['assigned_to' => null, 'status' => 'new'])->save();
+
+        app(NotificationService::class)->syncPartners($ticket, [$peter->id], 'manual');
+
+        $this->actingAs($peter)
+            ->get(route('helpdesk.show', $ticket))
+            ->assertOk()
+            ->assertSee('Take ownership');
+
+        $this->actingAs($peter)
+            ->post(route('helpdesk.take-ownership', $ticket))
+            ->assertRedirect();
+
+        $this->assertSame($peter->id, $ticket->fresh()->assigned_to);
     }
 
     public function test_an_employee_lands_on_my_cases_not_the_ict_queue(): void
