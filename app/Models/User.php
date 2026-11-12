@@ -124,6 +124,26 @@ class User extends Authenticatable
         return $this->roles->pluck('name')->join(', ') ?: 'User';
     }
 
+    public function shortRoleLabel(): string
+    {
+        $this->loadMissing('roles:id,name');
+        $name = (string) ($this->roles->first()?->name ?: 'User');
+
+        return match ($name) {
+            'System Administrator' => 'Admin',
+            default => $name,
+        };
+    }
+
+    public function initials(): string
+    {
+        $parts = preg_split('/\s+/u', trim((string) $this->name)) ?: [];
+        $first = mb_substr($parts[0] ?? 'U', 0, 1);
+        $last = count($parts) > 1 ? mb_substr((string) end($parts), 0, 1) : '';
+
+        return mb_strtoupper($first.$last);
+    }
+
     public function isSystemAdministrator(): bool
     {
         $this->loadMissing('roles:id,name');
@@ -139,6 +159,13 @@ class User extends Authenticatable
     public function canDeleteTicketComment(TicketComment $comment): bool
     {
         return $this->canEditTicketComment($comment) || $this->isSystemAdministrator();
+    }
+
+    public function canDeleteTicketAttachment(TicketAttachment $attachment): bool
+    {
+        return (int) $attachment->uploaded_by === (int) $this->id
+            || $this->isSystemAdministrator()
+            || $this->hasPermission('tickets.assign');
     }
 
     /**

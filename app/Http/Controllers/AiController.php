@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\SupportTicket;
 use App\Services\AiAgentService;
+use App\Services\CaseTriageService;
 use App\Services\OpenAiService;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use RuntimeException;
@@ -87,6 +90,46 @@ class AiController extends Controller
         });
     }
 
+    public function triage(Request $request, SupportTicket $ticket, CaseTriageService $triage): JsonResponse
+    {
+        return $this->respond(function () use ($request, $ticket, $triage) {
+            $this->assertTicketVisible($request, $ticket);
+
+            return [
+                'suggestion' => $triage->suggest($ticket, $request->user()),
+            ];
+        });
+    }
+
+    public function applyTriage(Request $request, SupportTicket $ticket, CaseTriageService $triage): JsonResponse
+    {
+        $data = $request->validate([
+            'owner_id' => ['nullable', 'integer', 'exists:users,id'],
+            'partner_ids' => ['nullable', 'array', 'max:5'],
+            'partner_ids.*' => ['integer', 'exists:users,id'],
+            'internal_note' => ['nullable', 'string', 'max:4000'],
+            'resolution_outline' => ['nullable', 'string', 'max:4000'],
+        ]);
+
+        return $this->respond(function () use ($request, $ticket, $triage, $data) {
+            $this->assertTicketVisible($request, $ticket);
+            $result = $triage->apply($ticket, $request->user(), $data);
+
+            return [
+                'message' => $result['message'],
+                'ticket' => $result['ticket'],
+                'comment' => $result['comment'],
+                'history' => $result['history'],
+            ];
+        });
+    }
+
+    private function assertTicketVisible(Request $request, SupportTicket $ticket): void
+    {
+        abort_unless($request->user() !== null, 403);
+        unset($ticket);
+    }
+
     /**
      * @param  callable(): array<string, mixed>  $callback
      */
@@ -97,6 +140,11 @@ class AiController extends Controller
                 'ok' => true,
                 ...$callback(),
             ]);
+        } catch (AuthorizationException $exception) {
+            return response()->json([
+                'ok' => false,
+                'message' => $exception->getMessage() ?: 'You are not allowed to run this AI action.',
+            ], 403);
         } catch (RuntimeException $exception) {
             return response()->json([
                 'ok' => false,

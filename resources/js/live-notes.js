@@ -47,20 +47,24 @@ function noteActionsHtml(comment) {
         ? '<button class="btn btn-sm btn-pg-line" type="button" data-note-delete>Delete</button>'
         : '';
 
-    return `<span class="ms-auto d-inline-flex flex-wrap gap-1" data-note-actions>${editBtn}${deleteBtn}</span>`;
+    return `<span class="pg-note-actions" data-note-actions>${editBtn}${deleteBtn}</span>`;
 }
 
 function noteArticleHtml(comment) {
     const internalBadge = comment.is_internal
-        ? '<span class="pg-badge pg-badge-muted" data-note-internal-badge>Internal</span>'
+        ? '<span class="pg-note-visibility-badge" data-note-internal-badge>Internal</span>'
+        : '';
+    const role = comment.author_role
+        ? `<span class="pg-note-role" data-note-role><i data-lucide="user-round" aria-hidden="true"></i>${escapeHtml(comment.author_role)}</span>`
         : '';
     const edited = comment.edited
-        ? `<span class="text-muted small" data-note-edited>· edited ${escapeHtml(comment.updated_at)}</span>`
+        ? `<span class="pg-note-edited" data-note-edited>· edited ${escapeHtml(comment.updated_at)}</span>`
         : '';
+    const tone = comment.is_internal ? 'is-internal' : 'is-public';
 
     return `
         <article
-            class="pg-note"
+            class="pg-note ${tone}"
             data-note-id="${comment.id}"
             data-note-body="${escapeHtml(JSON.stringify(comment.comment))}"
             data-note-visibility="${escapeHtml(comment.visibility)}"
@@ -69,13 +73,21 @@ function noteArticleHtml(comment) {
             data-can-edit="${comment.can_edit ? '1' : '0'}"
             data-can-delete="${comment.can_delete ? '1' : '0'}"
         >
-            <div class="d-flex flex-wrap gap-2 align-items-center mb-1">
-                <strong>${escapeHtml(comment.author)}</strong>
-                ${internalBadge}
-                <span class="text-muted small" data-note-time>${escapeHtml(comment.created_at)}</span>
-                ${edited}
-                ${noteActionsHtml(comment)}
-            </div>
+            <header class="pg-note-head">
+                <span class="pg-note-avatar" aria-hidden="true">${escapeHtml(comment.author_initials || 'U')}</span>
+                <div class="pg-note-meta">
+                    <div class="pg-note-meta-top">
+                        <strong data-note-author>${escapeHtml(comment.author)}</strong>
+                        ${role}
+                        ${internalBadge}
+                        ${noteActionsHtml(comment)}
+                    </div>
+                    <div class="pg-note-time-row">
+                        <time class="pg-note-time" data-note-time>${escapeHtml(comment.created_at)}</time>
+                        ${edited}
+                    </div>
+                </div>
+            </header>
             <div class="pg-rich-note" data-note-html>${comment.html}</div>
             <div class="pg-note-editor" data-note-editor hidden></div>
         </article>
@@ -90,17 +102,32 @@ function visibilityControls(canInternal, selected) {
         <div class="pg-note-visibility" role="group" aria-label="Note visibility">
             <label class="pg-note-visibility-option">
                 <input type="radio" name="visibility" value="internal" ${selected === 'internal' ? 'checked' : ''}>
-                <span>Internal ICT note</span>
+                <span class="pg-note-visibility-copy">
+                    <strong>Internal ICT note</strong>
+                    <small>Visible to ICT team and authorized staff only</small>
+                </span>
             </label>
             <label class="pg-note-visibility-option">
                 <input type="radio" name="visibility" value="requester_visible" ${selected === 'requester_visible' ? 'checked' : ''}>
-                <span>Visible to requester</span>
+                <span class="pg-note-visibility-copy">
+                    <strong>Visible to requester</strong>
+                    <small>Visible to the requester (e.g. user, client)</small>
+                </span>
             </label>
         </div>
     `;
 }
 
-export function initLiveNotes() {
+function syncNotesCount(root, list) {
+    const countNode = root.querySelector('[data-notes-count]');
+    if (!countNode || !list) {
+        return;
+    }
+    const count = list.querySelectorAll('[data-note-id]').length;
+    countNode.textContent = `${count} Note${count === 1 ? '' : 's'}`;
+}
+
+export function initLiveNotes(refreshIcons = () => {}) {
     const root = document.querySelector('[data-live-notes]');
     if (!root) {
         return;
@@ -108,9 +135,28 @@ export function initLiveNotes() {
 
     const list = root.querySelector('[data-notes-list]');
     const form = root.querySelector('[data-notes-form]');
+    const openTrigger = root.querySelector('[data-notes-open]');
     const status = root.querySelector('[data-notes-status]');
     const canInternal = root.dataset.canInternal === '1';
     let openEditor = null;
+
+    const setComposerOpen = (open) => {
+        if (!form) {
+            return;
+        }
+        form.hidden = !open;
+        if (openTrigger) {
+            openTrigger.hidden = open;
+        }
+        root.classList.toggle('is-composing', open);
+        if (open) {
+            const textarea = form.querySelector('#comment');
+            window.requestAnimationFrame(() => {
+                textarea?.focus();
+                refreshIcons();
+            });
+        }
+    };
 
     const closeEditor = () => {
         if (!openEditor) {
@@ -132,6 +178,30 @@ export function initLiveNotes() {
         openEditor = null;
     };
 
+    const resetComposer = ({ close = true } = {}) => {
+        if (!form) {
+            return;
+        }
+        form.reset();
+        const textarea = form.querySelector('#comment');
+        if (textarea) {
+            textarea.value = '';
+            textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        if (canInternal) {
+            const internal = form.querySelector('input[name="visibility"][value="internal"]');
+            if (internal) {
+                internal.checked = true;
+            }
+        }
+        form.querySelector('[data-attach-clear]')?.click();
+        form.dispatchEvent(new CustomEvent('plantgrid:draft-clear', { bubbles: true }));
+        document.dispatchEvent(new CustomEvent('plantgrid:draft-clear', { detail: { form } }));
+        if (close) {
+            setComposerOpen(false);
+        }
+    };
+
     const applyComment = (article, comment) => {
         article.dataset.noteBody = JSON.stringify(comment.comment);
         article.dataset.noteVisibility = comment.visibility;
@@ -139,6 +209,8 @@ export function initLiveNotes() {
         article.dataset.noteDeleteUrl = comment.delete_url || '';
         article.dataset.canEdit = comment.can_edit ? '1' : '0';
         article.dataset.canDelete = comment.can_delete ? '1' : '0';
+        article.classList.toggle('is-internal', Boolean(comment.is_internal));
+        article.classList.toggle('is-public', !comment.is_internal);
 
         const html = article.querySelector('[data-note-html]');
         if (html) {
@@ -146,14 +218,40 @@ export function initLiveNotes() {
             html.hidden = false;
         }
 
+        const author = article.querySelector('[data-note-author]');
+        if (author) {
+            author.textContent = comment.author || 'User';
+        }
+
+        const avatar = article.querySelector('.pg-note-avatar');
+        if (avatar && comment.author_initials) {
+            avatar.textContent = comment.author_initials;
+        }
+
+        let role = article.querySelector('[data-note-role]');
+        if (comment.author_role) {
+            if (!role) {
+                role = document.createElement('span');
+                role.className = 'pg-note-role';
+                role.dataset.noteRole = '';
+                article.querySelector('[data-note-author]')?.after(role);
+            }
+            role.innerHTML = `<i data-lucide="user-round" aria-hidden="true"></i>${escapeHtml(comment.author_role)}`;
+        }
+
         let badge = article.querySelector('[data-note-internal-badge]');
         if (comment.is_internal && !badge) {
-            const head = article.querySelector('.d-flex');
+            const head = article.querySelector('.pg-note-meta-top');
             badge = document.createElement('span');
-            badge.className = 'pg-badge pg-badge-muted';
+            badge.className = 'pg-note-visibility-badge';
             badge.dataset.noteInternalBadge = '';
             badge.textContent = 'Internal';
-            head?.querySelector('strong')?.after(badge);
+            const actions = head?.querySelector('[data-note-actions]');
+            if (actions) {
+                head.insertBefore(badge, actions);
+            } else {
+                head?.appendChild(badge);
+            }
         }
         if (!comment.is_internal && badge) {
             badge.remove();
@@ -163,18 +261,17 @@ export function initLiveNotes() {
         if (comment.edited) {
             if (!edited) {
                 edited = document.createElement('span');
-                edited.className = 'text-muted small';
+                edited.className = 'pg-note-edited';
                 edited.dataset.noteEdited = '';
-                article.querySelector('[data-note-time]')?.after(edited);
+                article.querySelector('.pg-note-time-row')?.appendChild(edited);
             }
             edited.textContent = `· edited ${comment.updated_at}`;
         }
 
-        const head = article.querySelector('.d-flex');
-        // Remove any duplicate action groups left over from older markup.
+        const head = article.querySelector('.pg-note-meta-top');
         const actionGroups = [...article.querySelectorAll('[data-note-actions]')];
         const orphanButtons = [...article.querySelectorAll('button[data-note-edit], button[data-note-delete]')]
-            .map((button) => button.closest('span.ms-auto, [data-note-actions]'))
+            .map((button) => button.closest('.pg-note-actions, [data-note-actions], span.ms-auto'))
             .filter(Boolean);
         const allGroups = [...new Set([...actionGroups, ...orphanButtons])];
         let actions = allGroups[0] || null;
@@ -183,12 +280,12 @@ export function initLiveNotes() {
         if (comment.can_edit || comment.can_delete) {
             if (!actions) {
                 actions = document.createElement('span');
-                actions.className = 'ms-auto d-inline-flex flex-wrap gap-1';
+                actions.className = 'pg-note-actions';
                 actions.dataset.noteActions = '';
                 head?.appendChild(actions);
             }
             actions.dataset.noteActions = '';
-            actions.classList.add('ms-auto', 'd-inline-flex', 'flex-wrap', 'gap-1');
+            actions.className = 'pg-note-actions';
             actions.innerHTML = '';
             if (comment.can_edit) {
                 const editBtn = document.createElement('button');
@@ -210,6 +307,8 @@ export function initLiveNotes() {
         } else if (actions) {
             actions.remove();
         }
+
+        refreshIcons();
     };
 
     const openEdit = (article) => {
@@ -233,11 +332,11 @@ export function initLiveNotes() {
         const visibility = article.dataset.noteVisibility || 'requester_visible';
         editor.innerHTML = `
             <label class="form-label" for="note-edit-${article.dataset.noteId}">Edit note</label>
-            <textarea class="form-control mb-1" id="note-edit-${article.dataset.noteId}" rows="4" data-mentions data-ai-assist data-format-toolbar required></textarea>
+            <textarea class="form-control pg-note-textarea mb-2" id="note-edit-${article.dataset.noteId}" rows="4" data-mentions data-ai-assist data-format-toolbar required></textarea>
             ${visibilityControls(canInternal, visibility)}
-            <div class="d-flex flex-wrap gap-2">
-                <button class="btn btn-sm btn-pg" type="button" data-note-save>Save changes</button>
+            <div class="pg-note-composer-actions is-inline">
                 <button class="btn btn-sm btn-pg-line" type="button" data-note-cancel>Cancel</button>
+                <button class="btn btn-sm btn-pg" type="button" data-note-save>Save changes</button>
             </div>
         `;
         editor.hidden = false;
@@ -254,6 +353,7 @@ export function initLiveNotes() {
         }
         initFormatToolbars(editor);
         initMentions(editor);
+        refreshIcons();
 
         editor.querySelector('[data-note-cancel]')?.addEventListener('click', closeEditor);
         editor.querySelector('[data-note-save]')?.addEventListener('click', async () => {
@@ -335,21 +435,21 @@ export function initLiveNotes() {
             article.remove();
             if (list && !list.querySelector('[data-note-id]')) {
                 const empty = document.createElement('p');
-                empty.className = 'text-muted';
+                empty.className = 'pg-notes-empty';
                 empty.dataset.notesEmpty = '';
-                empty.textContent = 'No notes yet.';
+                empty.textContent = 'No notes yet. Use Add a note to post the first update.';
                 list.appendChild(empty);
             }
+            syncNotesCount(root, list);
             setStatus(status, 'Note deleted.');
         } catch (error) {
             setStatus(status, error.message || 'Could not delete the note.', true);
         }
     };
 
-    // Clean duplicate Edit/Delete groups from notes updated before the fix.
     list?.querySelectorAll('[data-note-id]').forEach((article) => {
         const groups = [...article.querySelectorAll('button[data-note-edit], button[data-note-delete]')]
-            .map((button) => button.closest('span.ms-auto, [data-note-actions]'))
+            .map((button) => button.closest('.pg-note-actions, [data-note-actions], span.ms-auto'))
             .filter(Boolean);
         const unique = [...new Set(groups)];
         if (unique.length > 1) {
@@ -382,14 +482,29 @@ export function initLiveNotes() {
         }
     });
 
+    openTrigger?.addEventListener('click', () => {
+        setComposerOpen(true);
+    });
+
+    form?.querySelector('[data-notes-cancel]')?.addEventListener('click', () => {
+        resetComposer({ close: true });
+        setStatus(status, 'Draft cleared.');
+    });
+
+    form?.addEventListener('plantgrid:draft-restored', () => {
+        setComposerOpen(true);
+    });
+
+    if (form && !form.hidden) {
+        setComposerOpen(true);
+    }
+
     form?.addEventListener('submit', async (event) => {
         event.preventDefault();
         const submit = form.querySelector('[data-notes-submit]');
-        const textarea = form.querySelector('#comment');
         const formData = new FormData(form);
         if (submit) {
             submit.disabled = true;
-            submit.textContent = 'Posting…';
         }
         setStatus(status, 'Posting note…');
 
@@ -414,23 +529,16 @@ export function initLiveNotes() {
             wrapper.innerHTML = noteArticleHtml(payload.comment).trim();
             const article = wrapper.firstElementChild;
             list?.prepend(article);
-            form.reset();
-            if (canInternal) {
-                const internal = form.querySelector('input[name="visibility"][value="internal"]');
-                if (internal) {
-                    internal.checked = true;
-                }
-            }
-            if (textarea) {
-                textarea.value = '';
-            }
+            resetComposer({ close: true });
+            syncNotesCount(root, list);
+            refreshIcons();
             setStatus(status, 'Note posted. Only you can edit it; you or an admin can delete it.');
         } catch (error) {
             setStatus(status, error.message || 'Could not post the note.', true);
+            setComposerOpen(true);
         } finally {
             if (submit) {
                 submit.disabled = false;
-                submit.textContent = 'Post note';
             }
         }
     });

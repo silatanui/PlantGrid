@@ -112,6 +112,7 @@ export function initMentions(root = document) {
                 <button type="button" class="pg-mention-item" data-mention-item data-index="${index}">
                     <span class="pg-mention-copy">
                         <strong>${escapeHtml(item.label)}</strong>
+                        ${item.meta ? `<span class="pg-mention-meta">${escapeHtml(item.meta)}</span>` : ''}
                     </span>
                 </button>
             `).join('');

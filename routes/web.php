@@ -76,6 +76,12 @@ Route::middleware('auth')->group(function () {
         Route::post('/actions/cancel', [AiController::class, 'cancel'])->name('actions.cancel');
         Route::post('/refine', [AiController::class, 'refine'])->name('refine');
         Route::post('/paraphrase', [AiController::class, 'paraphrase'])->name('paraphrase');
+        Route::post('/triage/{ticket}', [AiController::class, 'triage'])
+            ->middleware('permission:tickets.assign')
+            ->name('triage');
+        Route::post('/triage/{ticket}/apply', [AiController::class, 'applyTriage'])
+            ->middleware('permission:tickets.assign')
+            ->name('triage.apply');
     });
 
     Route::get('/dashboard', [DashboardController::class, 'index'])
@@ -141,11 +147,14 @@ Route::middleware('auth')->group(function () {
         Route::post('/helpdesk/{ticket}/transition', [HelpdeskController::class, 'transition'])->name('helpdesk.transition');
         Route::post('/helpdesk/{ticket}/partners', [HelpdeskController::class, 'addPartner'])
             ->name('helpdesk.partners.store');
+        Route::delete('/helpdesk/{ticket}/partners/{partner}', [HelpdeskController::class, 'removePartner'])
+            ->name('helpdesk.partners.destroy');
         Route::post('/helpdesk/{ticket}/comments', [HelpdeskController::class, 'comment'])->name('helpdesk.comment');
         Route::put('/helpdesk/{ticket}/comments/{comment}', [HelpdeskController::class, 'updateComment'])->name('helpdesk.comment.update');
         Route::delete('/helpdesk/{ticket}/comments/{comment}', [HelpdeskController::class, 'deleteComment'])->name('helpdesk.comment.destroy');
         Route::get('/helpdesk/{ticket}/attachments/{attachment}', [HelpdeskController::class, 'download'])->name('helpdesk.attachment');
         Route::get('/helpdesk/{ticket}/attachments/{attachment}/preview', [HelpdeskController::class, 'preview'])->name('helpdesk.attachment.preview');
+        Route::delete('/helpdesk/{ticket}/attachments/{attachment}', [HelpdeskController::class, 'destroyAttachment'])->name('helpdesk.attachment.destroy');
     });
 
     Route::middleware('permission:maintenance.view')->group(function () {

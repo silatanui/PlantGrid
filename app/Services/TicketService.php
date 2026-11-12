@@ -358,7 +358,7 @@ class TicketService
             'visibility' => $visibility,
         ]);
 
-        $entry = $entry->load('author');
+        $entry = $entry->load(['author.roles:id,name']);
         $this->notifications->caseCommented($ticket, $entry, $user);
 
         return $entry;
@@ -383,7 +383,7 @@ class TicketService
             'visibility' => $visibility,
         ]);
 
-        return $entry->fresh(['author']);
+        return $entry->fresh(['author.roles:id,name']);
     }
 
     public function deleteComment(TicketComment $entry, User $user): void

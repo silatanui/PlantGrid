@@ -97,6 +97,60 @@ class HelpdeskAccessTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_admin_can_remove_a_partner_from_a_case(): void
+    {
+        $this->seed();
+
+        $admin = User::query()->where('email', 'amina.okello@northridge.example')->firstOrFail();
+        $partner = User::query()->where('email', 'grace.wanjiku@northridge.example')->firstOrFail();
+        $ticket = SupportTicket::query()
+            ->where('requester_id', '!=', $partner->id)
+            ->where(fn ($query) => $query->whereNull('assigned_to')->orWhere('assigned_to', '!=', $partner->id))
+            ->firstOrFail();
+
+        app(NotificationService::class)->syncPartners($ticket, [$partner->id], 'manual');
+        $this->assertTrue($ticket->fresh()->partners()->where('users.id', $partner->id)->exists());
+
+        $this->actingAs($admin)
+            ->deleteJson(route('helpdesk.partners.destroy', [$ticket, $partner]))
+            ->assertOk()
+            ->assertJsonPath('ok', true);
+
+        $this->assertFalse($ticket->fresh()->partners()->where('users.id', $partner->id)->exists());
+    }
+
+    public function test_employee_cannot_remove_a_partner_from_a_case(): void
+    {
+        $this->seed();
+
+        $grace = User::query()->where('email', 'grace.wanjiku@northridge.example')->firstOrFail();
+        $partner = User::query()->where('email', 'peter.kamau@northridge.example')->firstOrFail();
+        $ticket = SupportTicket::query()->where('requester_id', $grace->id)->firstOrFail();
+
+        app(NotificationService::class)->syncPartners($ticket, [$partner->id], 'manual');
+
+        $this->actingAs($grace)
+            ->deleteJson(route('helpdesk.partners.destroy', [$ticket, $partner]))
+            ->assertForbidden();
+    }
+
+    public function test_admin_cannot_remove_the_case_owner_as_a_partner(): void
+    {
+        $this->seed();
+
+        $admin = User::query()->where('email', 'amina.okello@northridge.example')->firstOrFail();
+        $owner = User::query()->where('email', 'faith.cheruiyot@northridge.example')->firstOrFail();
+        $ticket = SupportTicket::query()->firstOrFail();
+        $ticket->update(['assigned_to' => $owner->id]);
+        app(NotificationService::class)->syncPartners($ticket, [$owner->id], 'ownership');
+
+        $this->actingAs($admin)
+            ->deleteJson(route('helpdesk.partners.destroy', [$ticket, $owner]))
+            ->assertStatus(422);
+
+        $this->assertTrue($ticket->fresh()->isPartner($owner));
+    }
+
     public function test_an_employee_lands_on_my_cases_not_the_ict_queue(): void
     {
         $this->seed();

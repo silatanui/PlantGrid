@@ -41,6 +41,11 @@ class NotificationService
         }
     }
 
+    public function removePartner(SupportTicket $ticket, User $partner): void
+    {
+        $ticket->partners()->detach($partner->id);
+    }
+
     public function caseAssigned(SupportTicket $ticket, User $assignedBy, ?int $previousAssigneeId = null): void
     {
         $this->syncPartners(

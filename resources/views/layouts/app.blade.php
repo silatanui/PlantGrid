@@ -240,7 +240,7 @@
                                         <span class="pg-workspace-tab-meta">{{ $tab['meta'] ?? '' }}</span>
                                         <strong>{{ $tab['label'] }}</strong>
                                     </a>
-                                    <form method="post" action="{{ route('workspace.tabs.close') }}" class="pg-workspace-tab-close">
+                                    <form method="post" action="{{ route('workspace.tabs.close') }}" class="pg-workspace-tab-close" data-no-draft>
                                         @csrf
                                         <input type="hidden" name="key" value="{{ $tab['key'] }}">
                                         @if ($tabActive)

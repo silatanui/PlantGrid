@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\SupportTicket;
 use App\Models\User;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use RuntimeException;
 
 class OpenAiService
@@ -97,6 +99,81 @@ class OpenAiService
                 'content' => $text,
             ],
         ], 0.5);
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $candidates
+     * @return array<string, mixed>
+     */
+    public function triageCase(SupportTicket $ticket, array $candidates): array
+    {
+        $ticket->loadMissing(['requester', 'department', 'category', 'asset.category', 'asset.location']);
+
+        $candidateLines = collect($candidates)->map(function (array $candidate) {
+            return sprintf(
+                '- id:%d · %s · %s · %s · online:%s · open_load:%d · score:%.2f · %s',
+                $candidate['id'],
+                $candidate['name'],
+                $candidate['role'] ?? 'staff',
+                $candidate['department'] ?? 'n/a',
+                ! empty($candidate['online']) ? 'yes' : 'no',
+                (int) ($candidate['open_load'] ?? 0),
+                (float) ($candidate['score'] ?? 0),
+                implode('; ', $candidate['reasons'] ?? [])
+            );
+        })->implode("\n");
+
+        $prompt = implode("\n", [
+            'Case: '.$ticket->ticket_number,
+            'Subject: '.$ticket->subject,
+            'Priority: '.$ticket->priority,
+            'Status: '.$ticket->status,
+            'Category: '.($ticket->category?->name ?? 'n/a'),
+            'Department: '.($ticket->department?->name ?? 'n/a'),
+            'Requester: '.($ticket->requester?->name ?? 'n/a'),
+            'Asset: '.($ticket->asset ? $ticket->asset->asset_tag.' · '.$ticket->asset->name : 'none'),
+            'Location: '.($ticket->asset?->location?->name ?? 'n/a'),
+            'Description:',
+            Str::limit(strip_tags((string) $ticket->description), 1200),
+            '',
+            'Candidate staff (choose only from these ids):',
+            $candidateLines === '' ? '- none' : $candidateLines,
+        ]);
+
+        $content = $this->chat([
+            [
+                'role' => 'system',
+                'content' => implode(' ', [
+                    'You are PlantGrid case triage for fictional Northridge Processing manufacturing ICT.',
+                    'Recommend one owner and up to 3 partners from the candidate list only.',
+                    'Prefer people who are online, have matching expertise, and lower open workload.',
+                    'Prefer ICT Technician for hands-on ownership when suitable; use managers as partners when useful.',
+                    'Do not invent people, assets, or ticket numbers.',
+                    'Return ONLY valid JSON with keys:',
+                    'owner_id (number|null), owner_reason (string),',
+                    'partners (array of {user_id:number, reason:string}),',
+                    'next_steps (array of 3-6 short imperative strings),',
+                    'resolution_outline (string),',
+                    'internal_note (string: actionable internal note for the new owner and partners).',
+                ]),
+            ],
+            [
+                'role' => 'user',
+                'content' => $prompt,
+            ],
+        ], 0.2);
+
+        $json = $content;
+        if (preg_match('/\{.*\}/s', $content, $matches)) {
+            $json = $matches[0];
+        }
+
+        $decoded = json_decode($json, true);
+        if (! is_array($decoded)) {
+            throw new RuntimeException('The AI triage response was not valid JSON.');
+        }
+
+        return $decoded;
     }
 
     /**

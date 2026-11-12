@@ -207,12 +207,81 @@
     @if ($charts !== [])
         <div class="pg-dash-charts">
             @foreach (array_slice($charts, 0, 2) as $chart)
-                <section class="pg-card pg-card-pad">
-                    <h2 class="pg-section-title mb-0">{{ $chart['title'] }}</h2>
-                    <p class="text-muted small">{{ $chart['caption'] }}</p>
-                    <div class="pg-chart pg-chart-dash" data-chart='@json($chart['config'])'>
-                        <canvas aria-label="{{ $chart['title'] }}"></canvas>
+                @php
+                    $layout = $chart['layout'] ?? 'plain';
+                    $segments = $chart['segments'] ?? [];
+                    $toneVar = static function (string $token): string {
+                        return match ($token) {
+                            'pg-accent' => 'var(--pg-navy)',
+                            'pg-deep' => 'var(--pg-navy-deep)',
+                            'pg-critical' => 'var(--pg-critical)',
+                            'pg-warning' => 'var(--pg-warning)',
+                            'pg-success' => 'var(--pg-success)',
+                            'pg-info' => 'var(--pg-info)',
+                            'pg-muted' => 'var(--pg-muted)',
+                            default => $token,
+                        };
+                    };
+                @endphp
+                <section class="pg-card pg-card-pad pg-dash-chart-card">
+                    <div class="pg-dash-chart-head">
+                        <div>
+                            <h2 class="pg-section-title mb-0">{{ $chart['title'] }}</h2>
+                            <p class="text-muted small mb-0">{{ $chart['caption'] }}</p>
+                        </div>
+                        @if (isset($chart['total']))
+                            <div class="pg-dash-chart-total">
+                                <strong>{{ $chart['total'] }}</strong>
+                                <span>{{ $chart['total_label'] ?? '' }}</span>
+                            </div>
+                        @endif
                     </div>
+
+                    @if ($layout === 'donut')
+                        <div class="pg-dash-chart-body pg-dash-chart-body--donut">
+                            <div
+                                class="pg-chart pg-chart-dash pg-chart-dash--donut"
+                                data-chart='@json($chart['config'])'
+                                data-chart-total="{{ $chart['total'] ?? '' }}"
+                                data-chart-total-label="{{ $chart['total_label'] ?? '' }}"
+                            >
+                                <canvas aria-label="{{ $chart['title'] }}"></canvas>
+                            </div>
+                            <ul class="pg-dash-chart-legend">
+                                @foreach ($segments as $segment)
+                                    <li>
+                                        <span class="pg-dash-swatch" style="--pg-swatch: {{ $toneVar($segment['color']) }}"></span>
+                                        <span class="pg-dash-legend-copy">
+                                            <strong>{{ $segment['label'] }}</strong>
+                                            <em>{{ $segment['pct'] }}%</em>
+                                        </span>
+                                        <span class="pg-dash-legend-value">{{ $segment['value'] }}</span>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @elseif ($layout === 'bars')
+                        <ul class="pg-dash-chart-meters" aria-label="{{ $chart['title'] }}">
+                            @foreach ($segments as $segment)
+                                <li>
+                                    <div class="pg-dash-meter-meta">
+                                        <span>
+                                            <span class="pg-dash-swatch" style="--pg-swatch: {{ $toneVar($segment['color']) }}"></span>
+                                            {{ $segment['label'] }}
+                                        </span>
+                                        <strong>{{ $segment['value'] }} <em>{{ $segment['pct'] }}%</em></strong>
+                                    </div>
+                                    <div class="pg-dash-meter" role="presentation">
+                                        <span style="width: {{ max($segment['fill'] ?? $segment['pct'], $segment['value'] > 0 ? 6 : 0) }}%; background: {{ $toneVar($segment['color']) }}"></span>
+                                    </div>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @else
+                        <div class="pg-chart pg-chart-dash" data-chart='@json($chart['config'])'>
+                            <canvas aria-label="{{ $chart['title'] }}"></canvas>
+                        </div>
+                    @endif
                 </section>
             @endforeach
         </div>

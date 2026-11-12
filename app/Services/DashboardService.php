@@ -15,6 +15,7 @@ use App\Models\SecurityControl;
 use App\Models\Server;
 use App\Models\SupportTicket;
 use App\Models\User;
+use App\Support\Labels;
 use Illuminate\Support\Carbon;
 
 class DashboardService
@@ -157,30 +158,77 @@ class DashboardService
 
         if ($user->hasAnyPermission(['tickets.view.all', 'tickets.view.department', 'audit.view'])) {
             $tickets = SupportTicket::query()->visibleTo($user)->get();
+            $statusOrder = ['new', 'assigned', 'in_progress', 'pending', 'pending_vendor', 'resolved', 'closed'];
+            $statusCounts = $tickets->countBy('status');
+            $statusKeys = collect($statusOrder)
+                ->filter(fn ($status) => ($statusCounts[$status] ?? 0) > 0)
+                ->merge($statusCounts->keys()->diff($statusOrder)->sort())
+                ->values();
+            $statusTotal = max(1, $tickets->count());
+            $statusSegments = $statusKeys->map(function ($status) use ($statusCounts, $statusTotal) {
+                $value = (int) ($statusCounts[$status] ?? 0);
+
+                return [
+                    'key' => $status,
+                    'label' => Labels::status($status),
+                    'value' => $value,
+                    'pct' => (int) round(($value / $statusTotal) * 100),
+                    'color' => $this->statusChartColor($status),
+                ];
+            })->all();
+
             $charts[] = [
                 'title' => 'Tickets by status',
-                'caption' => 'Calculated from the ticket register.',
+                'caption' => 'Live mix across the ticket register.',
+                'layout' => 'donut',
+                'total' => $tickets->count(),
+                'total_label' => 'tickets',
+                'segments' => $statusSegments,
                 'config' => $this->doughnut(
-                    $tickets->countBy('status')->sortKeys()->keys()->map(fn ($status) => ucwords(str_replace('_', ' ', $status)))->values()->all(),
-                    $tickets->countBy('status')->sortKeys()->values()->all()
+                    array_column($statusSegments, 'label'),
+                    array_column($statusSegments, 'value'),
+                    array_column($statusSegments, 'color')
                 ),
             ];
+
+            $openTickets = $tickets->whereNotIn('status', ['resolved', 'closed']);
+            $priorityKeys = ['critical', 'high', 'medium', 'low'];
+            $priorityValues = collect($priorityKeys)
+                ->mapWithKeys(fn ($priority) => [$priority => $openTickets->where('priority', $priority)->count()]);
+            $priorityTotal = max(1, $openTickets->count());
+            $priorityMax = max(1, ...$priorityValues->values()->all());
+            $prioritySegments = collect($priorityKeys)->map(function ($priority) use ($priorityValues, $priorityTotal, $priorityMax) {
+                $value = (int) $priorityValues[$priority];
+
+                return [
+                    'key' => $priority,
+                    'label' => Labels::status($priority),
+                    'value' => $value,
+                    'pct' => (int) round(($value / $priorityTotal) * 100),
+                    'fill' => (int) round(($value / $priorityMax) * 100),
+                    'color' => $this->priorityChartColor($priority),
+                ];
+            })->all();
+
             $charts[] = [
                 'title' => 'Open tickets by priority',
-                'caption' => 'Open tickets only.',
+                'caption' => 'Open queue only · bars scaled from zero.',
+                'layout' => 'bars',
+                'total' => $openTickets->count(),
+                'total_label' => 'open',
+                'segments' => $prioritySegments,
                 'config' => $this->bar(
-                    ['Critical', 'High', 'Medium', 'Low'],
+                    array_column($prioritySegments, 'label'),
                     [[
-                        'label' => 'Tickets',
-                        'data' => [
-                            $tickets->whereNotIn('status', ['resolved', 'closed'])->where('priority', 'critical')->count(),
-                            $tickets->whereNotIn('status', ['resolved', 'closed'])->where('priority', 'high')->count(),
-                            $tickets->whereNotIn('status', ['resolved', 'closed'])->where('priority', 'medium')->count(),
-                            $tickets->whereNotIn('status', ['resolved', 'closed'])->where('priority', 'low')->count(),
-                        ],
-                        'backgroundColor' => ['#EA001E', '#DD7A01', '#0176D3', '#706E6B'],
+                        'label' => 'Open tickets',
+                        'data' => array_column($prioritySegments, 'value'),
+                        'backgroundColor' => array_column($prioritySegments, 'color'),
+                        'borderRadius' => 6,
+                        'borderSkipped' => false,
+                        'maxBarThickness' => 42,
                     ]],
-                    false
+                    true,
+                    true
                 ),
             ];
         }
@@ -386,7 +434,31 @@ class DashboardService
         return compact('label', 'value', 'hint', 'icon', 'href', 'tone');
     }
 
-    private function doughnut(array $labels, array $values): array
+    private function statusChartColor(string $status): string
+    {
+        return match ($status) {
+            'new' => 'pg-critical',
+            'assigned' => 'pg-accent',
+            'in_progress' => 'pg-warning',
+            'pending', 'pending_vendor' => 'pg-info',
+            'resolved' => 'pg-success',
+            'closed' => 'pg-deep',
+            default => 'pg-muted',
+        };
+    }
+
+    private function priorityChartColor(string $priority): string
+    {
+        return match ($priority) {
+            'critical' => 'pg-critical',
+            'high' => 'pg-warning',
+            'medium' => 'pg-accent',
+            'low' => 'pg-muted',
+            default => 'pg-muted',
+        };
+    }
+
+    private function doughnut(array $labels, array $values, ?array $colors = null): array
     {
         return [
             'type' => 'doughnut',
@@ -394,32 +466,71 @@ class DashboardService
                 'labels' => $labels,
                 'datasets' => [[
                     'data' => $values,
-                    'backgroundColor' => ['#0176D3', '#032D60', '#DD7A01', '#EA001E', '#0B5CAB', '#706E6B', '#939393', '#747474'],
+                    'backgroundColor' => $colors ?? [
+                        'pg-accent', 'pg-deep', 'pg-warning', 'pg-critical',
+                        'pg-info', 'pg-success', 'pg-muted', '#939393',
+                    ],
+                    'hoverOffset' => 6,
+                    'spacing' => 2,
                     'borderWidth' => 0,
                 ]],
             ],
             'options' => [
-                'plugins' => ['legend' => ['position' => 'bottom']],
-                'cutout' => '62%',
+                'plugins' => [
+                    'legend' => ['display' => false],
+                    'tooltip' => [
+                        'backgroundColor' => '#152028',
+                        'padding' => 10,
+                        'cornerRadius' => 4,
+                        'displayColors' => true,
+                    ],
+                ],
+                'cutout' => '72%',
+                'animation' => [
+                    'animateRotate' => true,
+                    'duration' => 700,
+                ],
             ],
         ];
     }
 
-    private function bar(array $labels, array $datasets, bool $beginAtZero = true): array
+    private function bar(array $labels, array $datasets, bool $beginAtZero = true, bool $indexAxisY = false): array
     {
+        $valueAxis = $indexAxisY ? 'x' : 'y';
+        $categoryAxis = $indexAxisY ? 'y' : 'x';
+
         return [
             'type' => 'bar',
             'data' => [
                 'labels' => $labels,
                 'datasets' => $datasets,
             ],
-            'options' => [
-                'plugins' => ['legend' => ['display' => count($datasets) > 1]],
-                'scales' => [
-                    'y' => ['beginAtZero' => $beginAtZero, 'ticks' => ['precision' => 0]],
-                    'x' => ['grid' => ['display' => false]],
+            'options' => array_filter([
+                'indexAxis' => $indexAxisY ? 'y' : null,
+                'plugins' => [
+                    'legend' => ['display' => count($datasets) > 1],
+                    'tooltip' => [
+                        'backgroundColor' => '#152028',
+                        'padding' => 10,
+                        'cornerRadius' => 4,
+                    ],
                 ],
-            ],
+                'scales' => [
+                    $valueAxis => [
+                        'beginAtZero' => $beginAtZero,
+                        'grace' => '8%',
+                        'ticks' => ['precision' => 0, 'color' => '#5a6773'],
+                        'grid' => ['color' => 'rgba(18, 38, 63, 0.08)', 'drawBorder' => false],
+                        'border' => ['display' => false],
+                    ],
+                    $categoryAxis => [
+                        'grid' => ['display' => false],
+                        'ticks' => ['color' => '#152028', 'font' => ['weight' => '600', 'size' => 11]],
+                        'border' => ['display' => false],
+                    ],
+                ],
+                'animation' => ['duration' => 700],
+            ]),
         ];
     }
 

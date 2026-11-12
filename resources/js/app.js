@@ -11,6 +11,8 @@ import { initFormatToolbars } from './format-toolbar';
 import { initTheme } from './theme';
 import { initWorkspaceTabs } from './workspace-tabs';
 import { initAttachPreview } from './attach-preview';
+import { initCaseTriage } from './case-triage';
+import { initFormDrafts } from './form-drafts';
 
 Chart.register(...registerables);
 Chart.defaults.font.family = 'system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
@@ -24,12 +26,14 @@ document.addEventListener('DOMContentLoaded', () => {
     initAiAssistant(refreshIcons);
     initGlobalSearch();
     initMentions();
-    initLiveNotes();
+    initLiveNotes(refreshIcons);
     initPresence();
     initLiveInbox();
     initFormatToolbars();
     initWorkspaceTabs(refreshIcons);
     initAttachPreview(refreshIcons);
+    initCaseTriage(refreshIcons);
+    initFormDrafts();
 
     const emailInput = document.querySelector('#email');
     const demoButtons = () => document.querySelectorAll('[data-demo-email]');
@@ -185,16 +189,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const accent = themeColor('--pg-navy', '#7d259d');
+        const deep = themeColor('--pg-navy-deep', '#5a1a72');
         const soft = themeColor('--pg-teal-soft', '#f3e9f7');
         const muted = themeColor('--pg-muted', '#5a6773');
         const warning = themeColor('--pg-warning', '#b54708');
         const success = themeColor('--pg-success', '#0b8f9c');
+        const critical = themeColor('--pg-critical', '#b42318');
+        const info = themeColor('--pg-info', accent);
         const palette = {
             'pg-accent': accent,
+            'pg-deep': deep,
             'pg-accent-soft': soft,
             'pg-muted': muted,
             'pg-warning': warning,
             'pg-success': success,
+            'pg-critical': critical,
+            'pg-info': info,
         };
 
         const config = JSON.parse(node.dataset.chart);
@@ -211,7 +221,47 @@ document.addEventListener('DOMContentLoaded', () => {
             if (dataset.borderColor !== undefined) {
                 dataset.borderColor = paintChartColors(dataset.borderColor, palette);
             }
+            if (dataset.borderRadius === undefined && config.type === 'bar') {
+                dataset.borderRadius = 6;
+                dataset.borderSkipped = false;
+            }
+            if (dataset.maxBarThickness === undefined && config.type === 'bar') {
+                dataset.maxBarThickness = 44;
+            }
         });
+
+        const centerTotal = node.dataset.chartTotal;
+        if (centerTotal !== undefined && centerTotal !== '' && config.type === 'doughnut') {
+            const centerLabel = node.dataset.chartTotalLabel || '';
+            const centerPlugin = {
+                id: `pg-center-${Math.random().toString(36).slice(2, 8)}`,
+                afterDraw(chart) {
+                    const { ctx, chartArea } = chart;
+                    if (!chartArea) {
+                        return;
+                    }
+                    const x = (chartArea.left + chartArea.right) / 2;
+                    const y = (chartArea.top + chartArea.bottom) / 2;
+                    ctx.save();
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = accent;
+                    ctx.font = '700 28px IBM Plex Sans, system-ui, sans-serif';
+                    ctx.fillText(String(centerTotal), x, y - (centerLabel ? 8 : 0));
+                    if (centerLabel) {
+                        ctx.fillStyle = muted;
+                        ctx.font = '700 10px IBM Plex Sans, system-ui, sans-serif';
+                        ctx.fillText(centerLabel.toUpperCase(), x, y + 14);
+                    }
+                    ctx.restore();
+                },
+            };
+            config.plugins = [...(config.plugins || []), centerPlugin];
+        }
+
+        Chart.defaults.color = muted;
+        Chart.defaults.borderColor = 'rgba(18, 38, 63, 0.08)';
+        Chart.defaults.font.family = 'IBM Plex Sans, system-ui, sans-serif';
         new Chart(canvas, config);
     });
 

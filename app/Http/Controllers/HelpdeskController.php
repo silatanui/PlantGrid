@@ -10,6 +10,7 @@ use App\Models\TicketAttachment;
 use App\Models\TicketCategory;
 use App\Models\TicketComment;
 use App\Models\User;
+use App\Services\AuditLogger;
 use App\Services\TicketService;
 use App\Support\SearchPages;
 use App\Support\TableSort;
@@ -125,7 +126,7 @@ class HelpdeskController extends Controller
         $ticket->load(['requester', 'assignee', 'partners', 'department', 'category', 'asset.category', 'asset.location', 'application', 'histories.changer', 'attachments.uploader', 'duplicateOf']);
         $canSeeInternal = $request->user()->hasAnyPermission(['tickets.update', 'audit.view'])
             || $ticket->isPartner($request->user());
-        $comments = $ticket->comments()->with('author')->latest()
+        $comments = $ticket->comments()->with(['author.roles:id,name'])->latest()
             ->when(! $canSeeInternal, fn ($query) => $query->where('visibility', 'requester_visible'))
             ->get();
 
@@ -139,24 +140,24 @@ class HelpdeskController extends Controller
             'canTransferOwnership' => $tickets->canTransferOwnership($ticket, $request->user()),
             'isCasePartner' => $ticket->isPartner($request->user()),
             'technicians' => User::query()
+                ->with(['roles:id,name', 'department:id,name,code'])
                 ->where('status', 'active')
                 ->when(
                     ! $request->user()->hasPermission('tickets.assign'),
                     fn ($query) => $query->whereIn('id', $ticket->partners->pluck('id')->all() ?: [0])
                 )
-                ->when(
-                    $request->user()->hasPermission('tickets.assign'),
-                    fn ($query) => $query->whereHas('roles', fn ($roles) => $roles->whereIn('name', ['ICT Technician', 'ICT Manager', 'System Administrator', 'Department Manager']))
-                )
                 ->orderBy('name')
-                ->get(['id', 'name', 'last_seen_at', 'status']),
+                ->get(['id', 'name', 'email', 'job_title', 'department_id', 'last_seen_at', 'status']),
             'presence' => app(\App\Services\PresenceService::class),
             'partnerCandidates' => User::query()
+                ->with(['roles:id,name', 'department:id,name,code'])
                 ->where('status', 'active')
                 ->whereNotIn('id', $ticket->partners->pluck('id')->all())
                 ->orderBy('name')
-                ->limit(80)
-                ->get(['id', 'name', 'email']),
+                ->get(['id', 'name', 'email', 'job_title', 'department_id']),
+            'canTriage' => $request->user()->hasPermission('tickets.assign')
+                && ! in_array($ticket->status, ['resolved', 'closed'], true),
+            'canRemovePartners' => $request->user()->hasPermission('tickets.assign'),
         ]);
     }
 
@@ -178,14 +179,104 @@ class HelpdeskController extends Controller
 
         $partner = User::query()->whereKey($data['user_id'])->where('status', 'active')->firstOrFail();
         $notifications->syncPartners($ticket, [$partner->id], 'manual');
+        $ticket->load('partners');
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'message' => $partner->name.' was added as a case partner.',
+                'partner' => [
+                    'id' => $partner->id,
+                    'name' => $partner->name,
+                    'url' => route('people.show', $partner),
+                    'source' => 'manual',
+                ],
+                'partners' => $this->partnerPayload($ticket),
+            ]);
+        }
 
         return back()->with('status', $partner->name.' was added as a case partner.');
+    }
+
+    public function removePartner(Request $request, SupportTicket $ticket, User $partner, \App\Services\NotificationService $notifications, AuditLogger $audit)
+    {
+        $this->visible($request, $ticket);
+        abort_unless($request->user()->hasPermission('tickets.assign'), 403);
+
+        if (! $ticket->isPartner($partner)) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'ok' => false,
+                    'message' => $partner->name.' is not a partner on this case.',
+                ], 422);
+            }
+
+            return back()->withErrors(['partner' => $partner->name.' is not a partner on this case.']);
+        }
+
+        if ($ticket->assigned_to && (int) $ticket->assigned_to === (int) $partner->id) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'ok' => false,
+                    'message' => 'The case owner cannot be removed as a partner. Transfer ownership first.',
+                ], 422);
+            }
+
+            return back()->withErrors(['partner' => 'The case owner cannot be removed as a partner. Transfer ownership first.']);
+        }
+
+        $notifications->removePartner($ticket, $partner);
+        $audit->log('ticket.partner.remove', 'support_ticket', $ticket->id, [
+            'partner_id' => $partner->id,
+            'partner_name' => $partner->name,
+        ], []);
+        $ticket->load('partners');
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'message' => $partner->name.' was removed from case partners.',
+                'removed_partner_id' => $partner->id,
+                'partners' => $this->partnerPayload($ticket),
+            ]);
+        }
+
+        return back()->with('status', $partner->name.' was removed from case partners.');
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function partnerPayload(SupportTicket $ticket): array
+    {
+        return $ticket->partners->map(fn (User $person) => [
+            'id' => $person->id,
+            'name' => $person->name,
+            'url' => route('people.show', $person),
+            'source' => $person->pivot->source ?? 'manual',
+        ])->values()->all();
     }
 
     public function takeOwnership(Request $request, SupportTicket $ticket, TicketService $tickets)
     {
         $this->visible($request, $ticket);
         $tickets->takeOwnership($ticket, $request->user());
+        $ticket->refresh()->load('assignee');
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'message' => 'You now own '.$ticket->ticket_number.'.',
+                'owner' => [
+                    'id' => $request->user()->id,
+                    'name' => $request->user()->name,
+                    'url' => route('people.show', $request->user()),
+                ],
+                'assigned_to' => $request->user()->id,
+                'status' => $ticket->status,
+                'status_badge' => \App\Support\Labels::badge((string) $ticket->status),
+            ]);
+        }
 
         return back()->with('status', 'You now own '.$ticket->ticket_number.'.');
     }
@@ -205,6 +296,28 @@ class HelpdeskController extends Controller
             $request->user(),
             $data['note'] ?? $request->user()->name.' transferred ownership to '.$assignee->name.'.'
         );
+        $ticket->refresh()->load(['assignee', 'partners']);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'message' => $ticket->ticket_number.' was transferred to '.$assignee->name.'.',
+                'owner' => [
+                    'id' => $assignee->id,
+                    'name' => $assignee->name,
+                    'url' => route('people.show', $assignee),
+                ],
+                'assigned_to' => $assignee->id,
+                'status' => $ticket->status,
+                'status_badge' => \App\Support\Labels::badge((string) $ticket->status),
+                'partners' => $ticket->partners->map(fn (User $person) => [
+                    'id' => $person->id,
+                    'name' => $person->name,
+                    'url' => route('people.show', $person),
+                    'source' => $person->pivot->source ?? 'manual',
+                ])->values()->all(),
+            ]);
+        }
 
         return back()->with('status', $ticket->ticket_number.' was transferred to '.$assignee->name.'.');
     }
@@ -328,10 +441,14 @@ class HelpdeskController extends Controller
      */
     private function commentPayload(TicketComment $comment, $user): array
     {
+        $author = $comment->author;
+
         return [
             'id' => $comment->id,
-            'author' => $comment->author?->name ?? 'User',
+            'author' => $author?->name ?? 'User',
             'author_id' => $comment->user_id,
+            'author_initials' => $author?->initials() ?? 'U',
+            'author_role' => $author?->shortRoleLabel() ?? 'User',
             'comment' => $comment->comment,
             'html' => \App\Support\RichText::render($comment->comment),
             'visibility' => $comment->visibility,
@@ -368,6 +485,37 @@ class HelpdeskController extends Controller
             'Content-Disposition' => 'inline; filename="'.$attachment->original_name.'"',
             'Cache-Control' => 'private, max-age=3600',
         ]);
+    }
+
+    public function destroyAttachment(Request $request, SupportTicket $ticket, TicketAttachment $attachment, AuditLogger $audit)
+    {
+        $this->visible($request, $ticket);
+        abort_unless($attachment->support_ticket_id === $ticket->id, 404);
+        abort_unless($request->user()->canDeleteTicketAttachment($attachment), 403);
+
+        $path = $attachment->storage_path;
+        $name = $attachment->original_name;
+        $id = $attachment->id;
+
+        if ($path && Storage::disk('local')->exists($path)) {
+            Storage::disk('local')->delete($path);
+        }
+
+        $attachment->delete();
+        $audit->log('ticket.attachment.delete', 'support_ticket', $ticket->id, [
+            'attachment_id' => $id,
+            'original_name' => $name,
+        ], []);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'message' => $name.' was deleted.',
+                'attachment_id' => $id,
+            ]);
+        }
+
+        return back()->with('status', $name.' was deleted.');
     }
 
     private function visible(Request $request, SupportTicket $ticket): void

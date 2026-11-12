@@ -26,13 +26,52 @@ class MaintenanceController extends Controller
             'desc',
         );
 
+        $base = MaintenanceRecord::query()
+            ->with([
+                'asset',
+                'server',
+                'networkDevice',
+                'equipment.system',
+                'equipment.asset',
+                'technician',
+                'vendor',
+            ])
+            ->when($request->user()->limitsRecordsToDepartment(), function ($query) use ($request) {
+                $query->whereHas('asset', fn ($asset) => $asset->where('department_id', $request->user()->department_id));
+            });
+
+        $summaryBase = (clone $base);
+        $summary = [
+            'open' => (clone $summaryBase)->whereNotIn('status', ['completed', 'cancelled'])->count(),
+            'scheduled' => (clone $summaryBase)->where('status', 'scheduled')->count(),
+            'in_progress' => (clone $summaryBase)->where('status', 'in_progress')->count(),
+            'pending_vendor' => (clone $summaryBase)->where('status', 'pending_vendor')->count(),
+            'completed' => (clone $summaryBase)->where('status', 'completed')->count(),
+            'overdue' => (clone $summaryBase)
+                ->whereNotIn('status', ['completed', 'cancelled'])
+                ->whereNotNull('scheduled_at')
+                ->where('scheduled_at', '<', now())
+                ->count(),
+        ];
+
         $records = $sort->apply(
-            MaintenanceRecord::query()
-                ->with(['asset', 'server', 'networkDevice', 'equipment', 'technician', 'vendor'])
-                ->when($request->user()->limitsRecordsToDepartment(), function ($query) use ($request) {
-                    $query->whereHas('asset', fn ($asset) => $asset->where('department_id', $request->user()->department_id));
-                })
+            (clone $base)
                 ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')))
+                ->when($request->filled('type'), fn ($query) => $query->where('maintenance_type', $request->string('type')))
+                ->when($request->filled('priority'), fn ($query) => $query->where('priority', $request->string('priority')))
+                ->when($request->filled('q'), function ($query) use ($request) {
+                    $term = '%'.$request->string('q').'%';
+                    $query->where(function ($inner) use ($term) {
+                        $inner->where('subject', 'like', $term)
+                            ->orWhere('description', 'like', $term)
+                            ->orWhere('notes', 'like', $term);
+                    });
+                })
+                ->when($request->boolean('overdue'), function ($query) {
+                    $query->whereNotIn('status', ['completed', 'cancelled'])
+                        ->whereNotNull('scheduled_at')
+                        ->where('scheduled_at', '<', now());
+                })
         )
             ->paginate(12)
             ->withQueryString();
@@ -40,10 +79,18 @@ class MaintenanceController extends Controller
         return view('maintenance.index', [
             'title' => 'Maintenance',
             'records' => $records,
+            'summary' => $summary,
+            'filters' => [
+                'q' => (string) $request->string('q'),
+                'status' => (string) $request->string('status'),
+                'type' => (string) $request->string('type'),
+                'priority' => (string) $request->string('priority'),
+                'overdue' => $request->boolean('overdue'),
+            ],
             'assets' => Asset::query()->orderBy('asset_tag')->limit(200)->get(),
             'servers' => Server::query()->orderBy('hostname')->get(),
             'devices' => NetworkDevice::query()->orderBy('hostname')->get(),
-            'equipment' => ProductionEquipment::query()->orderBy('equipment_type')->get(),
+            'equipment' => ProductionEquipment::query()->with('system')->orderBy('equipment_type')->get(),
             'technicians' => User::query()->where('status', 'active')->orderBy('name')->get(),
             'vendors' => Vendor::query()->orderBy('name')->get(),
             'sort' => $sort,
@@ -108,10 +155,29 @@ class MaintenanceController extends Controller
         $previous = $maintenance->status;
         $maintenance->status = $data['status'];
         $maintenance->notes = $data['notes'] ?? $maintenance->notes;
-        $maintenance->completed_at = $data['status'] === 'completed' ? now() : $maintenance->completed_at;
-        $maintenance->save();
-        $audit->log('maintenance.updated', 'maintenance_record', $maintenance->id, ['status' => $previous], ['status' => $maintenance->status]);
 
-        return back()->with('status', 'Maintenance status updated.');
+        if ($data['status'] === 'completed') {
+            $maintenance->completed_at = $maintenance->completed_at ?? now();
+        } else {
+            // Allow undoing an accidental complete click.
+            $maintenance->completed_at = null;
+        }
+
+        $maintenance->save();
+        $audit->log(
+            'maintenance.updated',
+            'maintenance_record',
+            $maintenance->id,
+            ['status' => $previous, 'completed_at' => $previous === 'completed'],
+            ['status' => $maintenance->status, 'completed_at' => $maintenance->completed_at]
+        );
+
+        $message = $data['status'] === 'completed'
+            ? 'Maintenance marked complete.'
+            : ($previous === 'completed'
+                ? 'Maintenance reopened — status set to '.\App\Support\Labels::status($data['status']).'.'
+                : 'Maintenance status updated.');
+
+        return back()->with('status', $message);
     }
 }

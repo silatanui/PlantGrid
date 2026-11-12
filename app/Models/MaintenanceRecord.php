@@ -47,4 +47,59 @@ class MaintenanceRecord extends Model
     {
         return $this->belongsTo(Vendor::class);
     }
+
+    /**
+     * @return array{kind: string, label: string, detail: ?string, url: ?string}|null
+     */
+    public function linkedTarget(): ?array
+    {
+        if ($this->asset) {
+            return [
+                'kind' => 'Asset',
+                'label' => $this->asset->asset_tag,
+                'detail' => $this->asset->name,
+                'url' => route('assets.show', $this->asset),
+            ];
+        }
+
+        if ($this->server) {
+            return [
+                'kind' => 'Server',
+                'label' => $this->server->hostname,
+                'detail' => $this->server->server_role ?? null,
+                'url' => route('servers.show', $this->server),
+            ];
+        }
+
+        if ($this->networkDevice) {
+            return [
+                'kind' => 'Network',
+                'label' => $this->networkDevice->hostname,
+                'detail' => $this->networkDevice->device_type ?? null,
+                'url' => route('network.show', $this->networkDevice),
+            ];
+        }
+
+        if ($this->equipment) {
+            $url = null;
+            if ($this->equipment->relationLoaded('system') && $this->equipment->system) {
+                $url = route('production.show', $this->equipment->system);
+            } elseif ($this->equipment->relationLoaded('asset') && $this->equipment->asset) {
+                $url = route('assets.show', $this->equipment->asset);
+            } elseif ($this->equipment->production_system_id) {
+                $url = route('production.show', $this->equipment->production_system_id);
+            } elseif ($this->equipment->asset_id) {
+                $url = route('assets.show', $this->equipment->asset_id);
+            }
+
+            return [
+                'kind' => 'Equipment',
+                'label' => $this->equipment->equipment_type,
+                'detail' => trim(($this->equipment->manufacturer ?? '').' '.($this->equipment->model ?? '')) ?: null,
+                'url' => $url,
+            ];
+        }
+
+        return null;
+    }
 }
