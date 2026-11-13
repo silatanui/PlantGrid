@@ -91,6 +91,13 @@ class SearchPages
                 'permission' => ['tickets.view.department', 'tickets.view.all', 'tickets.update'],
             ],
             [
+                'title' => 'Plant map',
+                'summary' => 'Interactive Northridge floor plan with locations and installed devices.',
+                'keywords' => ['plant map', 'floor plan', 'main entrance', 'location map', 'where is'],
+                'url' => route('locations.index'),
+                'permission' => ['assets.view', 'network.view'],
+            ],
+            [
                 'title' => 'New case',
                 'summary' => 'Open a new helpdesk case.',
                 'keywords' => ['new case', 'create case', 'report issue', 'open ticket'],

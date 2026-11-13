@@ -4,9 +4,12 @@
     <div class="d-flex justify-content-between align-items-end gap-2 mb-3">
         <div>
             <h1 class="pg-page-title">Reports</h1>
-            <p class="pg-page-lead">{{ $catalog[$selected]['label'] }} · {{ $total }} rows. The table shows the first 50.</p>
+            <p class="pg-page-lead">{{ $catalog[$selected]['label'] }} · {{ $total }} rows. The table shows the first 50. Names and codes open the related record.</p>
         </div>
         <div class="d-flex flex-wrap gap-2">
+            @if (auth()->user()->hasAnyPermission(['assets.view', 'network.view']))
+                <a class="btn btn-pg-line" href="{{ route('locations.index') }}">Plant map</a>
+            @endif
             <a class="btn btn-pg-line" href="{{ route('performance.index') }}">Worker performance</a>
             @if ($canExport)
                 <a class="btn btn-pg" href="{{ route('reports.export', ['report' => $selected]) }}">Export CSV</a>
@@ -23,7 +26,21 @@
             <thead><tr>@foreach ($headers as $header)<th>{{ $header }}</th>@endforeach</tr></thead>
             <tbody>
             @forelse ($rows as $row)
-                <tr>@foreach ($row as $cell)<td>{{ $cell }}</td>@endforeach</tr>
+                <tr>
+                    @foreach ($row as $cell)
+                        @php
+                            $text = is_array($cell) ? ($cell['text'] ?? '') : $cell;
+                            $url = is_array($cell) ? ($cell['url'] ?? null) : null;
+                        @endphp
+                        <td>
+                            @if ($url)
+                                <a href="{{ $url }}">{{ $text }}</a>
+                            @else
+                                {{ $text }}
+                            @endif
+                        </td>
+                    @endforeach
+                </tr>
             @empty
                 <tr><td class="text-muted">No rows.</td></tr>
             @endforelse

@@ -83,7 +83,13 @@
                     </td>
                     <td>{{ $asset->category->name ?? '-' }}</td>
                     <td>{{ $asset->department->code ?? '-' }}</td>
-                    <td>{{ $asset->location->name ?? '-' }}</td>
+                    <td>
+                        @if ($asset->location)
+                            <a href="{{ route('locations.show', $asset->location) }}">{{ $asset->location->name }}</a>
+                        @else
+                            -
+                        @endif
+                    </td>
                     <td>{!! \App\Support\Labels::badge($asset->status) !!}</td>
                 </tr>
             @empty

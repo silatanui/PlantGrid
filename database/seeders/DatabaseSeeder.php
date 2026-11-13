@@ -157,21 +157,25 @@ class DatabaseSeeder extends Seeder
         });
 
         $locations = collect([
-            ['Server Room', 'SRV-RM', 'ICT', 'Controlled room for demonstration servers.'],
-            ['ICT Office', 'ICT-OF', 'ICT', 'ICT support office.'],
-            ['Packaging Hall', 'PKG-HL', 'PRD', 'Fictional packaging area.'],
-            ['Processing Hall', 'PRC-HL', 'PRD', 'Fictional processing area.'],
-            ['QA Laboratory', 'QA-LAB', 'QA', 'Quality laboratory.'],
-            ['Warehouse Office', 'WHS-OF', 'WHS', 'Warehouse supervision desk.'],
-            ['Administration Block', 'ADM-BL', 'FIN', 'Office block.'],
-            ['Main Entrance', 'GATE', 'ICT', 'Entrance used for the CCTV record.'],
+            ['Server Room', 'SRV-RM', 'ICT', 'Controlled room for demonstration servers.', 'srv-rm'],
+            ['ICT Office', 'ICT-OF', 'ICT', 'ICT support office.', 'ict-of'],
+            ['Packaging Hall', 'PKG-HL', 'PRD', 'Fictional packaging area.', 'pkg-hl'],
+            ['Processing Hall', 'PRC-HL', 'PRD', 'Fictional processing area.', 'prc-hl'],
+            ['QA Laboratory', 'QA-LAB', 'QA', 'Quality laboratory.', 'qa-lab'],
+            ['Warehouse Office', 'WHS-OF', 'WHS', 'Warehouse supervision desk.', 'whs-of'],
+            ['Administration Block', 'ADM-BL', 'FIN', 'Office block.', 'adm-bl'],
+            ['Main Entrance', 'GATE', 'ICT', 'Entrance used for the CCTV record.', 'gate'],
         ])->mapWithKeys(function ($row) use ($departments) {
+            $zone = \App\Support\PlantMap::zone($row[4]);
             $location = Location::query()->create([
                 'name' => $row[0],
                 'code' => $row[1],
                 'department_id' => $departments[$row[2]]->id,
                 'description' => $row[3],
                 'status' => 'active',
+                'map_zone' => $row[4],
+                'map_x' => $zone['x'] ?? null,
+                'map_y' => $zone['y'] ?? null,
             ]);
 
             return [$row[1] => $location];

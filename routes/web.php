@@ -11,6 +11,7 @@ use App\Http\Controllers\DocsController;
 use App\Http\Controllers\HelpdeskController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LiveInboxController;
+use App\Http\Controllers\LocationController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\MentionController;
 use App\Http\Controllers\MessageController;
@@ -103,6 +104,11 @@ Route::middleware('auth')->group(function () {
     // Detail is authorised in the controller so case partners can open a linked
     // device without Assets register permission. Keep after /assets/create.
     Route::get('/assets/{asset}', [AssetController::class, 'show'])->name('assets.show');
+
+    Route::middleware('permission:assets.view,network.view')->group(function () {
+        Route::get('/locations', [LocationController::class, 'index'])->name('locations.index');
+        Route::get('/locations/{location}', [LocationController::class, 'show'])->name('locations.show');
+    });
 
     Route::middleware('permission:network.view')->group(function () {
         Route::get('/network', [NetworkController::class, 'index'])->name('network.index');

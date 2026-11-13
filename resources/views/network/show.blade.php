@@ -9,7 +9,15 @@
             <dt>Status</dt><dd>{!! \App\Support\Labels::badge($device->status) !!}</dd>
             <dt>Management IP</dt><dd class="pg-mono">{{ $device->management_ip ?: '-' }}</dd>
             <dt>Model</dt><dd>{{ $device->manufacturer }} {{ $device->model }}</dd>
-            <dt>Location</dt><dd>{{ $device->location->name ?? '-' }}</dd>
+            <dt>Location</dt>
+            <dd>
+                @if ($device->location)
+                    <a href="{{ route('locations.show', $device->location) }}">{{ $device->location->name }}</a>
+                    <span class="text-muted small">· {{ $device->location->code }}</span>
+                @else
+                    -
+                @endif
+            </dd>
             <dt>Asset</dt><dd>@if ($device->asset)<a href="{{ route('assets.show', $device->asset) }}">{{ $device->asset->asset_tag }}</a>@else - @endif</dd>
             <dt>Notes</dt><dd>{{ $device->notes ?: '-' }}</dd>
         </dl>

@@ -56,9 +56,17 @@ class ReportController extends Controller
             $reports['assets'] = [
                 'label' => 'ICT asset inventory',
                 'headers' => ['Tag', 'Name', 'Category', 'Department', 'Location', 'Status', 'Condition'],
-                'rows' => $assets->map(fn ($asset) => [
-                    $asset->asset_tag, $asset->name, $asset->category->name ?? '', $asset->department->name ?? '',
-                    $asset->location->name ?? '', $asset->status, $asset->condition,
+                'rows' => $assets->map(fn (Asset $asset) => [
+                    $this->cell($asset->asset_tag, route('assets.show', $asset)),
+                    $this->cell($asset->name, route('assets.show', $asset)),
+                    $this->cell($asset->category->name ?? ''),
+                    $this->cell($asset->department->name ?? ''),
+                    $this->cell(
+                        $asset->location->name ?? '',
+                        $asset->location ? route('locations.show', $asset->location) : null
+                    ),
+                    $this->cell($asset->status),
+                    $this->cell($asset->condition),
                 ]),
             ];
         }
@@ -67,15 +75,25 @@ class ReportController extends Controller
             $reports['network'] = [
                 'label' => 'Network devices',
                 'headers' => ['Hostname', 'Type', 'Management IP', 'Status'],
-                'rows' => NetworkDevice::query()->orderBy('hostname')->get()->map(fn ($device) => [
-                    $device->hostname, $device->device_type, $device->management_ip, $device->status,
+                'rows' => NetworkDevice::query()->orderBy('hostname')->get()->map(fn (NetworkDevice $device) => [
+                    $this->cell($device->hostname, route('network.show', $device)),
+                    $this->cell($device->device_type),
+                    $this->cell($device->management_ip ?? ''),
+                    $this->cell($device->status),
                 ]),
             ];
             $reports['addresses'] = [
                 'label' => 'IP address register',
                 'headers' => ['Address', 'Subnet', 'Type', 'Status', 'Device'],
-                'rows' => IpAddress::query()->with(['subnet', 'networkDevice'])->orderBy('ip_address')->get()->map(fn ($address) => [
-                    $address->ip_address, $address->subnet?->label(), $address->address_type, $address->status, $address->networkDevice->hostname ?? '',
+                'rows' => IpAddress::query()->with(['subnet', 'networkDevice'])->orderBy('ip_address')->get()->map(fn (IpAddress $address) => [
+                    $this->cell($address->ip_address),
+                    $this->cell($address->subnet?->label() ?? ''),
+                    $this->cell($address->address_type),
+                    $this->cell($address->status),
+                    $this->cell(
+                        $address->networkDevice->hostname ?? '',
+                        $address->networkDevice ? route('network.show', $address->networkDevice) : null
+                    ),
                 ]),
             ];
         }
@@ -84,8 +102,12 @@ class ReportController extends Controller
             $reports['servers'] = [
                 'label' => 'Server inventory',
                 'headers' => ['Hostname', 'Role', 'Operating system', 'Environment', 'Status'],
-                'rows' => Server::query()->orderBy('hostname')->get()->map(fn ($server) => [
-                    $server->hostname, $server->server_role, $server->operating_system.' '.$server->os_version, $server->environment, $server->status,
+                'rows' => Server::query()->orderBy('hostname')->get()->map(fn (Server $server) => [
+                    $this->cell($server->hostname, route('servers.show', $server)),
+                    $this->cell($server->server_role ?? ''),
+                    $this->cell(trim(($server->operating_system ?? '').' '.($server->os_version ?? ''))),
+                    $this->cell($server->environment ?? ''),
+                    $this->cell($server->status),
                 ]),
             ];
         }
@@ -94,8 +116,12 @@ class ReportController extends Controller
             $reports['tickets'] = [
                 'label' => 'Helpdesk tickets',
                 'headers' => ['Number', 'Subject', 'Priority', 'Status', 'Department'],
-                'rows' => SupportTicket::query()->visibleTo($user)->with('department')->latest('reported_at')->get()->map(fn ($ticket) => [
-                    $ticket->ticket_number, $ticket->subject, $ticket->priority, $ticket->status, $ticket->department->name ?? '',
+                'rows' => SupportTicket::query()->visibleTo($user)->with('department')->latest('reported_at')->get()->map(fn (SupportTicket $ticket) => [
+                    $this->cell($ticket->ticket_number, route('helpdesk.show', $ticket)),
+                    $this->cell($ticket->subject, route('helpdesk.show', $ticket)),
+                    $this->cell($ticket->priority),
+                    $this->cell($ticket->status),
+                    $this->cell($ticket->department->name ?? ''),
                 ]),
             ];
         }
@@ -104,9 +130,16 @@ class ReportController extends Controller
             $reports['maintenance'] = [
                 'label' => 'Maintenance history',
                 'headers' => ['Subject', 'Type', 'Status', 'Scheduled'],
-                'rows' => MaintenanceRecord::query()->latest('scheduled_at')->get()->map(fn ($record) => [
-                    $record->subject, $record->maintenance_type, $record->status, optional($record->scheduled_at)->toDateTimeString(),
-                ]),
+                'rows' => MaintenanceRecord::query()->with('asset')->latest('scheduled_at')->get()->map(function (MaintenanceRecord $record) {
+                    $url = $record->asset_id ? route('assets.show', $record->asset_id) : null;
+
+                    return [
+                        $this->cell($record->subject, $url),
+                        $this->cell($record->maintenance_type),
+                        $this->cell($record->status),
+                        $this->cell(optional($record->scheduled_at)->toDateTimeString() ?? ''),
+                    ];
+                }),
             ];
         }
 
@@ -114,8 +147,11 @@ class ReportController extends Controller
             $reports['production'] = [
                 'label' => 'Production incidents',
                 'headers' => ['Severity', 'Status', 'Impact', 'Downtime minutes'],
-                'rows' => ProductionIncident::query()->latest('reported_at')->get()->map(fn ($incident) => [
-                    $incident->severity, $incident->status, $incident->operational_impact, $incident->downtime_minutes,
+                'rows' => ProductionIncident::query()->latest('reported_at')->get()->map(fn (ProductionIncident $incident) => [
+                    $this->cell($incident->severity),
+                    $this->cell($incident->status),
+                    $this->cell($incident->operational_impact ?? ''),
+                    $this->cell((string) ($incident->downtime_minutes ?? '')),
                 ]),
             ];
         }
@@ -124,15 +160,20 @@ class ReportController extends Controller
             $reports['security'] = [
                 'label' => 'Security incidents',
                 'headers' => ['Type', 'Severity', 'Status', 'Reported'],
-                'rows' => SecurityIncident::query()->latest('reported_at')->get()->map(fn ($incident) => [
-                    $incident->incident_type, $incident->severity, $incident->status, optional($incident->reported_at)->toDateTimeString(),
+                'rows' => SecurityIncident::query()->latest('reported_at')->get()->map(fn (SecurityIncident $incident) => [
+                    $this->cell($incident->incident_type),
+                    $this->cell($incident->severity),
+                    $this->cell($incident->status),
+                    $this->cell(optional($incident->reported_at)->toDateTimeString() ?? ''),
                 ]),
             ];
             $reports['compliance'] = [
                 'label' => 'Compliance checks',
                 'headers' => ['Control', 'Result', 'Review date'],
-                'rows' => ComplianceCheck::query()->with('control')->latest('review_date')->get()->map(fn ($check) => [
-                    $check->control->name ?? '', $check->result, optional($check->review_date)->toDateString(),
+                'rows' => ComplianceCheck::query()->with('control')->latest('review_date')->get()->map(fn (ComplianceCheck $check) => [
+                    $this->cell($check->control->name ?? ''),
+                    $this->cell($check->result),
+                    $this->cell(optional($check->review_date)->toDateString() ?? ''),
                 ]),
             ];
         }
@@ -141,8 +182,11 @@ class ReportController extends Controller
             $reports['backups'] = [
                 'label' => 'Backup runs',
                 'headers' => ['Plan', 'Result', 'Source', 'Started'],
-                'rows' => BackupRun::query()->with('plan')->latest('started_at')->get()->map(fn ($run) => [
-                    $run->plan->name ?? '', $run->result, $run->data_source, optional($run->started_at)->toDateTimeString(),
+                'rows' => BackupRun::query()->with('plan')->latest('started_at')->get()->map(fn (BackupRun $run) => [
+                    $this->cell($run->plan->name ?? ''),
+                    $this->cell($run->result),
+                    $this->cell($run->data_source ?? ''),
+                    $this->cell(optional($run->started_at)->toDateTimeString() ?? ''),
                 ]),
             ];
         }
@@ -151,12 +195,26 @@ class ReportController extends Controller
             $reports['alerts'] = [
                 'label' => 'Monitoring alerts',
                 'headers' => ['Severity', 'Status', 'Source', 'Message'],
-                'rows' => MonitoringAlert::query()->latest('triggered_at')->limit(200)->get()->map(fn ($alert) => [
-                    $alert->severity, $alert->status, $alert->source, $alert->message,
+                'rows' => MonitoringAlert::query()->latest('triggered_at')->limit(200)->get()->map(fn (MonitoringAlert $alert) => [
+                    $this->cell($alert->severity),
+                    $this->cell($alert->status),
+                    $this->cell($alert->source ?? ''),
+                    $this->cell($alert->message),
                 ]),
             ];
         }
 
         return $reports;
+    }
+
+    /**
+     * @return array{text: string, url: ?string}
+     */
+    private function cell(string $text, ?string $url = null): array
+    {
+        return [
+            'text' => $text,
+            'url' => $url,
+        ];
     }
 }

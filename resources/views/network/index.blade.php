@@ -28,7 +28,13 @@
                         <td class="pg-mono"><a href="{{ route('network.show', $device) }}">{{ $device->hostname }}</a></td>
                         <td>{{ \App\Support\Labels::status($device->device_type) }}</td>
                         <td class="pg-mono">{{ $device->management_ip }}</td>
-                        <td>{{ $device->location->name ?? '-' }}</td>
+                        <td>
+                            @if ($device->location)
+                                <a href="{{ route('locations.show', $device->location) }}">{{ $device->location->name }}</a>
+                            @else
+                                -
+                            @endif
+                        </td>
                         <td>{!! \App\Support\Labels::badge($device->status) !!}</td>
                     </tr>
                 @endforeach

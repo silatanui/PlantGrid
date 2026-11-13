@@ -58,6 +58,7 @@ class Navigation
             ),
             'Infrastructure' => [
                 ['label' => 'Assets', 'route' => 'assets.index', 'pattern' => 'assets.*', 'icon' => 'boxes', 'permission' => 'assets.view'],
+                ['label' => 'Plant map', 'route' => 'locations.index', 'pattern' => 'locations.*', 'icon' => 'map', 'permission' => 'assets.view'],
                 ['label' => 'Network', 'route' => 'network.index', 'pattern' => 'network.*', 'icon' => 'network', 'permission' => 'network.view'],
                 ['label' => 'Servers', 'route' => 'servers.index', 'pattern' => 'servers.*', 'icon' => 'server', 'permission' => 'servers.view'],
                 ['label' => 'Production', 'route' => 'production.index', 'pattern' => 'production.*', 'icon' => 'factory', 'permission' => 'production.view'],
@@ -142,6 +143,10 @@ class Navigation
     {
         if ($item['permission'] === 'tickets.view.own') {
             return $user->hasAnyPermission(['tickets.view.own', 'tickets.view.department', 'tickets.view.all']);
+        }
+
+        if (($item['route'] ?? '') === 'locations.index') {
+            return $user->hasAnyPermission(['assets.view', 'network.view']);
         }
 
         return $user->hasPermission($item['permission']);

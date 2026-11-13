@@ -24,6 +24,10 @@ class Csv
 
     public static function cell(mixed $value): string
     {
+        if (is_array($value)) {
+            $value = $value['text'] ?? '';
+        }
+
         $text = (string) ($value ?? '');
 
         if (preg_match('/^[=+\-@]/', $text) === 1) {

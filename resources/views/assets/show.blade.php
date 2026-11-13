@@ -33,7 +33,15 @@
                     <dt>Manufacturer</dt><dd>{{ $asset->manufacturer ?: '-' }} {{ $asset->model }}</dd>
                     <dt>Serial</dt><dd class="pg-mono">{{ $asset->serial_number ?: '-' }}</dd>
                     <dt>Department</dt><dd>{{ $asset->department->name ?? '-' }}</dd>
-                    <dt>Location</dt><dd>{{ $asset->location->name ?? '-' }}</dd>
+                    <dt>Location</dt>
+                    <dd>
+                        @if ($asset->location)
+                            <a href="{{ route('locations.show', $asset->location) }}">{{ $asset->location->name }}</a>
+                            <span class="text-muted small">· {{ $asset->location->code }}</span>
+                        @else
+                            -
+                        @endif
+                    </dd>
                     <dt>Vendor</dt><dd>{{ $asset->vendor->name ?? '-' }}</dd>
                     <dt>Warranty</dt><dd>{{ \App\Support\Format::date($asset->warranty_expiry, 'd M Y') }}</dd>
                     <dt>Notes</dt><dd class="pg-rich-note">{!! $asset->notes ? \App\Support\RichText::render($asset->notes) : e('-') !!}</dd>
