@@ -15,6 +15,7 @@ import { initCaseTriage } from './case-triage';
 import { initFormDrafts } from './form-drafts';
 import { initPlantMap } from './plant-map';
 import { initNavBack } from './nav-back';
+import { initPartnersSummary } from './partners-summary';
 
 Chart.register(...registerables);
 Chart.defaults.font.family = 'system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
@@ -38,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initFormDrafts();
     initPlantMap();
     initNavBack();
+    initPartnersSummary();
 
     const emailInput = document.querySelector('#email');
     const demoButtons = () => document.querySelectorAll('[data-demo-email]');

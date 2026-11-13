@@ -1,3 +1,5 @@
+import { partnersSummaryHtml } from './partners-summary';
+
 function csrfToken() {
     return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 }
@@ -176,14 +178,9 @@ function partnerRemoveUrl(list, partnerId) {
 function updateCasePartners(partners = []) {
     const summary = document.querySelector('[data-case-partners]');
     if (summary) {
-        summary.innerHTML = partners.length
-            ? partners.map((partner, index) => {
-                const link = partner.url
-                    ? `<a href="${escapeHtml(partner.url)}">${escapeHtml(partner.name)}</a>`
-                    : escapeHtml(partner.name);
-                return `${link}${index < partners.length - 1 ? ', ' : ''}`;
-            }).join('')
-            : '-';
+        summary.innerHTML = partnersSummaryHtml(partners);
+        summary.classList.add('pg-partners-summary');
+        summary.classList.remove('is-open');
     }
 
     const list = document.querySelector('[data-case-partner-list]');

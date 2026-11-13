@@ -20,12 +20,33 @@
             <div><dt>Owner</dt><dd data-case-owner>{{ $ticket->assignee->name ?? 'Unassigned' }}</dd></div>
             <div>
                 <dt>Partners</dt>
-                <dd data-case-partners>
-                    @forelse (($ticket->partners ?? collect()) as $partner)
-                        <a href="{{ route('people.show', $partner) }}">{{ $partner->name }}</a>@if (! $loop->last), @endif
-                    @empty
+                <dd class="pg-partners-summary" data-case-partners>
+                    @php($casePartners = ($ticket->partners ?? collect())->values())
+                    @if ($casePartners->isEmpty())
                         -
-                    @endforelse
+                    @else
+                        <span class="pg-partners-visible">
+                            @foreach ($casePartners->take(2) as $partner)
+                                <a href="{{ route('people.show', $partner) }}">{{ $partner->name }}</a>@if (! $loop->last), @endif
+                            @endforeach
+                        </span>
+                        @if ($casePartners->count() > 2)
+                            <button
+                                type="button"
+                                class="pg-partners-more"
+                                data-partners-more
+                                aria-expanded="false"
+                                title="Show all {{ $casePartners->count() }} partners"
+                            >+{{ $casePartners->count() - 2 }}</button>
+                            <div class="pg-partners-popover" data-partners-popover hidden>
+                                <ul>
+                                    @foreach ($casePartners as $partner)
+                                        <li><a href="{{ route('people.show', $partner) }}">{{ $partner->name }}</a></li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+                    @endif
                 </dd>
             </div>
             @if ($ticket->close_reason === 'duplicate' && $ticket->duplicateOf)
