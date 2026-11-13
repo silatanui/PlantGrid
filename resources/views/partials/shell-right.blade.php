@@ -48,7 +48,7 @@
     @endif
 
     <div class="pg-rail-section">
-        <div class="pg-rail-label">Activity</div>
+        <div class="pg-rail-label">Your activity</div>
         @forelse ($rightPanel['activity'] as $item)
             <a class="pg-rail-activity" href="{{ $item['href'] }}">
                 <strong>{{ $item['title'] }}</strong>
@@ -56,7 +56,7 @@
                 <em>{{ $item['when'] }}</em>
             </a>
         @empty
-            <p class="pg-rail-empty">No recent activity in your view.</p>
+            <p class="pg-rail-empty">Notes, ownership changes, and case updates you make will show here.</p>
         @endforelse
     </div>
 

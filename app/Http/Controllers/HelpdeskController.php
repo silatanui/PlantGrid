@@ -136,6 +136,7 @@ class HelpdeskController extends Controller
             'title' => $ticket->ticket_number,
             'ticket' => $ticket,
             'comments' => $comments,
+            'caseActivity' => \App\Support\CaseActivity::forTicket($ticket, $comments),
             'canSeeInternal' => $canSeeInternal,
             'transitions' => $tickets->allowedTransitions($ticket, $request->user()),
             'canTakeOwnership' => $tickets->canTakeOwnership($ticket, $request->user()),
@@ -181,7 +182,12 @@ class HelpdeskController extends Controller
 
         $partner = User::query()->whereKey($data['user_id'])->where('status', 'active')->firstOrFail();
         $notifications->syncPartners($ticket, [$partner->id], 'manual');
+        $ticket->touch();
         $ticket->load('partners');
+        app(AuditLogger::class)->log('ticket.partner.add', 'support_ticket', $ticket->id, [], [
+            'partner_id' => $partner->id,
+            'partner_name' => $partner->name,
+        ]);
 
         if ($request->expectsJson()) {
             return response()->json([
@@ -228,6 +234,7 @@ class HelpdeskController extends Controller
         }
 
         $notifications->removePartner($ticket, $partner);
+        $ticket->touch();
         $audit->log('ticket.partner.remove', 'support_ticket', $ticket->id, [
             'partner_id' => $partner->id,
             'partner_name' => $partner->name,

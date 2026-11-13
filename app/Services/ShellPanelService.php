@@ -151,6 +151,12 @@ class ShellPanelService
 
     private function activity(User $user, bool $employee): Collection
     {
+        $mine = \App\Support\CaseActivity::forUserRail($user, 8);
+        if ($mine->isNotEmpty()) {
+            return $mine;
+        }
+
+        // Fallback when the signed-in user has no audited actions yet.
         $tickets = SupportTicket::query()
             ->visibleTo($user)
             ->with(['requester', 'assignee'])

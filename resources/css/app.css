@@ -3327,6 +3327,16 @@ button.btn {
     letter-spacing: 0.04em;
 }
 .pg-highlights dd { margin: 2px 0 0; font-weight: 600; }
+.pg-activity-label {
+    display: block;
+    margin: 4px 0 2px;
+    font-size: 13px;
+}
+.pg-note:target,
+.pg-note:target .pg-rich-note {
+    outline: 2px solid color-mix(in srgb, var(--pg-navy) 35%, #fff);
+    outline-offset: 2px;
+}
 .pg-highlights .pg-partners-summary {
     position: relative;
     display: flex;

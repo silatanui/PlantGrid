@@ -112,6 +112,7 @@
                 @endif
             </section>
             <section
+                id="notes"
                 class="pg-card pg-card-pad mb-3 pg-notes-panel"
                 data-live-notes
                 data-notes-store="{{ route('helpdesk.comment', $ticket) }}"
@@ -222,6 +223,7 @@
                             $isInternal = $comment->visibility === 'internal';
                         @endphp
                         <article
+                            id="note-{{ $comment->id }}"
                             class="pg-note {{ $isInternal ? 'is-internal' : 'is-public' }}"
                             data-note-id="{{ $comment->id }}"
                             data-note-body="{{ json_encode($comment->comment) }}"
@@ -543,16 +545,29 @@
                     </div>
                 </section>
             @endif
-            <section class="pg-card">
-                <div class="pg-card-pad"><h2 class="pg-section-title mb-0">Status history</h2></div>
-                <ul class="pg-timeline px-3" data-case-history>
-                    @foreach ($ticket->histories->sortByDesc('created_at') as $history)
-                        <li>
-                            {!! \App\Support\Labels::badge($history->new_status) !!}
-                            <div class="pg-rich-note">{!! \App\Support\RichText::render($history->notes) !!}</div>
-                            <div class="text-muted">{{ \App\Support\Format::date($history->created_at) }} · {{ $history->changer->name ?? 'System' }}</div>
+            <section class="pg-card" id="activity">
+                <div class="pg-card-pad">
+                    <h2 class="pg-section-title mb-0">Activity</h2>
+                    <p class="text-muted small mb-0">Notes, ownership changes, partners, and status updates on this case.</p>
+                </div>
+                <ul class="pg-timeline px-3" data-case-history data-case-activity>
+                    @forelse (($caseActivity ?? collect()) as $item)
+                        <li @if (! empty($item['note_id'])) data-activity-note="{{ $item['note_id'] }}" @endif>
+                            {!! \App\Support\Labels::badge((string) ($item['badge'] ?? 'update')) !!}
+                            <strong class="pg-activity-label">{{ $item['label'] }}</strong>
+                            @if (! empty($item['html']))
+                                <div class="pg-rich-note">{!! $item['html'] !!}</div>
+                            @elseif (! empty($item['body']))
+                                <div class="text-muted">{{ $item['body'] }}</div>
+                            @endif
+                            <div class="text-muted">{{ \App\Support\Format::date($item['at']) }} · {{ $item['actor'] }}</div>
+                            @if (! empty($item['note_id']))
+                                <a class="small" href="#note-{{ $item['note_id'] }}">View note</a>
+                            @endif
                         </li>
-                    @endforeach
+                    @empty
+                        <li class="text-muted">No activity recorded on this case yet.</li>
+                    @endforelse
                 </ul>
             </section>
         </div>

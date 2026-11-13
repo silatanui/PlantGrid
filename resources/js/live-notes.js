@@ -63,6 +63,7 @@ function noteArticleHtml(comment) {
 
     return `
         <article
+            id="note-${comment.id}"
             class="pg-note ${tone}"
             data-note-id="${comment.id}"
             data-note-body="${escapeHtml(JSON.stringify(comment.comment))}"

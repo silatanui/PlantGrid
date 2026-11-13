@@ -78,11 +78,21 @@ export function htmlToMarkup(root) {
     root.childNodes.forEach((child) => {
         out += serializeNode(child);
     });
-    return out
+    out = out
         .replace(/\u00a0/g, ' ')
         .replace(/[ \t]+\n/g, '\n')
         .replace(/\n{3,}/g, '\n\n')
         .trim();
+
+    // Fallback if the browser produced markup we could not serialize cleanly.
+    if (out === '' && (root.textContent || '').trim() !== '') {
+        return String(root.textContent || '')
+            .replace(/\u00a0/g, ' ')
+            .replace(/\n{3,}/g, '\n\n')
+            .trim();
+    }
+
+    return out;
 }
 
 function toolbarHtml() {

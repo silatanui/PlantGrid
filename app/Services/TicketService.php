@@ -202,9 +202,13 @@ class TicketService
 
             $this->audit->log('ticket.assign', 'support_ticket', $ticket->id, [
                 'assigned_to' => $previousAssignee,
+                'assigned_to_name' => $previousAssignee
+                    ? (User::query()->whereKey($previousAssignee)->value('name') ?: 'User #'.$previousAssignee)
+                    : 'Unassigned',
                 'status' => $previous,
             ], [
                 'assigned_to' => $ticket->assigned_to,
+                'assigned_to_name' => $assignee->name,
                 'status' => $ticket->status,
             ]);
 
@@ -340,8 +344,12 @@ class TicketService
             'visibility' => $visibility,
         ]);
 
+        $ticket->touch();
+
         $this->audit->log('ticket.comment', 'support_ticket', $ticket->id, [], [
             'visibility' => $visibility,
+            'comment_id' => $entry->id,
+            'preview' => \Illuminate\Support\Str::limit(trim(preg_replace('/\s+/', ' ', strip_tags($comment)) ?: ''), 180),
         ]);
 
         $entry = $entry->load(['author.roles:id,name']);
@@ -364,9 +372,12 @@ class TicketService
             'visibility' => $visibility,
         ]);
 
+        $entry->ticket?->touch();
+
         $this->audit->log('ticket.comment.update', 'support_ticket', $entry->support_ticket_id, $before, [
             'comment_id' => $entry->id,
             'visibility' => $visibility,
+            'preview' => \Illuminate\Support\Str::limit(trim(preg_replace('/\s+/', ' ', strip_tags($comment)) ?: ''), 180),
         ]);
 
         return $entry->fresh(['author.roles:id,name']);
@@ -382,7 +393,9 @@ class TicketService
 
         $snapshot = $entry->only(['id', 'comment', 'visibility', 'user_id']);
         $ticketId = $entry->support_ticket_id;
+        $ticket = $entry->ticket;
         $entry->delete();
+        $ticket?->touch();
 
         $this->audit->log('ticket.comment.delete', 'support_ticket', $ticketId, $snapshot, []);
     }
