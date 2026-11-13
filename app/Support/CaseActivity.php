@@ -21,10 +21,13 @@ class CaseActivity
         $items = collect();
 
         foreach ($ticket->histories as $history) {
+            $changer = $history->changer;
             $items->push([
                 'type' => 'status',
                 'at' => $history->created_at,
-                'actor' => $history->changer->name ?? 'System',
+                'actor' => $changer->name ?? 'System',
+                'actor_id' => $changer?->id,
+                'actor_url' => $changer ? route('people.show', $changer) : null,
                 'label' => 'Status → '.Labels::status((string) $history->new_status),
                 'badge' => $history->new_status,
                 'body' => $history->notes,
@@ -35,14 +38,18 @@ class CaseActivity
         foreach ($comments as $comment) {
             /** @var TicketComment $comment */
             $internal = $comment->visibility === 'internal';
+            $author = $comment->author;
+            $previewSource = self::previewMarkup((string) $comment->comment, 220);
             $items->push([
                 'type' => 'note',
                 'at' => $comment->created_at,
-                'actor' => $comment->author->name ?? 'User',
+                'actor' => $author->name ?? 'User',
+                'actor_id' => $author?->id ?? $comment->user_id,
+                'actor_url' => $author ? route('people.show', $author) : null,
                 'label' => $internal ? 'Internal note posted' : 'Note posted',
                 'badge' => $internal ? 'internal' : 'note',
                 'body' => Str::limit(trim(strip_tags((string) $comment->comment)), 160),
-                'html' => null,
+                'html' => RichText::render($previewSource),
                 'note_id' => $comment->id,
             ]);
         }
@@ -64,14 +71,19 @@ class CaseActivity
             ->get();
 
         foreach ($audits as $log) {
+            $actor = $log->user;
+            $detail = self::detailFor($log);
             $items->push([
                 'type' => 'audit',
                 'at' => $log->created_at,
-                'actor' => $log->user->name ?? 'System',
-                'label' => self::labelFor($log, $ticket),
+                'actor' => $actor->name ?? 'System',
+                'actor_id' => $actor?->id ?? $log->user_id,
+                'actor_url' => $actor ? route('people.show', $actor) : null,
+                // Already viewing this case — omit redundant "on PG-…" suffix.
+                'label' => self::labelFor($log),
                 'badge' => self::badgeFor($log->action),
-                'body' => self::detailFor($log),
-                'html' => null,
+                'body' => $detail,
+                'html' => self::detailHtml($log, $detail),
             ]);
         }
 
@@ -205,5 +217,76 @@ class CaseActivity
                 : null,
             default => null,
         };
+    }
+
+    private static function detailHtml(AuditLog $log, ?string $detail): ?string
+    {
+        if ($detail === null || trim($detail) === '') {
+            return null;
+        }
+
+        $new = $log->new_values ?? [];
+        $old = $log->old_values ?? [];
+
+        if (in_array($log->action, ['ticket.comment', 'ticket.comment.update'], true)) {
+            return RichText::render((string) ($new['preview'] ?? $detail));
+        }
+
+        if ($log->action === 'ticket.assign') {
+            $fromId = isset($old['assigned_to']) ? (int) $old['assigned_to'] : null;
+            $toId = isset($new['assigned_to']) ? (int) $new['assigned_to'] : null;
+            $fromName = (string) ($old['assigned_to_name'] ?? $old['assigned_to'] ?? 'Unassigned');
+            $toName = (string) ($new['assigned_to_name'] ?? $new['assigned_to'] ?? 'Unassigned');
+
+            return self::personChip($fromId, $fromName).' → '.self::personChip($toId, $toName);
+        }
+
+        if ($log->action === 'ticket.partner.add') {
+            $id = isset($new['partner_id']) ? (int) $new['partner_id'] : null;
+
+            return self::personChip($id, (string) ($new['partner_name'] ?? $detail));
+        }
+
+        if ($log->action === 'ticket.partner.remove') {
+            $id = isset($old['partner_id']) ? (int) $old['partner_id'] : null;
+
+            return self::personChip($id, (string) ($old['partner_name'] ?? $detail));
+        }
+
+        return RichText::render($detail);
+    }
+
+    private static function personChip(?int $userId, string $label): string
+    {
+        if ($userId) {
+            $user = User::query()->find($userId);
+            if ($user) {
+                return '<a class="pg-mention pg-mention-people" href="'.e(route('people.show', $user)).'">'.e($user->name).'</a>';
+            }
+        }
+
+        return e($label);
+    }
+
+    /**
+     * Prefer cutting on a token boundary so @mentions stay intact for RichText.
+     */
+    private static function previewMarkup(string $text, int $limit = 220): string
+    {
+        $text = trim($text);
+        if (mb_strlen($text) <= $limit) {
+            return $text;
+        }
+
+        $slice = mb_substr($text, 0, $limit);
+        $break = max(
+            mb_strrpos($slice, "\n") ?: 0,
+            mb_strrpos($slice, ' ') ?: 0
+        );
+        if ($break > (int) ($limit * 0.6)) {
+            $slice = mb_substr($slice, 0, $break);
+        }
+
+        return rtrim($slice).'…';
     }
 }

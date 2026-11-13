@@ -6,6 +6,14 @@ function escapeHtml(value) {
         .replaceAll('"', '&quot;');
 }
 
+function actorHtml(item) {
+    const name = escapeHtml(item.actor || 'System');
+    if (item.actor_url) {
+        return `<a class="pg-activity-actor" href="${escapeHtml(item.actor_url)}">${name}</a>`;
+    }
+    return name;
+}
+
 function activityItemHtml(item) {
     const noteAttr = item.note_id ? ` data-activity-note="${escapeHtml(item.note_id)}"` : '';
     const body = item.html
@@ -20,7 +28,7 @@ function activityItemHtml(item) {
             ${item.badge_html || ''}
             <strong class="pg-activity-label">${escapeHtml(item.label || 'Update')}</strong>
             ${body}
-            <div class="text-muted">${escapeHtml(item.at || '')} · ${escapeHtml(item.actor || 'System')}</div>
+            <div class="text-muted">${escapeHtml(item.at || '')} · ${actorHtml(item)}</div>
             ${noteLink}
         </li>
     `;

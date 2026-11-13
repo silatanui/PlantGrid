@@ -481,6 +481,8 @@ class HelpdeskController extends Controller
                 'body' => $item['body'] ?? null,
                 'html' => $item['html'] ?? null,
                 'actor' => $item['actor'] ?? 'System',
+                'actor_id' => $item['actor_id'] ?? null,
+                'actor_url' => $item['actor_url'] ?? null,
                 'at' => \App\Support\Format::date($item['at'] ?? null),
                 'note_id' => $item['note_id'] ?? null,
             ])

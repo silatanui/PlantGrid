@@ -1812,27 +1812,36 @@ a:hover { color: var(--pg-navy-deep); }
     color: var(--pg-teal);
 }
 
-.pg-workspace {
+.pg-shell .pg-workspace {
     display: grid;
     grid-template-columns: var(--pg-left) minmax(0, 1fr) var(--pg-right);
-    align-items: start;
-    min-height: calc(100vh - var(--pg-topbar) - var(--pg-footer));
-    padding-bottom: var(--pg-footer);
+    align-items: stretch;
+    height: calc(100vh - var(--pg-topbar) - var(--pg-footer));
+    max-height: calc(100vh - var(--pg-topbar) - var(--pg-footer));
+    min-height: 0;
+    overflow: hidden;
+    padding-bottom: 0;
 }
 
 .pg-rail-left {
     grid-column: 1;
     min-width: 0;
+    min-height: 0;
 }
 
 .pg-main {
     grid-column: 2;
     min-width: 0;
+    min-height: 0;
+    height: 100%;
+    overflow: auto;
+    padding-bottom: calc(var(--pg-footer) + 12px);
 }
 
 .pg-rail-right {
     grid-column: 3;
     min-width: 0;
+    min-height: 0;
 }
 
 .pg-shell.pg-left-collapsed {
@@ -1895,10 +1904,11 @@ a:hover { color: var(--pg-navy-deep); }
 }
 
 .pg-rail {
-    position: sticky;
-    top: var(--pg-topbar);
-    height: calc(100vh - var(--pg-topbar) - var(--pg-footer));
+    position: relative;
+    height: 100%;
+    max-height: 100%;
     overflow: auto;
+    overscroll-behavior: contain;
     background: #fff;
     border-right: 1px solid var(--pg-border);
     padding: 10px 0 18px;
@@ -1975,8 +1985,7 @@ body.is-rail-resizing iframe {
     list-style: none;
     margin: 0;
     padding: 0;
-    max-height: min(52vh, 520px);
-    overflow: auto;
+    overflow: visible;
 }
 .pg-rail-timeline li {
     padding: 8px 0;
@@ -1989,13 +1998,66 @@ body.is-rail-resizing iframe {
     margin: 4px 0 2px;
     font-size: 12.5px;
 }
+.pg-rail-timeline .pg-rich-note {
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-top: 2px;
+}
 .pg-rail-timeline .pg-rich-note,
 .pg-rail-timeline .text-muted {
     font-size: 11.5px;
     line-height: 1.35;
 }
+.pg-rail-timeline .pg-activity-actor {
+    color: inherit;
+    font-weight: 600;
+    text-decoration: none;
+}
+.pg-rail-timeline .pg-activity-actor:hover {
+    color: var(--pg-navy);
+    text-decoration: underline;
+}
 .pg-rail-case-activity .pg-badge {
     font-size: 10px;
+}
+
+.pg-rail-sublabel {
+    color: var(--pg-muted);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin: 0 0 6px;
+}
+.pg-rail-utility-block {
+    margin-bottom: 12px;
+}
+.pg-rail-utility-block:last-child {
+    margin-bottom: 0;
+}
+.pg-rail-utilities {
+    border: 1px solid var(--pg-border);
+    background: #fafbfc;
+    padding: 0;
+}
+.pg-rail-utilities > summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 8px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--pg-navy);
+}
+.pg-rail-utilities > summary::-webkit-details-marker {
+    display: none;
+}
+.pg-rail-utilities[open] > summary {
+    border-bottom: 1px solid var(--pg-border);
+}
+.pg-rail-utilities-body {
+    padding: 10px;
 }
 
 .pg-rail-head {
@@ -5451,12 +5513,18 @@ body.pg-home {
 .dropdown-menu { border-radius: 0 !important; }
 
 @media (max-width: 1399.98px) {
-    .pg-workspace {
+    .pg-shell .pg-workspace {
         grid-template-columns: var(--pg-left) minmax(0, 1fr);
+        height: auto;
+        max-height: none;
+        overflow: visible;
     }
 
     .pg-main {
         grid-column: 2;
+        height: auto;
+        overflow: visible;
+        padding-bottom: var(--pg-footer);
     }
 
     .pg-rail-right {
@@ -5465,6 +5533,8 @@ body.pg-home {
         top: var(--pg-topbar);
         right: 0;
         width: min(320px, 92vw);
+        height: calc(100vh - var(--pg-topbar));
+        max-height: calc(100vh - var(--pg-topbar));
         z-index: 1025;
         display: block;
         transform: translateX(105%);
@@ -5482,12 +5552,17 @@ body.pg-home {
 }
 
 @media (max-width: 1199.98px) {
-    .pg-workspace {
+    .pg-shell .pg-workspace {
         grid-template-columns: minmax(0, 1fr);
+        height: auto;
+        max-height: none;
+        overflow: visible;
     }
 
     .pg-main {
         grid-column: 1;
+        height: auto;
+        overflow: visible;
     }
 
     .pg-rail-left {
@@ -5496,6 +5571,8 @@ body.pg-home {
         top: var(--pg-topbar);
         left: 0;
         width: min(280px, 88vw);
+        height: calc(100vh - var(--pg-topbar));
+        max-height: calc(100vh - var(--pg-topbar));
         z-index: 1025;
         display: block;
         transform: translateX(-105%);

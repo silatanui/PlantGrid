@@ -84,7 +84,13 @@ function readOrder(side, defaults) {
         const known = new Set(defaults);
         const ordered = parsed.filter((id) => known.has(id));
         defaults.forEach((id) => {
-            if (!ordered.includes(id)) {
+            if (ordered.includes(id)) {
+                return;
+            }
+            // New case Activity section should lead the utility rail.
+            if (id === 'case-activity') {
+                ordered.unshift(id);
+            } else {
                 ordered.push(id);
             }
         });

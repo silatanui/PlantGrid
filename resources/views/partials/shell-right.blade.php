@@ -1,9 +1,13 @@
-<aside class="pg-rail pg-rail-right" id="shell-right" aria-label="Utility">
+@php
+    $timeline = $rightPanel['caseTimeline'] ?? null;
+    $onCasePage = ! empty($timeline);
+@endphp
+<aside class="pg-rail pg-rail-right {{ $onCasePage ? 'is-case-context' : '' }}" id="shell-right" aria-label="Utility">
     <div class="pg-rail-resize" data-rail-resize="right" title="Drag to resize"></div>
     <div class="pg-rail-head">
         <div>
-            <strong>Utility</strong>
-            <span>{{ $plantName }}</span>
+            <strong>{{ $onCasePage ? 'Case context' : 'Utility' }}</strong>
+            <span>{{ $onCasePage ? $timeline['ticket']->ticket_number : $plantName }}</span>
         </div>
         <button class="pg-rail-toggle" type="button" data-shell-toggle="right" aria-label="Collapse utility panel">
             <i data-lucide="panel-right-close"></i>
@@ -11,63 +15,7 @@
     </div>
 
     <div class="pg-rail-body" data-rail-sections="right">
-        @if (($rightPanel['stats'] ?? []) !== [])
-            <div class="pg-rail-section" data-rail-section="stats">
-                <div class="pg-rail-label">
-                    <button type="button" class="pg-rail-handle" data-rail-handle aria-label="Drag to reorder">
-                        <i data-lucide="grip-vertical" aria-hidden="true"></i>
-                    </button>
-                    <span>At a glance</span>
-                </div>
-                <div class="pg-rail-stats">
-                    @foreach ($rightPanel['stats'] as $stat)
-                        <div>
-                            <strong>{{ $stat['value'] }}</strong>
-                            <span>{{ $stat['label'] }}</span>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-        @endif
-
-        <div class="pg-rail-section" data-rail-section="guidance">
-            <div class="pg-rail-label">
-                <button type="button" class="pg-rail-handle" data-rail-handle aria-label="Drag to reorder">
-                    <i data-lucide="grip-vertical" aria-hidden="true"></i>
-                </button>
-                <span>{{ $rightPanel['guidance']['title'] }}</span>
-            </div>
-            <div class="pg-rail-guidance">
-                <strong>{{ $rightPanel['guidance']['headline'] }}</strong>
-                <p>{{ $rightPanel['guidance']['body'] }}</p>
-                <ol>
-                    @foreach ($rightPanel['guidance']['steps'] as $step)
-                        <li>{{ $step }}</li>
-                    @endforeach
-                </ol>
-            </div>
-        </div>
-
-        @if (($rightPanel['actions'] ?? []) !== [])
-            <div class="pg-rail-section" data-rail-section="actions">
-                <div class="pg-rail-label">
-                    <button type="button" class="pg-rail-handle" data-rail-handle aria-label="Drag to reorder">
-                        <i data-lucide="grip-vertical" aria-hidden="true"></i>
-                    </button>
-                    <span>Quick actions</span>
-                </div>
-                <div class="pg-rail-actions">
-                    @foreach ($rightPanel['actions'] as $action)
-                        <a class="{{ $action['tone'] === 'primary' ? 'btn btn-pg btn-sm' : 'btn btn-pg-line btn-sm' }}" href="{{ route($action['route']) }}">{{ $action['label'] }}</a>
-                    @endforeach
-                </div>
-            </div>
-        @endif
-
-        @if (! empty($rightPanel['caseTimeline']))
-            @php
-                $timeline = $rightPanel['caseTimeline'];
-            @endphp
+        @if ($onCasePage)
             <div class="pg-rail-section pg-rail-case-activity" data-rail-section="case-activity" id="activity">
                 <div class="pg-rail-label">
                     <button type="button" class="pg-rail-handle" data-rail-handle aria-label="Drag to reorder">
@@ -75,7 +23,7 @@
                     </button>
                     <span>Activity</span>
                 </div>
-                <p class="pg-rail-section-note">Live updates for {{ $timeline['ticket']->ticket_number }}</p>
+                <p class="pg-rail-section-note">Live updates · mentions open people, cases, and assets</p>
                 <ul
                     class="pg-rail-timeline"
                     data-case-history
@@ -92,7 +40,14 @@
                             @elseif (! empty($item['body']))
                                 <div class="text-muted">{{ $item['body'] }}</div>
                             @endif
-                            <div class="text-muted">{{ \App\Support\Format::date($item['at']) }} · {{ $item['actor'] }}</div>
+                            <div class="text-muted">
+                                {{ \App\Support\Format::date($item['at']) }} ·
+                                @if (! empty($item['actor_url']))
+                                    <a class="pg-activity-actor" href="{{ $item['actor_url'] }}">{{ $item['actor'] }}</a>
+                                @else
+                                    {{ $item['actor'] }}
+                                @endif
+                            </div>
                             @if (! empty($item['note_id']))
                                 <a class="small" href="#note-{{ $item['note_id'] }}">View note</a>
                             @endif
@@ -104,21 +59,24 @@
             </div>
         @endif
 
-        @if (($rightPanel['alerts'] ?? collect())->isNotEmpty())
-            <div class="pg-rail-section" data-rail-section="alerts">
-                <div class="pg-rail-label">
-                    <button type="button" class="pg-rail-handle" data-rail-handle aria-label="Drag to reorder">
-                        <i data-lucide="grip-vertical" aria-hidden="true"></i>
-                    </button>
-                    <span>Simulated alerts</span>
-                </div>
-                @foreach ($rightPanel['alerts'] as $alert)
-                    <a class="pg-rail-alert" href="{{ route('monitoring.index') }}">
-                        <strong>{{ $alert->message }}</strong>
-                        <span>{{ ucfirst($alert->severity) }} · {{ ucfirst($alert->status) }}</span>
-                    </a>
-                @endforeach
+        <div class="pg-rail-section" data-rail-section="utilities">
+            <div class="pg-rail-label">
+                <button type="button" class="pg-rail-handle" data-rail-handle aria-label="Drag to reorder">
+                    <i data-lucide="grip-vertical" aria-hidden="true"></i>
+                </button>
+                <span>{{ $onCasePage ? 'More utilities' : 'Utility' }}</span>
             </div>
-        @endif
+
+            @if ($onCasePage)
+                <details class="pg-rail-utilities">
+                    <summary>Show guidance, actions{{ ($rightPanel['stats'] ?? []) !== [] ? ', and stats' : '' }}</summary>
+                    <div class="pg-rail-utilities-body">
+                        @include('partials.shell-right-utilities', ['rightPanel' => $rightPanel, 'compact' => true])
+                    </div>
+                </details>
+            @else
+                @include('partials.shell-right-utilities', ['rightPanel' => $rightPanel, 'compact' => false])
+            @endif
+        </div>
     </div>
 </aside>
