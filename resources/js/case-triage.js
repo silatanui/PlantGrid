@@ -378,9 +378,11 @@ function fillUpdateForm(suggestion, root) {
     const resolutionField = document.getElementById('resolution_notes');
     const assigned = document.getElementById('assigned_to');
     const transfer = document.getElementById('transfer_to');
+    const statusSelect = document.getElementById('status');
 
     if (resolutionField && resolution) {
         resolutionField.value = resolution;
+        resolutionField.dispatchEvent(new Event('input', { bubbles: true }));
     }
     if (assigned && ownerId) {
         assigned.value = String(ownerId);
@@ -388,12 +390,107 @@ function fillUpdateForm(suggestion, root) {
     if (transfer && ownerId) {
         transfer.value = String(ownerId);
     }
+    if (statusSelect && suggestion.suggested_status) {
+        const option = [...statusSelect.options].find((item) => item.value === suggestion.suggested_status);
+        if (option) {
+            statusSelect.value = suggestion.suggested_status;
+            statusSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    }
 
     const partnerSelect = document.getElementById('partner_user_id');
-    const firstPartner = root.querySelector('input[name="partner_ids"]:checked')?.value;
+    const firstPartner = root.querySelector('input[name="partner_ids"]:checked')?.value
+        || suggestion.partners?.[0]?.id;
     if (partnerSelect && firstPartner) {
         partnerSelect.value = String(firstPartner);
     }
+}
+
+function statusLabel(value) {
+    return String(value || '')
+        .replaceAll('_', ' ')
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function hideAiPanels(root) {
+    root.querySelectorAll('[data-ai-panel]').forEach((panel) => {
+        panel.hidden = true;
+        panel.innerHTML = '';
+    });
+}
+
+function renderSectionSuggestion(root, focus, suggestion) {
+    hideAiPanels(root);
+    const panel = root.querySelector(`[data-ai-panel="${focus}"]`)
+        || root.querySelector('[data-ai-panel="full"]');
+    if (!panel || !suggestion) {
+        return;
+    }
+
+    let html = `<div class="pg-ai-inline-head">AI suggestion · ${escapeHtml(suggestion.source === 'ai' ? 'model' : 'heuristic')}</div>`;
+
+    if (focus === 'owner' || focus === 'full') {
+        html += `
+            <div class="pg-triage-block">
+                <h3>Suggested owner</h3>
+                ${suggestion.owner
+                    ? personCard(suggestion.owner, { name: 'owner_id', checked: true, type: 'radio' })
+                    : '<p class="text-muted small mb-0">No owner candidate found.</p>'}
+            </div>
+        `;
+    }
+
+    if (focus === 'partners' || focus === 'full') {
+        const partners = (suggestion.partners || [])
+            .map((partner) => personCard(partner, { name: 'partner_ids', checked: true, type: 'checkbox' }))
+            .join('') || '<p class="text-muted small mb-0">No partner suggestions.</p>';
+        html += `
+            <div class="pg-triage-block">
+                <h3>Suggested partners</h3>
+                <div class="pg-triage-people">${partners}</div>
+            </div>
+        `;
+    }
+
+    if (focus === 'status' || focus === 'full') {
+        const steps = (suggestion.next_steps || []).map((step) => `<li>${escapeHtml(step)}</li>`).join('');
+        html += `
+            <div class="pg-triage-block">
+                <h3>Suggested status</h3>
+                <p class="mb-1"><strong>${escapeHtml(statusLabel(suggestion.suggested_status || 'in_progress'))}</strong></p>
+                <ol class="pg-triage-steps">${steps}</ol>
+            </div>
+        `;
+    }
+
+    if (focus === 'resolution' || focus === 'full') {
+        html += `
+            <div class="pg-triage-block">
+                <h3>Suggested resolution</h3>
+                <textarea class="form-control" data-triage-resolution rows="4">${escapeHtml(suggestion.resolution_outline || '')}</textarea>
+            </div>
+        `;
+    }
+
+    if (focus === 'full') {
+        html += `
+            <div class="pg-triage-block">
+                <label class="form-label" for="triage-note">Internal note for owner &amp; partners</label>
+                <textarea class="form-control" id="triage-note" data-triage-note rows="5">${escapeHtml(suggestion.internal_note || '')}</textarea>
+            </div>
+        `;
+    }
+
+    html += `
+        <div class="pg-triage-actions">
+            <button class="btn btn-sm btn-pg" type="button" data-triage-apply data-ai-focus="${escapeHtml(focus)}">Apply suggestion</button>
+            <button class="btn btn-sm btn-pg-line" type="button" data-triage-fill data-ai-focus="${escapeHtml(focus)}">Fill form only</button>
+            <button class="btn btn-sm btn-pg-line" type="button" data-ai-dismiss>Dismiss</button>
+        </div>
+    `;
+
+    panel.hidden = false;
+    panel.innerHTML = html;
 }
 
 function initLiveCaseForms() {
@@ -488,172 +585,156 @@ function initLiveCaseForms() {
 export function initCaseTriage(refreshIcons = () => {}) {
     initLiveCaseForms();
 
-    document.querySelectorAll('[data-case-triage]').forEach((root) => {
+    document.querySelectorAll('[data-case-workflow][data-triage-url], [data-case-triage][data-triage-url]').forEach((root) => {
         const ticketId = root.dataset.ticketId || 'case';
-        const runButton = root.querySelector('[data-triage-run]');
-        const hideButton = root.querySelector('[data-triage-hide]');
-        const panel = root.querySelector('[data-triage-panel]');
         const status = root.querySelector('[data-triage-status]');
-        const body = root.querySelector('[data-triage-body]');
         let latest = null;
-        let persistTimer = null;
+        let activeFocus = 'full';
+        let suggestPromise = null;
 
         const setStatus = (message, { error = false, hidden = false } = {}) => {
             if (!status) {
                 return;
             }
-            status.hidden = hidden;
-            status.textContent = message;
+            status.hidden = hidden || !message;
+            status.textContent = message || '';
             status.classList.toggle('is-error', error);
         };
 
-        const persist = () => {
-            writeStore(ticketId, currentDraft(root, latest));
+        const ensureSuggestion = async () => {
+            if (latest) {
+                return latest;
+            }
+            if (!suggestPromise) {
+                suggestPromise = postJson(root.dataset.triageUrl)
+                    .then((payload) => {
+                        latest = payload.suggestion;
+                        writeStore(ticketId, { suggestion: latest, open: true, focus: activeFocus });
+                        return latest;
+                    })
+                    .finally(() => {
+                        suggestPromise = null;
+                    });
+            }
+            return suggestPromise;
         };
 
-        const schedulePersist = () => {
-            window.clearTimeout(persistTimer);
-            persistTimer = window.setTimeout(persist, 200);
-        };
-
-        const openPanel = () => {
-            root.classList.remove('is-collapsed');
-            root.classList.add('is-open');
-            if (panel) {
-                panel.hidden = false;
+        const runSuggest = async (focus, button) => {
+            activeFocus = focus || 'full';
+            if (button) {
+                button.disabled = true;
+                button.dataset.originalLabel = button.textContent;
+                button.textContent = 'Suggesting…';
             }
-            persist();
-        };
-
-        const hidePanel = () => {
-            root.classList.add('is-collapsed');
-            root.classList.remove('is-open');
-            if (panel) {
-                panel.hidden = true;
-            }
-            setStatus('', { hidden: true });
-            persist();
-        };
-
-        const bindDraftWatchers = () => {
-            body?.querySelectorAll('textarea, input').forEach((field) => {
-                field.addEventListener('input', schedulePersist);
-                field.addEventListener('change', schedulePersist);
-            });
-        };
-
-        const showSuggestion = (suggestion, { restoreDraft = null } = {}) => {
-            latest = suggestion;
-            if (restoreDraft) {
-                latest = {
-                    ...suggestion,
-                    internal_note: restoreDraft.internal_note ?? suggestion.internal_note,
-                    resolution_outline: restoreDraft.resolution_outline ?? suggestion.resolution_outline,
-                };
-            }
-            renderSuggestion(root, latest);
-
-            if (restoreDraft?.owner_id) {
-                const ownerInput = root.querySelector(`input[name="owner_id"][value="${restoreDraft.owner_id}"]`);
-                if (ownerInput) {
-                    ownerInput.checked = true;
-                }
-            }
-            if (Array.isArray(restoreDraft?.partner_ids)) {
-                root.querySelectorAll('input[name="partner_ids"]').forEach((input) => {
-                    input.checked = restoreDraft.partner_ids.map(String).includes(input.value);
-                });
-            }
-            if (restoreDraft?.internal_note != null) {
-                const note = root.querySelector('[data-triage-note]');
-                if (note) {
-                    note.value = restoreDraft.internal_note;
-                }
-            }
-            if (restoreDraft?.resolution_outline != null) {
-                const resolution = root.querySelector('[data-triage-resolution]');
-                if (resolution) {
-                    resolution.value = restoreDraft.resolution_outline;
-                }
-            }
-
-            bindDraftWatchers();
-            refreshIcons();
-            persist();
-        };
-
-        const run = async ({ silent = false } = {}) => {
-            openPanel();
-            if (!silent) {
-                setStatus('Analysing expertise, availability, and case context…');
-            }
-            if (runButton) {
-                runButton.disabled = true;
-                runButton.textContent = 'Checking…';
-            }
+            setStatus('Analysing expertise, availability, and case context…');
             try {
-                const payload = await postJson(root.dataset.triageUrl);
-                const stored = readStore(ticketId);
-                showSuggestion(payload.suggestion, { restoreDraft: stored });
-                setStatus(
-                    payload.suggestion?.source === 'ai'
-                        ? 'AI triage ready. Edits save in this panel — no page reload.'
-                        : 'Triage ready. Edits save in this panel — no page reload.'
-                );
-            } catch (error) {
-                setStatus(error.message || 'Triage failed.', { error: true });
-                if (body && !latest) {
-                    body.hidden = true;
-                    body.innerHTML = '';
+                // "Suggest all" refreshes; section buttons reuse the last plan when available.
+                if (activeFocus === 'full') {
+                    latest = null;
                 }
+                const suggestion = await ensureSuggestion();
+                renderSectionSuggestion(root, activeFocus, suggestion);
+                setStatus('Suggestion ready. Apply it, fill the form, or dismiss.');
+                refreshIcons();
+            } catch (error) {
+                setStatus(error.message || 'Suggestion failed.', { error: true });
             } finally {
-                if (runButton) {
-                    runButton.disabled = false;
-                    runButton.textContent = 'Check AI suggestion';
+                if (button) {
+                    button.disabled = false;
+                    button.textContent = button.dataset.originalLabel || button.textContent;
                 }
             }
         };
-
-        runButton?.addEventListener('click', () => {
-            void run();
-        });
-
-        hideButton?.addEventListener('click', () => {
-            hidePanel();
-        });
 
         root.addEventListener('click', async (event) => {
-            const applyButton = event.target.closest('[data-triage-apply]');
+            const suggestButton = event.target.closest('[data-ai-suggest]');
+            if (suggestButton) {
+                event.preventDefault();
+                void runSuggest(suggestButton.dataset.aiSuggest || 'full', suggestButton);
+                return;
+            }
+
+            if (event.target.closest('[data-ai-dismiss]')) {
+                hideAiPanels(root);
+                setStatus('', { hidden: true });
+                return;
+            }
+
             const fillButton = event.target.closest('[data-triage-fill]');
-            const refreshButton = event.target.closest('[data-triage-refresh]');
-
-            if (refreshButton) {
-                void run();
-                return;
-            }
-
             if (fillButton && latest) {
-                fillUpdateForm(latest, root);
-                setStatus('Update form filled. The triage panel stays open.');
+                const focus = fillButton.dataset.aiFocus || activeFocus;
+                if (focus === 'status' || focus === 'full') {
+                    fillUpdateForm(latest, root);
+                }
+                if (focus === 'resolution' || focus === 'full') {
+                    const field = document.getElementById('resolution_notes');
+                    const text = root.querySelector('[data-triage-resolution]')?.value || latest.resolution_outline || '';
+                    if (field && text) {
+                        field.value = text;
+                        field.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                }
+                if (focus === 'owner' || focus === 'full') {
+                    const ownerId = root.querySelector('input[name="owner_id"]:checked')?.value || latest.owner?.id;
+                    const transfer = document.getElementById('transfer_to');
+                    const assigned = document.getElementById('assigned_to');
+                    if (ownerId && transfer) {
+                        transfer.value = String(ownerId);
+                    }
+                    if (ownerId && assigned) {
+                        assigned.value = String(ownerId);
+                    }
+                }
+                if (focus === 'partners' || focus === 'full') {
+                    const partnerId = root.querySelector('input[name="partner_ids"]:checked')?.value
+                        || latest.partners?.[0]?.id;
+                    const partnerSelect = document.getElementById('partner_user_id');
+                    if (partnerSelect && partnerId) {
+                        partnerSelect.value = String(partnerId);
+                    }
+                }
+                setStatus('Form fields filled from the suggestion. Review and save.');
                 return;
             }
 
+            const applyButton = event.target.closest('[data-triage-apply]');
             if (!applyButton || !latest) {
                 return;
             }
 
-            const ownerId = root.querySelector('input[name="owner_id"]:checked')?.value || null;
-            const partnerIds = [...root.querySelectorAll('input[name="partner_ids"]:checked')].map((input) => Number(input.value));
-            const internalNote = root.querySelector('[data-triage-note]')?.value || '';
-            const resolutionOutline = root.querySelector('[data-triage-resolution]')?.value || '';
+            const focus = applyButton.dataset.aiFocus || activeFocus;
+
+            if (focus === 'status' || focus === 'resolution') {
+                fillUpdateForm(latest, root);
+                if (focus === 'resolution' || focus === 'full') {
+                    const field = document.getElementById('resolution_notes');
+                    const text = root.querySelector('[data-triage-resolution]')?.value || latest.resolution_outline || '';
+                    if (field && text) {
+                        field.value = text;
+                    }
+                }
+                setStatus('Status / resolution filled. Review notes, then click Save update.');
+                return;
+            }
+
+            const ownerId = (focus === 'owner' || focus === 'full')
+                ? (root.querySelector('input[name="owner_id"]:checked')?.value || latest.owner?.id || null)
+                : null;
+            const partnerIds = (focus === 'partners' || focus === 'full')
+                ? [...root.querySelectorAll('input[name="partner_ids"]:checked')].map((input) => Number(input.value))
+                : [];
+            const internalNote = focus === 'full'
+                ? (root.querySelector('[data-triage-note]')?.value || latest.internal_note || '')
+                : '';
+            const resolutionOutline = root.querySelector('[data-triage-resolution]')?.value || latest.resolution_outline || '';
 
             if (!ownerId && partnerIds.length === 0 && !internalNote.trim()) {
-                setStatus('Choose an owner, partner, or note before applying.', { error: true });
+                setStatus('Choose an owner or partner before applying.', { error: true });
                 return;
             }
 
             applyButton.disabled = true;
-            setStatus('Applying triage without reloading…');
+            setStatus('Applying suggestion…');
             try {
                 const payload = await postJson(root.dataset.triageApplyUrl, {
                     owner_id: ownerId ? Number(ownerId) : null,
@@ -679,20 +760,16 @@ export function initCaseTriage(refreshIcons = () => {}) {
                     refreshCaseActivity();
                 }
 
-                setStatus(payload.message || 'Triage applied. Panel kept open for more edits.');
-                persist();
+                if (focus === 'full') {
+                    fillUpdateForm(latest, root);
+                }
+
+                setStatus(payload.message || 'Suggestion applied.');
             } catch (error) {
-                setStatus(error.message || 'Could not apply triage.', { error: true });
+                setStatus(error.message || 'Could not apply suggestion.', { error: true });
             } finally {
                 applyButton.disabled = false;
             }
         });
-
-        const stored = readStore(ticketId);
-        if (stored?.open && stored?.suggestion) {
-            openPanel();
-            showSuggestion(stored.suggestion, { restoreDraft: stored });
-            setStatus('Restored your last AI triage draft for this case.');
-        }
     });
 }

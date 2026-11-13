@@ -75,31 +75,27 @@ class TicketService
 
     public function allowedTransitions(SupportTicket $ticket, User $user): array
     {
-        $map = [
-            'new' => ['assigned', 'in_progress', 'closed'],
-            'assigned' => ['in_progress', 'pending', 'resolved', 'closed'],
-            'in_progress' => ['pending', 'resolved', 'closed'],
-            'pending' => ['in_progress', 'resolved', 'closed'],
-            'resolved' => ['closed', 'in_progress'],
-            'closed' => ['in_progress'],
-        ];
-
-        $next = $map[$ticket->status] ?? [];
+        // Any status the actor is allowed to set (except the current one), including
+        // reverting to new so the case can be reassigned or closed with a reason.
+        $all = ['new', 'assigned', 'in_progress', 'pending', 'resolved', 'closed'];
         $isPartner = $ticket->isPartner($user);
         $canWork = $user->hasPermission('tickets.update') || $isPartner;
         $canResolve = $user->hasPermission('tickets.resolve') || $isPartner;
         $canClose = $user->hasPermission('tickets.close') || $isPartner;
         $canReopen = $user->hasPermission('tickets.reopen') || $isPartner;
+        $canAssign = $user->hasPermission('tickets.assign');
 
-        return array_values(array_filter($next, function (string $status) use ($user, $ticket, $canWork, $canResolve, $canClose, $canReopen) {
+        return array_values(array_filter($all, function (string $status) use ($ticket, $canWork, $canResolve, $canClose, $canReopen, $canAssign) {
+            if ($status === $ticket->status) {
+                return false;
+            }
+
             return match ($status) {
-                'assigned' => $user->hasPermission('tickets.assign'),
+                'new' => $canAssign || $canReopen,
+                'assigned' => $canAssign,
+                'in_progress', 'pending' => $canWork || $canReopen,
                 'resolved' => $canResolve,
                 'closed' => $canClose,
-                'in_progress' => $ticket->status === 'resolved' || $ticket->status === 'closed'
-                    ? $canReopen
-                    : $canWork,
-                'pending' => $canWork,
                 default => false,
             };
         }));
@@ -244,21 +240,30 @@ class TicketService
                 ? $options['note']
                 : ($options['resolution_notes'] ?? null);
 
-            if ($status === 'assigned' || ($status === 'in_progress' && ! empty($options['assigned_to']))) {
-                if (empty($options['assigned_to']) && $status === 'assigned') {
+            if ($status === 'assigned') {
+                if (empty($options['assigned_to'])) {
                     throw ValidationException::withMessages([
                         'assigned_to' => 'Choose a technician before assigning this ticket.',
                     ]);
                 }
-                if (! empty($options['assigned_to'])) {
-                    $ticket->assigned_to = $options['assigned_to'];
-                }
+                $ticket->assigned_to = $options['assigned_to'];
+            } elseif (! empty($options['assigned_to']) && ! in_array($status, ['new', 'closed'], true)) {
+                $ticket->assigned_to = $options['assigned_to'];
             }
 
-            if ($needsStepEvidence || $status === 'resolved') {
+            if ($needsStepEvidence || $status === 'resolved' || $status === 'closed') {
                 if (filled($options['resolution_notes'] ?? null)) {
                     $ticket->resolution_notes = $options['resolution_notes'];
                 }
+            }
+
+            if ($status === 'new') {
+                $ticket->assigned_to = null;
+                $ticket->resolved_at = null;
+                $ticket->closed_at = null;
+                $ticket->close_reason = null;
+                $ticket->duplicate_of_ticket_id = null;
+                $this->sla->refreshForOpenTicket($ticket);
             }
 
             if ($status === 'resolved') {
@@ -275,8 +280,9 @@ class TicketService
             }
 
             if ($status === 'closed') {
-                if ($previous !== 'resolved') {
-                    $original = $this->resolveDuplicateOriginal($ticket, $options['duplicate_of'] ?? null);
+                $duplicateRef = trim((string) ($options['duplicate_of'] ?? ''));
+                if ($duplicateRef !== '') {
+                    $original = $this->resolveDuplicateOriginal($ticket, $duplicateRef);
                     $ticket->close_reason = 'duplicate';
                     $ticket->duplicate_of_ticket_id = $original->id;
                     $ticket->resolution_notes = filled($options['resolution_notes'] ?? null)
@@ -286,20 +292,29 @@ class TicketService
                         ? $historyNote
                         : 'Closed as duplicate of '.$original->ticket_number.'.';
                 } else {
+                    if (blank($options['resolution_notes'] ?? null)) {
+                        throw ValidationException::withMessages([
+                            'resolution_notes' => 'Add a note explaining why this case is being closed.',
+                        ]);
+                    }
                     $ticket->close_reason = null;
                     $ticket->duplicate_of_ticket_id = null;
+                    $ticket->resolution_notes = $options['resolution_notes'];
                 }
 
                 $ticket->closed_at = now();
                 $ticket->resolved_at ??= now();
             }
 
-            if ($status === 'in_progress' && in_array($previous, ['resolved', 'closed'], true)) {
+            if (in_array($status, ['assigned', 'in_progress', 'pending'], true)
+                && in_array($previous, ['resolved', 'closed', 'new'], true)) {
                 $ticket->resolved_at = null;
                 $ticket->closed_at = null;
                 $ticket->close_reason = null;
                 $ticket->duplicate_of_ticket_id = null;
-                $this->sla->refreshForOpenTicket($ticket);
+                if ($previous !== 'new') {
+                    $this->sla->refreshForOpenTicket($ticket);
+                }
             }
 
             $ticket->save();

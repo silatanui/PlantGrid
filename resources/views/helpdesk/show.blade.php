@@ -351,199 +351,230 @@
                     return implode(' · ', $parts);
                 };
             @endphp
-            @if (! empty($canTakeOwnership) || ! empty($canTransferOwnership))
-                <section class="pg-card pg-card-pad mb-3">
-                    <h2 class="pg-section-title">Ownership</h2>
-                    <p class="text-muted small">
-                        One owner at a time. Partners can claim an unassigned case; the owner can transfer it.
-                    </p>
-                    @if (! empty($canTakeOwnership))
-                        <form class="mb-2" method="post" action="{{ route('helpdesk.take-ownership', $ticket) }}" data-live-case-form="ownership">
-                            @csrf
-                            <button class="btn btn-pg" type="submit">Take ownership</button>
-                        </form>
-                    @endif
-                    @if (! empty($canTransferOwnership))
-                        <form method="post" action="{{ route('helpdesk.transfer', $ticket) }}" data-live-case-form="transfer">
-                            @csrf
-                            <label class="form-label" for="transfer_to">Transfer ownership</label>
-                            <select class="form-select mb-2" id="transfer_to" name="assigned_to" required>
-                                <option value="">Select person…</option>
-                                @foreach ($technicians as $technician)
-                                    @if ((int) $technician->id !== (int) auth()->id())
-                                        <option value="{{ $technician->id }}">
-                                            {{ $ownerOptionLabel($technician) }}
-                                        </option>
-                                    @endif
-                                @endforeach
-                            </select>
-                            <button class="btn btn-sm btn-pg" type="submit">Transfer case</button>
-                        </form>
-                    @endif
-                    <p class="text-muted small mb-0 mt-2" data-live-case-status hidden></p>
-                </section>
-            @endif
             @php
                 $canManagePartners = auth()->user()->hasPermission('tickets.assign')
                     || ! empty($isCasePartner)
                     || ((int) $ticket->requester_id === (int) auth()->id())
                     || ((int) $ticket->assigned_to === (int) auth()->id());
+                $showOwnership = ! empty($canTakeOwnership) || ! empty($canTransferOwnership);
+                $showStatus = $transitions !== [];
+                $showWorkflow = $showOwnership || $canManagePartners || $showStatus;
+                $canCloseDuplicate = in_array('closed', $transitions, true);
             @endphp
-            @if ($canManagePartners)
-                <section class="pg-card pg-card-pad mb-3">
-                    <h2 class="pg-section-title">Partners</h2>
-                    <p class="text-muted small mb-2">
-                        Can open the case, get notes/@mentions, and claim ownership when unassigned.
-                    </p>
-                    <ul
-                        class="mb-2 pg-partner-list"
-                        data-case-partner-list
-                        data-can-remove-partners="{{ ! empty($canRemovePartners) ? '1' : '0' }}"
-                        data-partner-remove-url-template="{{ route('helpdesk.partners.destroy', [$ticket, '__PARTNER__']) }}"
-                        data-case-owner-id="{{ $ticket->assigned_to }}"
-                    >
-                        @forelse ($ticket->partners as $partner)
-                            @php $isOwner = (int) $ticket->assigned_to === (int) $partner->id; @endphp
-                            <li data-partner-id="{{ $partner->id }}">
-                                <span class="pg-partner-chip {{ $isOwner ? 'is-owner' : '' }}" title="{{ $partner->name }} · {{ $partner->pivot->source }}">
-                                    <a href="{{ route('people.show', $partner) }}">{{ $partner->name }}</a>
-                                    @if ($isOwner)
-                                        <em>owner</em>
-                                    @elseif (! empty($canRemovePartners))
-                                        <button
-                                            type="button"
-                                            data-remove-partner
-                                            data-partner-id="{{ $partner->id }}"
-                                            data-partner-name="{{ $partner->name }}"
-                                            aria-label="Remove {{ $partner->name }}"
-                                            title="Remove"
-                                        >×</button>
-                                    @endif
-                                </span>
-                            </li>
-                        @empty
-                            <li class="text-muted pg-partner-empty" data-partners-empty>No partners yet.</li>
-                        @endforelse
-                    </ul>
-                    <form method="post" action="{{ route('helpdesk.partners.store', $ticket) }}" data-live-case-form="partners">
-                        @csrf
-                        <label class="form-label" for="partner_user_id">Add partner</label>
-                        <select class="form-select mb-2" id="partner_user_id" name="user_id" required>
-                            <option value="">Select person…</option>
-                            @foreach ($partnerCandidates as $person)
-                                <option value="{{ $person->id }}">{{ $ownerOptionLabel($person) }} · {{ $person->email }}</option>
-                            @endforeach
-                        </select>
-                        <button class="btn btn-sm btn-pg" type="submit">Add partner</button>
-                    </form>
-                    <p class="text-muted small mb-0 mt-2" data-live-case-status hidden></p>
-                </section>
-            @endif
-            @if ($transitions !== [])
-                @php $canCloseDuplicate = in_array('closed', $transitions, true) && $ticket->status !== 'resolved'; @endphp
-                <section class="pg-card pg-card-pad mb-3">
-                    <h2 class="pg-section-title">Update status</h2>
-                    <form method="post" action="{{ route('helpdesk.transition', $ticket) }}" data-status-form>
-                        @csrf
-                        <label class="form-label" for="status">Next status</label>
-                        <select class="form-select mb-2" id="status" name="status" data-status-select>
-                            @foreach ($transitions as $status)
-                                <option value="{{ $status }}" @selected(old('status') === $status)>
-                                    {{ $status === 'closed' && $canCloseDuplicate ? 'Closed (duplicate)' : \App\Support\Labels::status($status) }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @if (! empty($canTransferOwnership) || auth()->user()->hasPermission('tickets.assign'))
-                            <label class="form-label" for="assigned_to">Owner</label>
-                            <select class="form-select mb-2" id="assigned_to" name="assigned_to">
-                                <option value="">Unchanged</option>
-                                @foreach ($technicians as $technician)
-                                    <option value="{{ $technician->id }}" @selected($ticket->assigned_to == $technician->id)>
-                                        {{ $ownerOptionLabel($technician) }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        @endif
-                        @if ($canCloseDuplicate)
-                            <div class="pg-duplicate-close mb-2" data-duplicate-fields hidden>
-                                <label class="form-label" for="duplicate_of">Original case</label>
-                                <input
-                                    class="form-control mb-1"
-                                    id="duplicate_of"
-                                    name="duplicate_of"
-                                    value="{{ old('duplicate_of') }}"
-                                    placeholder="e.g. PG-2026-0148"
-                                    autocomplete="off"
-                                    data-mentions
-                                >
-                                <p class="text-muted small mb-0">Required when closing as a duplicate. Enter the surviving case number.</p>
-                            </div>
-                        @endif
-                        <label class="form-label" for="resolution_notes">Resolution / next-step notes</label>
-                        <p class="text-muted small mb-1">Required when moving the case forward. Explain what was done or why the next step is needed. Use <strong>Add a note</strong> above for ICT discussion posts.</p>
-                        <textarea class="form-control mb-2" id="resolution_notes" name="resolution_notes" rows="3" data-ai-assist data-mentions data-format-toolbar placeholder="What was done, and why this next step is needed…" data-step-evidence>{{ old('resolution_notes', $ticket->resolution_notes) }}</textarea>
-                        @if ($ticket->asset_id)
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="record_maintenance" id="record_maintenance" value="1">
-                                <label class="form-check-label" for="record_maintenance">Add a completed maintenance record for the asset</label>
-                            </div>
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" name="restore_asset" id="restore_asset" value="1">
-                                <label class="form-check-label" for="restore_asset">Mark the asset active again</label>
-                            </div>
-                        @endif
-                        <button class="btn btn-pg" type="submit">Save update</button>
-                    </form>
-                </section>
-                <script>
-                    (() => {
-                        const form = document.querySelector('[data-status-form]');
-                        const select = form?.querySelector('[data-status-select]');
-                        const evidence = form ? [...form.querySelectorAll('[data-step-evidence]')] : [];
-                        const fields = document.querySelector('[data-duplicate-fields]');
-                        const input = document.getElementById('duplicate_of');
-                        const current = @json($ticket->status);
-                        if (!select) return;
-                        const sync = () => {
-                            const next = select.value;
-                            const needsEvidence = next !== current && ! (current === 'resolved' && next === 'closed');
-                            evidence.forEach((field) => { field.required = needsEvidence; });
-                            if (fields) {
-                                const show = next === 'closed' && current !== 'resolved';
-                                fields.hidden = !show;
-                                if (input) input.required = show;
-                            }
-                        };
-                        select.addEventListener('change', sync);
-                        sync();
-                    })();
-                </script>
-            @endif
-            @if (! empty($canTriage))
+            @if ($showWorkflow)
                 <section
-                    class="pg-card pg-card-pad mb-3 pg-triage is-collapsed"
+                    class="pg-card pg-card-pad mb-3 pg-case-workflow"
+                    data-case-workflow
                     data-case-triage
                     data-ticket-id="{{ $ticket->id }}"
-                    data-triage-url="{{ route('ai.triage', $ticket) }}"
-                    data-triage-apply-url="{{ route('ai.triage.apply', $ticket) }}"
+                    @if (! empty($canTriage))
+                        data-triage-url="{{ route('ai.triage', $ticket) }}"
+                        data-triage-apply-url="{{ route('ai.triage.apply', $ticket) }}"
+                    @endif
                 >
-                    <div class="pg-triage-collapsed">
+                    <header class="pg-workflow-header">
                         <div>
-                            <h2 class="pg-section-title mb-0">AI triage</h2>
-                            <p class="text-muted small mb-0">Optional help choosing an owner, partners, and next steps.</p>
+                            <h2 class="pg-section-title mb-0">Case workflow</h2>
+                            <p class="text-muted small mb-0">Ownership, partners, and status in one place. Use AI on any band when you want a suggestion.</p>
                         </div>
-                        <button class="btn btn-sm btn-pg-line" type="button" data-triage-run>Check AI suggestion</button>
-                    </div>
-                    <div class="pg-triage-panel" data-triage-panel hidden>
-                        <div class="pg-triage-head">
-                            <p class="text-muted small mb-0">
-                                Review the suggestion, then apply it or fill the update form.
-                            </p>
-                            <button class="btn btn-sm btn-pg-line" type="button" data-triage-hide>Hide</button>
+                        @if (! empty($canTriage))
+                            <button class="btn btn-sm btn-pg-line" type="button" data-ai-suggest="full">Suggest all</button>
+                        @endif
+                    </header>
+                    <p class="pg-triage-status text-muted small" data-triage-status hidden></p>
+
+                    @if ($showOwnership)
+                        <div class="pg-workflow-band" data-workflow-band="ownership">
+                            <div class="pg-workflow-band-head">
+                                <div>
+                                    <h3>Ownership</h3>
+                                    <p class="text-muted small mb-0">One owner at a time. Partners can claim an unassigned case; the owner can transfer it.</p>
+                                </div>
+                                @if (! empty($canTriage) && ! empty($canTransferOwnership))
+                                    <button class="btn btn-sm btn-pg-line" type="button" data-ai-suggest="owner">Suggest owner</button>
+                                @endif
+                            </div>
+                            @if (! empty($canTakeOwnership))
+                                <form class="mb-2" method="post" action="{{ route('helpdesk.take-ownership', $ticket) }}" data-live-case-form="ownership">
+                                    @csrf
+                                    <button class="btn btn-pg" type="submit">Take ownership</button>
+                                </form>
+                            @endif
+                            @if (! empty($canTransferOwnership))
+                                <form method="post" action="{{ route('helpdesk.transfer', $ticket) }}" data-live-case-form="transfer">
+                                    @csrf
+                                    <label class="form-label" for="transfer_to">Transfer ownership</label>
+                                    <select class="form-select mb-2" id="transfer_to" name="assigned_to" required>
+                                        <option value="">Select person…</option>
+                                        @foreach ($technicians as $technician)
+                                            @if ((int) $technician->id !== (int) auth()->id())
+                                                <option value="{{ $technician->id }}">
+                                                    {{ $ownerOptionLabel($technician) }}
+                                                </option>
+                                            @endif
+                                        @endforeach
+                                    </select>
+                                    <button class="btn btn-sm btn-pg" type="submit">Transfer case</button>
+                                </form>
+                            @endif
+                            <div class="pg-ai-inline" data-ai-panel="owner" hidden></div>
+                            <p class="text-muted small mb-0 mt-2" data-live-case-status hidden></p>
                         </div>
-                        <p class="pg-triage-status text-muted small mb-0" data-triage-status hidden></p>
-                        <div class="pg-triage-body" data-triage-body hidden></div>
-                    </div>
+                    @endif
+
+                    @if ($canManagePartners)
+                        <div class="pg-workflow-band" data-workflow-band="partners">
+                            <div class="pg-workflow-band-head">
+                                <div>
+                                    <h3>Partners</h3>
+                                    <p class="text-muted small mb-0">Can open the case, get notes/@mentions, and claim ownership when unassigned.</p>
+                                </div>
+                                @if (! empty($canTriage))
+                                    <button class="btn btn-sm btn-pg-line" type="button" data-ai-suggest="partners">Suggest partners</button>
+                                @endif
+                            </div>
+                            <ul
+                                class="mb-2 pg-partner-list"
+                                data-case-partner-list
+                                data-can-remove-partners="{{ ! empty($canRemovePartners) ? '1' : '0' }}"
+                                data-partner-remove-url-template="{{ route('helpdesk.partners.destroy', [$ticket, '__PARTNER__']) }}"
+                                data-case-owner-id="{{ $ticket->assigned_to }}"
+                            >
+                                @forelse ($ticket->partners as $partner)
+                                    @php $isOwner = (int) $ticket->assigned_to === (int) $partner->id; @endphp
+                                    <li data-partner-id="{{ $partner->id }}">
+                                        <span class="pg-partner-chip {{ $isOwner ? 'is-owner' : '' }}" title="{{ $partner->name }} · {{ $partner->pivot->source }}">
+                                            <a href="{{ route('people.show', $partner) }}">{{ $partner->name }}</a>
+                                            @if ($isOwner)
+                                                <em>owner</em>
+                                            @elseif (! empty($canRemovePartners))
+                                                <button
+                                                    type="button"
+                                                    data-remove-partner
+                                                    data-partner-id="{{ $partner->id }}"
+                                                    data-partner-name="{{ $partner->name }}"
+                                                    aria-label="Remove {{ $partner->name }}"
+                                                    title="Remove"
+                                                >×</button>
+                                            @endif
+                                        </span>
+                                    </li>
+                                @empty
+                                    <li class="text-muted pg-partner-empty" data-partners-empty>No partners yet.</li>
+                                @endforelse
+                            </ul>
+                            <form method="post" action="{{ route('helpdesk.partners.store', $ticket) }}" data-live-case-form="partners">
+                                @csrf
+                                <label class="form-label" for="partner_user_id">Add partner</label>
+                                <select class="form-select mb-2" id="partner_user_id" name="user_id" required>
+                                    <option value="">Select person…</option>
+                                    @foreach ($partnerCandidates as $person)
+                                        <option value="{{ $person->id }}">{{ $ownerOptionLabel($person) }} · {{ $person->email }}</option>
+                                    @endforeach
+                                </select>
+                                <button class="btn btn-sm btn-pg" type="submit">Add partner</button>
+                            </form>
+                            <div class="pg-ai-inline" data-ai-panel="partners" hidden></div>
+                            <p class="text-muted small mb-0 mt-2" data-live-case-status hidden></p>
+                        </div>
+                    @endif
+
+                    @if ($showStatus)
+                        <div class="pg-workflow-band" data-workflow-band="status">
+                            <div class="pg-workflow-band-head">
+                                <div>
+                                    <h3>Status &amp; resolution</h3>
+                                    <p class="text-muted small mb-0">Move forward, revert (including back to New), reassign, or close with a reason.</p>
+                                </div>
+                                @if (! empty($canTriage))
+                                    <div class="pg-workflow-ai-actions">
+                                        <button class="btn btn-sm btn-pg-line" type="button" data-ai-suggest="status">Suggest status</button>
+                                        <button class="btn btn-sm btn-pg-line" type="button" data-ai-suggest="resolution">Suggest resolution</button>
+                                    </div>
+                                @endif
+                            </div>
+                            <form method="post" action="{{ route('helpdesk.transition', $ticket) }}" data-status-form>
+                                @csrf
+                                <label class="form-label" for="status">Next status</label>
+                                <select class="form-select mb-2" id="status" name="status" data-status-select>
+                                    @foreach ($transitions as $status)
+                                        <option value="{{ $status }}" @selected(old('status') === $status)>
+                                            {{ \App\Support\Labels::status($status) }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @if (! empty($canTransferOwnership) || auth()->user()->hasPermission('tickets.assign'))
+                                    <label class="form-label" for="assigned_to">Owner</label>
+                                    <select class="form-select mb-2" id="assigned_to" name="assigned_to">
+                                        <option value="">Unchanged</option>
+                                        @foreach ($technicians as $technician)
+                                            <option value="{{ $technician->id }}" @selected($ticket->assigned_to == $technician->id)>
+                                                {{ $ownerOptionLabel($technician) }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                @endif
+                                @if ($canCloseDuplicate)
+                                    <div class="pg-duplicate-close mb-2" data-duplicate-fields hidden>
+                                        <label class="form-label" for="duplicate_of">Original case (optional duplicate close)</label>
+                                        <input
+                                            class="form-control mb-1"
+                                            id="duplicate_of"
+                                            name="duplicate_of"
+                                            value="{{ old('duplicate_of') }}"
+                                            placeholder="e.g. PG-2026-0148"
+                                            autocomplete="off"
+                                            data-mentions
+                                        >
+                                        <p class="text-muted small mb-0">Leave blank to close with a written reason. Fill this only when closing as a duplicate.</p>
+                                    </div>
+                                @endif
+                                <label class="form-label" for="resolution_notes">Resolution / next-step notes</label>
+                                <p class="text-muted small mb-1">Required when changing status. Explain what was done, why you are reverting, or why the case is closed.</p>
+                                <textarea class="form-control mb-2" id="resolution_notes" name="resolution_notes" rows="3" data-ai-assist data-mentions data-format-toolbar placeholder="What was done, and why this next step is needed…" data-step-evidence>{{ old('resolution_notes', $ticket->resolution_notes) }}</textarea>
+                                @if ($ticket->asset_id)
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="record_maintenance" id="record_maintenance" value="1">
+                                        <label class="form-check-label" for="record_maintenance">Add a completed maintenance record for the asset</label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="restore_asset" id="restore_asset" value="1">
+                                        <label class="form-check-label" for="restore_asset">Mark the asset active again</label>
+                                    </div>
+                                @endif
+                                <button class="btn btn-pg" type="submit">Save update</button>
+                            </form>
+                            <div class="pg-ai-inline" data-ai-panel="status" hidden></div>
+                            <div class="pg-ai-inline" data-ai-panel="resolution" hidden></div>
+                            <div class="pg-ai-inline" data-ai-panel="full" hidden></div>
+                        </div>
+                        <script>
+                            (() => {
+                                const form = document.querySelector('[data-status-form]');
+                                const select = form?.querySelector('[data-status-select]');
+                                const evidence = form ? [...form.querySelectorAll('[data-step-evidence]')] : [];
+                                const fields = document.querySelector('[data-duplicate-fields]');
+                                const input = document.getElementById('duplicate_of');
+                                const assigned = document.getElementById('assigned_to');
+                                const current = @json($ticket->status);
+                                if (!select) return;
+                                const sync = () => {
+                                    const next = select.value;
+                                    const needsEvidence = next !== current;
+                                    evidence.forEach((field) => { field.required = needsEvidence; });
+                                    if (fields) {
+                                        fields.hidden = next !== 'closed';
+                                        if (input) input.required = false;
+                                    }
+                                    if (assigned) {
+                                        assigned.required = next === 'assigned';
+                                    }
+                                };
+                                select.addEventListener('change', sync);
+                                sync();
+                            })();
+                        </script>
+                    @endif
                 </section>
             @endif
         </div>

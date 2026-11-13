@@ -410,10 +410,24 @@ class CaseTriageService
         return [
             'owner' => $ownerPayload,
             'partners' => $partners,
+            'suggested_status' => $this->defaultSuggestedStatus($ticket),
             'next_steps' => $nextSteps,
             'resolution_outline' => $resolution,
             'internal_note' => $internalNote,
         ];
+    }
+
+    private function defaultSuggestedStatus(SupportTicket $ticket): string
+    {
+        return match ($ticket->status) {
+            'new' => 'assigned',
+            'assigned' => 'in_progress',
+            'in_progress' => 'pending',
+            'pending' => 'in_progress',
+            'resolved' => 'closed',
+            'closed' => 'in_progress',
+            default => 'in_progress',
+        };
     }
 
     /**
@@ -478,9 +492,16 @@ class CaseTriageService
             $internalNote = $this->defaultInternalNote($ticket, $owner, $partners, $nextSteps);
         }
 
+        $allowedStatuses = ['new', 'assigned', 'in_progress', 'pending', 'resolved', 'closed'];
+        $suggestedStatus = strtolower(trim((string) ($aiSuggestion['suggested_status'] ?? '')));
+        if (! in_array($suggestedStatus, $allowedStatuses, true) || $suggestedStatus === $ticket->status) {
+            $suggestedStatus = $heuristic['suggested_status'] ?? $this->defaultSuggestedStatus($ticket);
+        }
+
         return [
             'owner' => $owner,
             'partners' => $partners,
+            'suggested_status' => $suggestedStatus,
             'next_steps' => $nextSteps,
             'resolution_outline' => $resolution,
             'internal_note' => $internalNote,

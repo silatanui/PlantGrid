@@ -338,7 +338,7 @@ class HelpdeskController extends Controller
     {
         $this->visible($request, $ticket);
         $data = $request->validate([
-            'status' => ['required', Rule::in(['assigned', 'in_progress', 'pending', 'resolved', 'closed'])],
+            'status' => ['required', Rule::in(['new', 'assigned', 'in_progress', 'pending', 'resolved', 'closed'])],
             'assigned_to' => ['nullable', 'exists:users,id'],
             'resolution_notes' => ['nullable', 'string', 'max:5000'],
             'duplicate_of' => ['nullable', 'string', 'max:40'],
