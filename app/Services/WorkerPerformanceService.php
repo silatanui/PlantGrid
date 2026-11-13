@@ -70,88 +70,15 @@ class WorkerPerformanceService
         $noteCounts = $this->noteCounts($workers->pluck('id')->all(), $from, $to);
         $firstResponseHours = $this->firstResponseHours($workers->pluck('id')->all(), $from, $to);
 
-        $rows = $workers->map(function (User $worker) use ($ticketBags, $reopenCounts, $noteCounts, $firstResponseHours, $months, $days) {
-            $bag = $ticketBags[$worker->id] ?? [
-                'open' => collect(),
-                'resolved' => collect(),
-                'intake' => collect(),
-            ];
-
-            /** @var Collection<int, SupportTicket> $open */
-            $open = $bag['open'];
-            /** @var Collection<int, SupportTicket> $resolved */
-            $resolved = $bag['resolved'];
-            /** @var Collection<int, SupportTicket> $intake */
-            $intake = $bag['intake'];
-
-            $resolutionHours = $resolved
-                ->filter(fn (SupportTicket $ticket) => $ticket->reported_at && $ticket->resolved_at)
-                ->map(fn (SupportTicket $ticket) => $ticket->reported_at->diffInMinutes($ticket->resolved_at) / 60)
-                ->values();
-
-            $slaEligible = $resolved->filter(fn (SupportTicket $ticket) => $ticket->sla_due_at !== null);
-            $slaHits = $slaEligible->filter(function (SupportTicket $ticket) {
-                if ($ticket->sla_breached_at) {
-                    return false;
-                }
-
-                return $ticket->resolved_at && $ticket->resolved_at->lessThanOrEqualTo($ticket->sla_due_at);
-            })->count();
-
-            $breaches = $resolved->filter(fn (SupportTicket $ticket) => $ticket->sla_breached_at !== null)->count()
-                + $open->filter(fn (SupportTicket $ticket) => $ticket->sla_breached_at !== null)->count();
-
-            $resolvedCount = $resolved->count();
-            $openCount = $open->count();
-            $reopens = (int) ($reopenCounts[$worker->id] ?? 0);
-            $notes = (int) ($noteCounts[$worker->id] ?? 0);
-            $criticalResolved = $resolved->whereIn('priority', ['critical', 'high'])->count();
-
-            $avgHours = $resolutionHours->avg();
-            $medianHours = $this->median($resolutionHours->all());
-            $backlogAgeHours = $open
-                ->filter(fn (SupportTicket $ticket) => $ticket->reported_at)
-                ->map(fn (SupportTicket $ticket) => $ticket->reported_at->diffInMinutes(now()) / 60)
-                ->avg();
-
-            $slaRate = $slaEligible->isEmpty()
-                ? null
-                : round(($slaHits / $slaEligible->count()) * 100, 1);
-
-            $roleName = $worker->roles->pluck('name')->first() ?? '—';
-
-            return [
-                'user_id' => $worker->id,
-                'name' => $worker->name,
-                'email' => $worker->email,
-                'role' => $roleName,
-                'department' => $worker->department->name ?? '—',
-                'open' => $openCount,
-                'intake' => $intake->count(),
-                'resolved' => $resolvedCount,
-                'cpm' => round($resolvedCount / $months, 2),
-                'cpd' => round($resolvedCount / $days, 2),
-                'avg_hours' => $avgHours === null ? null : round((float) $avgHours, 1),
-                'median_hours' => $medianHours === null ? null : round((float) $medianHours, 1),
-                'first_response_hours' => isset($firstResponseHours[$worker->id])
-                    ? round((float) $firstResponseHours[$worker->id], 1)
-                    : null,
-                'sla_rate' => $slaRate,
-                'breaches' => $breaches,
-                'reopen_rate' => $resolvedCount === 0
-                    ? ($reopens > 0 ? 100.0 : 0.0)
-                    : round(($reopens / $resolvedCount) * 100, 1),
-                'reopens' => $reopens,
-                'backlog_age_hours' => $backlogAgeHours === null ? null : round((float) $backlogAgeHours, 1),
-                'notes_per_case' => $resolvedCount === 0
-                    ? null
-                    : round($notes / $resolvedCount, 1),
-                'critical_share' => $resolvedCount === 0
-                    ? null
-                    : round(($criticalResolved / $resolvedCount) * 100, 1),
-                'overloaded' => $openCount > self::OPEN_OVERLOAD_THRESHOLD,
-            ];
-        });
+        $rows = $workers->map(fn (User $worker) => $this->rowForWorker(
+            $worker,
+            $ticketBags,
+            $reopenCounts,
+            $noteCounts,
+            $firstResponseHours,
+            $months,
+            $days
+        ));
 
         $rows = $this->sortRows($rows, $filters['sort']);
 
@@ -423,6 +350,172 @@ class WorkerPerformanceService
             ['id' => '90d', 'label' => '90 days', 'from' => $now->copy()->subDays(89)->toDateString(), 'to' => $now->toDateString()],
             ['id' => 'month', 'label' => 'This month', 'from' => $now->copy()->startOfMonth()->toDateString(), 'to' => $now->toDateString()],
             ['id' => 'quarter', 'label' => 'This quarter', 'from' => $now->copy()->firstOfQuarter()->toDateString(), 'to' => $now->toDateString()],
+        ];
+    }
+
+    /**
+     * Person-scoped workload snapshot for any contact (not only the ICT leaderboard).
+     *
+     * @return array{
+     *     from: Carbon,
+     *     to: Carbon,
+     *     days: float,
+     *     months: float,
+     *     selected: array<string, mixed>,
+     *     open_queue: Collection,
+     *     trend: Collection,
+     *     notes_count: int
+     * }
+     */
+    public function forPerson(User $person, array $input = []): array
+    {
+        $from = Carbon::parse($input['from'] ?? now()->subDays(29)->toDateString())->startOfDay();
+        $to = Carbon::parse($input['to'] ?? now()->toDateString())->endOfDay();
+        if ($from->greaterThan($to)) {
+            [$from, $to] = [$to->copy()->startOfDay(), $from->copy()->endOfDay()];
+        }
+
+        $days = max($from->diffInDays($to) + 1, 1);
+        $months = max($days / 30.437, 1 / 30.437);
+
+        $person->loadMissing(['roles', 'department']);
+        $userIds = [$person->id];
+        $ticketBags = $this->ticketBags($userIds, $from, $to);
+        $reopenCounts = $this->reopenCounts($userIds, $from, $to);
+        $noteCounts = $this->noteCounts($userIds, $from, $to);
+        $firstResponseHours = $this->firstResponseHours($userIds, $from, $to);
+
+        $selected = $this->rowForWorker(
+            $person,
+            $ticketBags,
+            $reopenCounts,
+            $noteCounts,
+            $firstResponseHours,
+            $months,
+            $days
+        );
+
+        $priorityRank = ['critical' => 0, 'high' => 1, 'medium' => 2, 'low' => 3];
+        $openQueue = SupportTicket::query()
+            ->with(['department', 'category'])
+            ->where('assigned_to', $person->id)
+            ->open()
+            ->orderBy('reported_at')
+            ->get()
+            ->sortBy(fn (SupportTicket $ticket) => [
+                $priorityRank[$ticket->priority] ?? 9,
+                optional($ticket->reported_at)?->timestamp ?? 0,
+            ])
+            ->values();
+
+        return [
+            'from' => $from,
+            'to' => $to,
+            'days' => $days,
+            'months' => $months,
+            'selected' => $selected,
+            'open_queue' => $openQueue,
+            'trend' => $this->monthlyTrend($person->id),
+            'notes_count' => (int) ($noteCounts[$person->id] ?? 0),
+        ];
+    }
+
+    /**
+     * @param  array<int, array{open: Collection, resolved: Collection, intake: Collection}>  $ticketBags
+     * @param  array<int, int>  $reopenCounts
+     * @param  array<int, int>  $noteCounts
+     * @param  array<int, float>  $firstResponseHours
+     * @return array<string, mixed>
+     */
+    private function rowForWorker(
+        User $worker,
+        array $ticketBags,
+        array $reopenCounts,
+        array $noteCounts,
+        array $firstResponseHours,
+        float $months,
+        float $days
+    ): array {
+        $bag = $ticketBags[$worker->id] ?? [
+            'open' => collect(),
+            'resolved' => collect(),
+            'intake' => collect(),
+        ];
+
+        /** @var Collection<int, SupportTicket> $open */
+        $open = $bag['open'];
+        /** @var Collection<int, SupportTicket> $resolved */
+        $resolved = $bag['resolved'];
+        /** @var Collection<int, SupportTicket> $intake */
+        $intake = $bag['intake'];
+
+        $resolutionHours = $resolved
+            ->filter(fn (SupportTicket $ticket) => $ticket->reported_at && $ticket->resolved_at)
+            ->map(fn (SupportTicket $ticket) => $ticket->reported_at->diffInMinutes($ticket->resolved_at) / 60)
+            ->values();
+
+        $slaEligible = $resolved->filter(fn (SupportTicket $ticket) => $ticket->sla_due_at !== null);
+        $slaHits = $slaEligible->filter(function (SupportTicket $ticket) {
+            if ($ticket->sla_breached_at) {
+                return false;
+            }
+
+            return $ticket->resolved_at && $ticket->resolved_at->lessThanOrEqualTo($ticket->sla_due_at);
+        })->count();
+
+        $breaches = $resolved->filter(fn (SupportTicket $ticket) => $ticket->sla_breached_at !== null)->count()
+            + $open->filter(fn (SupportTicket $ticket) => $ticket->sla_breached_at !== null)->count();
+
+        $resolvedCount = $resolved->count();
+        $openCount = $open->count();
+        $reopens = (int) ($reopenCounts[$worker->id] ?? 0);
+        $notes = (int) ($noteCounts[$worker->id] ?? 0);
+        $criticalResolved = $resolved->whereIn('priority', ['critical', 'high'])->count();
+
+        $avgHours = $resolutionHours->avg();
+        $medianHours = $this->median($resolutionHours->all());
+        $backlogAgeHours = $open
+            ->filter(fn (SupportTicket $ticket) => $ticket->reported_at)
+            ->map(fn (SupportTicket $ticket) => $ticket->reported_at->diffInMinutes(now()) / 60)
+            ->avg();
+
+        $slaRate = $slaEligible->isEmpty()
+            ? null
+            : round(($slaHits / $slaEligible->count()) * 100, 1);
+
+        $roleName = $worker->roles->pluck('name')->first() ?? '—';
+
+        return [
+            'user_id' => $worker->id,
+            'name' => $worker->name,
+            'email' => $worker->email,
+            'role' => $roleName,
+            'department' => $worker->department->name ?? '—',
+            'open' => $openCount,
+            'intake' => $intake->count(),
+            'resolved' => $resolvedCount,
+            'cpm' => round($resolvedCount / $months, 2),
+            'cpd' => round($resolvedCount / $days, 2),
+            'avg_hours' => $avgHours === null ? null : round((float) $avgHours, 1),
+            'median_hours' => $medianHours === null ? null : round((float) $medianHours, 1),
+            'first_response_hours' => isset($firstResponseHours[$worker->id])
+                ? round((float) $firstResponseHours[$worker->id], 1)
+                : null,
+            'sla_rate' => $slaRate,
+            'breaches' => $breaches,
+            'reopen_rate' => $resolvedCount === 0
+                ? ($reopens > 0 ? 100.0 : 0.0)
+                : round(($reopens / $resolvedCount) * 100, 1),
+            'reopens' => $reopens,
+            'backlog_age_hours' => $backlogAgeHours === null ? null : round((float) $backlogAgeHours, 1),
+            'notes_per_case' => $resolvedCount === 0
+                ? null
+                : round($notes / $resolvedCount, 1),
+            'notes' => $notes,
+            'critical_share' => $resolvedCount === 0
+                ? null
+                : round(($criticalResolved / $resolvedCount) * 100, 1),
+            'overloaded' => $openCount > self::OPEN_OVERLOAD_THRESHOLD,
         ];
     }
 

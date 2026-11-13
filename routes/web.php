@@ -55,6 +55,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/mentions/suggest', [MentionController::class, 'suggest'])->name('mentions.suggest');
 
     Route::get('/people/{person}', [PeopleController::class, 'show'])->name('people.show');
+    Route::get('/people/{person}/performance', [PeopleController::class, 'performance'])->name('people.performance');
     Route::put('/people/{person}/contact', [PeopleController::class, 'updateContact'])->name('people.contact');
     Route::post('/people/{person}/message', [PeopleController::class, 'message'])->name('people.message');
 

@@ -37,7 +37,10 @@
                         <div class="text-muted small">{{ $person->contactLine() }}</div>
                     </td>
                     <td class="text-end">
-                        <a class="btn btn-sm btn-pg" href="{{ route('people.show', $person) }}#contact-details">Contact</a>
+                        <div class="d-inline-flex flex-wrap gap-1 justify-content-end">
+                            <a class="btn btn-sm btn-pg-line" href="{{ route('people.performance', $person) }}">Performance</a>
+                            <a class="btn btn-sm btn-pg" href="{{ route('people.show', $person) }}#contact-details">Contact</a>
+                        </div>
                     </td>
                 </tr>
             @empty

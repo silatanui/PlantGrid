@@ -120,7 +120,7 @@ class WorkspaceTabService
             return;
         }
 
-        if ($request->routeIs('people.show')) {
+        if ($request->routeIs('people.show', 'people.performance')) {
             $person = $request->route('person');
             if ($person instanceof User) {
                 $this->open([
@@ -258,7 +258,7 @@ class WorkspaceTabService
                 && (string) $request->route('slug') === (string) Str::after($tab['key'] ?? '', 'doc:'),
             'case' => $request->routeIs('helpdesk.show')
                 && (string) optional($request->route('ticket'))->getKey() === (string) Str::after($tab['key'] ?? '', 'case:'),
-            'contact' => $request->routeIs('people.show')
+            'contact' => $request->routeIs('people.show', 'people.performance')
                 && (string) optional($request->route('person'))->getKey() === (string) Str::after($tab['key'] ?? '', 'contact:'),
             'asset' => $request->routeIs('assets.show')
                 && (string) optional($request->route('asset'))->getKey() === (string) Str::after($tab['key'] ?? '', 'asset:'),

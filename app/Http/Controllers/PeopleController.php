@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\DirectMessage;
 use App\Models\SupportTicket;
+use App\Models\TicketComment;
 use App\Models\User;
+use App\Services\WorkerPerformanceService;
+use App\Support\CaseActivity;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -44,6 +47,62 @@ class PeopleController extends Controller
             'person' => $person,
             'openCases' => $openCases,
             'thread' => $thread,
+        ]);
+    }
+
+    public function performance(Request $request, User $person, WorkerPerformanceService $performance): View
+    {
+        abort_if($person->status !== 'active' && $person->id !== auth()->id(), 404);
+
+        $person->load(['roles:id,name', 'department:id,name']);
+
+        $snapshot = $performance->forPerson($person, $request->only(['from', 'to']));
+        $presets = $performance->rangePresets();
+        $activeRange = collect($presets)->first(function (array $preset) use ($snapshot) {
+            return $preset['from'] === $snapshot['from']->toDateString()
+                && $preset['to'] === $snapshot['to']->toDateString();
+        })['id'] ?? 'custom';
+
+        $partnerCases = SupportTicket::query()
+            ->with(['assignee:id,name'])
+            ->open()
+            ->whereHas('partners', fn ($partners) => $partners->where('users.id', $person->id))
+            ->where(function ($query) use ($person) {
+                $query->whereNull('assigned_to')
+                    ->orWhere('assigned_to', '!=', $person->id);
+            })
+            ->latest('reported_at')
+            ->limit(15)
+            ->get(['id', 'ticket_number', 'subject', 'status', 'priority', 'assigned_to']);
+
+        $requestedCases = SupportTicket::query()
+            ->open()
+            ->where('requester_id', $person->id)
+            ->latest('reported_at')
+            ->limit(15)
+            ->get(['id', 'ticket_number', 'subject', 'status', 'priority']);
+
+        $notes = TicketComment::query()
+            ->with(['ticket:id,ticket_number,subject'])
+            ->where('user_id', $person->id)
+            ->whereBetween('created_at', [$snapshot['from'], $snapshot['to']])
+            ->latest()
+            ->limit(20)
+            ->get();
+
+        $activity = CaseActivity::forUserRail($person, 15);
+
+        return view('people.performance', [
+            'title' => $person->name.' · Performance',
+            'person' => $person,
+            'snapshot' => $snapshot,
+            'rangePresets' => $presets,
+            'activeRange' => $activeRange,
+            'partnerCases' => $partnerCases,
+            'requestedCases' => $requestedCases,
+            'notes' => $notes,
+            'activity' => $activity,
+            'canViewTeamBoard' => $request->user()->hasPermission('reports.view'),
         ]);
     }
 

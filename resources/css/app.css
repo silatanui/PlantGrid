@@ -3178,6 +3178,9 @@ body.is-case-resizing {
     gap: 10px 12px;
     align-items: end;
 }
+.pg-perf-filters--compact {
+    grid-template-columns: repeat(2, minmax(160px, 220px)) auto;
+}
 
 .pg-perf-filters .form-label {
     font-size: 11px;

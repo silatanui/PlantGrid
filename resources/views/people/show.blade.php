@@ -10,6 +10,7 @@
             </div>
         </div>
         <div class="pg-person-hero-actions d-flex flex-wrap align-items-center gap-2">
+            <a class="btn btn-pg-line" href="{{ route('people.performance', $person) }}">View performance</a>
             <a class="btn btn-pg-line" href="{{ route('messages.index') }}">Open inbox</a>
             @if ($person->id !== auth()->id())
                 <a class="btn btn-pg" href="#contact">Message {{ strtok($person->name, ' ') }}</a>
@@ -50,7 +51,10 @@
             </section>
 
             <section class="pg-card mb-3">
-                <div class="pg-card-pad"><h2 class="pg-section-title mb-0">Open assigned cases</h2></div>
+                <div class="pg-card-pad d-flex justify-content-between align-items-center gap-2">
+                    <h2 class="pg-section-title mb-0">Open assigned cases</h2>
+                    <a class="btn btn-sm btn-pg-line" href="{{ route('people.performance', $person) }}">Full performance</a>
+                </div>
                 <table class="pg-table">
                     <tbody>
                     @forelse ($openCases as $case)

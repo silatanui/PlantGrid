@@ -264,7 +264,10 @@
                         · Backlog age {{ $person['backlog_age_hours'] === null ? '—' : number_format($person['backlog_age_hours'], 1).' h' }}
                     </p>
                 </div>
-                <a class="btn btn-sm btn-pg-line" href="{{ route('performance.index', $queryBase + ['sort' => $filters['sort']]) }}">Clear person</a>
+                <div class="d-flex flex-wrap gap-2">
+                    <a class="btn btn-sm btn-pg-line" href="{{ route('people.performance', $person['user_id']) }}">Person page</a>
+                    <a class="btn btn-sm btn-pg-line" href="{{ route('performance.index', $queryBase + ['sort' => $filters['sort']]) }}">Clear person</a>
+                </div>
             </div>
 
             <div class="pg-card pg-card-pad">
