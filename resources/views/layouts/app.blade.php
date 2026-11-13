@@ -245,6 +245,7 @@
                     aria-label="Open records"
                     data-workspace-tabs
                     data-reorder-url="{{ route('workspace.tabs.reorder') }}"
+                    data-close-url="{{ route('workspace.tabs.close') }}"
                     data-csrf="{{ csrf_token() }}"
                 >
                     <div class="pg-workspace-tabs" role="tablist">

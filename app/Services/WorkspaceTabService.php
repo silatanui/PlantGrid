@@ -41,6 +41,43 @@ class WorkspaceTabService
     }
 
     /**
+     * @return list<string>
+     */
+    public function closeOthers(string $keepKey): array
+    {
+        $before = $this->all();
+        $closed = $before
+            ->reject(fn (array $tab) => ($tab['key'] ?? '') === $keepKey)
+            ->map(fn (array $tab) => (string) ($tab['key'] ?? ''))
+            ->filter()
+            ->values()
+            ->all();
+
+        $kept = $before
+            ->first(fn (array $tab) => ($tab['key'] ?? '') === $keepKey);
+
+        session([self::SESSION_KEY => $kept ? [$kept] : []]);
+
+        return $closed;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function closeAll(): array
+    {
+        $closed = $this->all()
+            ->map(fn (array $tab) => (string) ($tab['key'] ?? ''))
+            ->filter()
+            ->values()
+            ->all();
+
+        session([self::SESSION_KEY => []]);
+
+        return $closed;
+    }
+
+    /**
      * @param  list<string>  $keys
      */
     public function reorder(array $keys): void

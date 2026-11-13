@@ -1,10 +1,53 @@
 let workspaceChromeBound = false;
 let syncOverflowActive = null;
+let activeCloseTabs = null;
+let contextMenuEl = null;
+let contextMenuKey = null;
+
+function ensureContextMenu() {
+    if (contextMenuEl) {
+        return contextMenuEl;
+    }
+    const menu = document.createElement('div');
+    menu.className = 'pg-workspace-context';
+    menu.hidden = true;
+    menu.setAttribute('role', 'menu');
+    menu.innerHTML = `
+        <button type="button" role="menuitem" data-tab-action="one">Close</button>
+        <button type="button" role="menuitem" data-tab-action="others">Close all but this</button>
+        <button type="button" role="menuitem" data-tab-action="all">Close all</button>
+    `;
+    document.body.appendChild(menu);
+    contextMenuEl = menu;
+    return menu;
+}
+
+function hideContextMenu() {
+    if (!contextMenuEl) {
+        return;
+    }
+    contextMenuEl.hidden = true;
+    contextMenuKey = null;
+}
+
+function placeContextMenu(clientX, clientY) {
+    const menu = ensureContextMenu();
+    menu.hidden = false;
+    const pad = 8;
+    const width = menu.offsetWidth || 180;
+    const height = menu.offsetHeight || 120;
+    const left = Math.min(clientX, window.innerWidth - width - pad);
+    const top = Math.min(clientY, window.innerHeight - height - pad);
+    menu.style.left = `${Math.max(pad, left)}px`;
+    menu.style.top = `${Math.max(pad, top)}px`;
+}
 
 export function initWorkspaceTabs(refreshIcons = () => {}) {
     const root = document.querySelector('[data-workspace-tabs]');
     if (!root) {
         syncOverflowActive = null;
+        activeCloseTabs = null;
+        hideContextMenu();
         return;
     }
 
@@ -20,6 +63,7 @@ export function initWorkspaceTabs(refreshIcons = () => {}) {
     const moreMenu = root.querySelector('[data-workspace-more-menu]');
     const moreLabel = root.querySelector('[data-workspace-more-label]');
     const reorderUrl = root.dataset.reorderUrl;
+    const closeUrl = root.dataset.closeUrl;
     const csrf = root.dataset.csrf
         || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
         || '';
@@ -31,6 +75,7 @@ export function initWorkspaceTabs(refreshIcons = () => {}) {
     let dragKey = null;
 
     const tabNodes = () => Array.from(track.querySelectorAll('[data-tab-key]'));
+    const allTabNodes = () => Array.from(root.querySelectorAll('[data-tab-key]'));
 
     const updateMoreLabel = (count) => {
         if (!moreLabel || !moreButton) {
@@ -147,11 +192,80 @@ export function initWorkspaceTabs(refreshIcons = () => {}) {
 
     syncOverflowActive = syncOverflow;
 
+    const removeClosedTabs = (closedKeys) => {
+        const closed = new Set(closedKeys || []);
+        allTabNodes().forEach((tab) => {
+            if (closed.has(tab.dataset.tabKey)) {
+                tab.closest('.pg-workspace-more-item')?.remove();
+                tab.remove();
+            }
+        });
+        if (allTabNodes().length === 0) {
+            root.remove();
+            document.querySelector('.pg-navrow')?.classList.remove('has-workspace-tabs');
+            return;
+        }
+        syncOverflow();
+    };
+
+    const runClose = async ({ mode, key, wasActive }) => {
+        if (!closeUrl) {
+            return;
+        }
+        hideContextMenu();
+        try {
+            const response = await fetch(closeUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-CSRF-TOKEN': csrf,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({
+                    mode,
+                    key: key || null,
+                    was_active: Boolean(wasActive),
+                }),
+                credentials: 'same-origin',
+            });
+            const payload = await response.json().catch(() => null);
+            if (!response.ok || !payload?.ok) {
+                throw new Error(payload?.message || 'Could not close tab.');
+            }
+            if (payload.redirect) {
+                window.location.assign(payload.redirect);
+                return;
+            }
+            removeClosedTabs(payload.closed || []);
+        } catch {
+            if (mode === 'one' && key) {
+                const form = root.querySelector(`[data-tab-key="${CSS.escape(key)}"] .pg-workspace-tab-close`);
+                form?.submit();
+            }
+        }
+    };
+
+    const showTabContextMenu = (tab, clientX, clientY) => {
+        const key = tab.dataset.tabKey;
+        if (!key) {
+            return;
+        }
+        contextMenuKey = key;
+        const menu = ensureContextMenu();
+        const tabCount = allTabNodes().length;
+        menu.querySelector('[data-tab-action="others"]').disabled = tabCount < 2;
+        menu.querySelector('[data-tab-action="all"]').disabled = tabCount < 1;
+        placeContextMenu(clientX, clientY);
+        closeMore();
+    };
+
     track.addEventListener('dragstart', (event) => {
         const tab = event.target.closest('[data-tab-key]');
         if (!tab || event.target.closest('.pg-workspace-tab-close')) {
             return;
         }
+        hideContextMenu();
         dragKey = tab.dataset.tabKey;
         tab.classList.add('is-dragging');
         event.dataTransfer?.setData('text/plain', dragKey);
@@ -192,6 +306,7 @@ export function initWorkspaceTabs(refreshIcons = () => {}) {
     moreButton?.addEventListener('click', (event) => {
         event.preventDefault();
         event.stopPropagation();
+        hideContextMenu();
         if (moreMenu.children.length === 0) {
             syncOverflow();
         }
@@ -212,6 +327,15 @@ export function initWorkspaceTabs(refreshIcons = () => {}) {
         }
     });
 
+    root.addEventListener('contextmenu', (event) => {
+        const tab = event.target.closest('[data-tab-key]');
+        if (!tab || !root.contains(tab)) {
+            return;
+        }
+        event.preventDefault();
+        showTabContextMenu(tab, event.clientX, event.clientY);
+    });
+
     if (!workspaceChromeBound) {
         workspaceChromeBound = true;
         document.addEventListener('click', (event) => {
@@ -219,17 +343,49 @@ export function initWorkspaceTabs(refreshIcons = () => {}) {
             if (!currentMore?.contains(event.target)) {
                 const menu = document.querySelector('[data-workspace-more-menu]');
                 const button = document.querySelector('[data-workspace-more-toggle]');
-                if (menu && button) {
+                if (menu && button && currentMore) {
                     menu.hidden = true;
                     button.setAttribute('aria-expanded', 'false');
                     currentMore.hidden = menu.children.length === 0;
                 }
             }
+            if (!event.target.closest('.pg-workspace-context')) {
+                hideContextMenu();
+            }
         });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                hideContextMenu();
+            }
+        });
+        window.addEventListener('blur', hideContextMenu);
         window.addEventListener('resize', () => {
+            hideContextMenu();
             window.requestAnimationFrame(() => syncOverflowActive?.());
         });
+        document.addEventListener('scroll', hideContextMenu, true);
+
+        ensureContextMenu().addEventListener('click', (event) => {
+            const button = event.target.closest('[data-tab-action]');
+            if (!button || button.disabled) {
+                return;
+            }
+            const mode = button.dataset.tabAction;
+            const key = contextMenuKey;
+            const strip = document.querySelector('[data-workspace-tabs]');
+            const tab = key
+                ? strip?.querySelector(`[data-tab-key="${CSS.escape(key)}"]`)
+                : null;
+            const wasActive = Boolean(tab?.classList.contains('active'));
+            if (typeof activeCloseTabs === 'function') {
+                void activeCloseTabs({ mode, key, wasActive });
+                return;
+            }
+            hideContextMenu();
+        });
     }
+
+    activeCloseTabs = runClose;
 
     syncOverflow();
 }
