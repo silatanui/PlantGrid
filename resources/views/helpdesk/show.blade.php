@@ -393,7 +393,7 @@
                 <section class="pg-card pg-card-pad mb-3">
                     <h2 class="pg-section-title">Partners</h2>
                     <p class="text-muted small mb-2">
-                        Partners can open the case, get notes and @mentions, and claim ownership when it is unassigned.
+                        Can open the case, get notes/@mentions, and claim ownership when unassigned.
                     </p>
                     <ul
                         class="mb-2 pg-partner-list"
@@ -403,25 +403,26 @@
                         data-case-owner-id="{{ $ticket->assigned_to }}"
                     >
                         @forelse ($ticket->partners as $partner)
+                            @php $isOwner = (int) $ticket->assigned_to === (int) $partner->id; @endphp
                             <li data-partner-id="{{ $partner->id }}">
-                                <span class="pg-partner-row">
-                                    <span>
-                                        <a href="{{ route('people.show', $partner) }}">{{ $partner->name }}</a>
-                                        <span class="text-muted small">· {{ $partner->pivot->source }}</span>
-                                    </span>
-                                    @if (! empty($canRemovePartners) && (int) $ticket->assigned_to !== (int) $partner->id)
+                                <span class="pg-partner-chip {{ $isOwner ? 'is-owner' : '' }}" title="{{ $partner->name }} · {{ $partner->pivot->source }}">
+                                    <a href="{{ route('people.show', $partner) }}">{{ $partner->name }}</a>
+                                    @if ($isOwner)
+                                        <em>owner</em>
+                                    @elseif (! empty($canRemovePartners))
                                         <button
-                                            class="btn btn-sm btn-pg-line"
                                             type="button"
                                             data-remove-partner
                                             data-partner-id="{{ $partner->id }}"
                                             data-partner-name="{{ $partner->name }}"
-                                        >Remove</button>
+                                            aria-label="Remove {{ $partner->name }}"
+                                            title="Remove"
+                                        >×</button>
                                     @endif
                                 </span>
                             </li>
                         @empty
-                            <li class="text-muted" data-partners-empty>No partners yet.</li>
+                            <li class="text-muted pg-partner-empty" data-partners-empty>No partners yet.</li>
                         @endforelse
                     </ul>
                     <form method="post" action="{{ route('helpdesk.partners.store', $ticket) }}" data-live-case-form="partners">

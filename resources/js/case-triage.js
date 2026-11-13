@@ -191,20 +191,19 @@ function updateCasePartners(partners = []) {
             ? partners.map((partner) => {
                 const isOwner = ownerId && String(partner.id) === String(ownerId);
                 const removeBtn = canRemove && !isOwner
-                    ? `<button class="btn btn-sm btn-pg-line" type="button" data-remove-partner data-partner-id="${escapeHtml(partner.id)}" data-partner-name="${escapeHtml(partner.name)}">Remove</button>`
+                    ? `<button type="button" data-remove-partner data-partner-id="${escapeHtml(partner.id)}" data-partner-name="${escapeHtml(partner.name)}" aria-label="Remove ${escapeHtml(partner.name)}" title="Remove">×</button>`
                     : '';
+                const ownerTag = isOwner ? '<em>owner</em>' : '';
                 return `
                 <li data-partner-id="${escapeHtml(partner.id)}">
-                    <span class="pg-partner-row">
-                        <span>
-                            <a href="${escapeHtml(partner.url || '#')}">${escapeHtml(partner.name)}</a>
-                            <span class="text-muted small">· ${escapeHtml(partner.source || 'manual')}</span>
-                        </span>
+                    <span class="pg-partner-chip ${isOwner ? 'is-owner' : ''}" title="${escapeHtml(partner.name)} · ${escapeHtml(partner.source || 'manual')}">
+                        <a href="${escapeHtml(partner.url || '#')}">${escapeHtml(partner.name)}</a>
+                        ${ownerTag}
                         ${removeBtn}
                     </span>
                 </li>`;
             }).join('')
-            : '<li class="text-muted" data-partners-empty>No partners yet.</li>';
+            : '<li class="text-muted pg-partner-empty" data-partners-empty>No partners yet.</li>';
     }
 
     const select = document.getElementById('partner_user_id');
