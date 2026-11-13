@@ -21,7 +21,9 @@
             <div>
                 <dt>Partners</dt>
                 <dd class="pg-partners-summary" data-case-partners>
-                    @php($casePartners = ($ticket->partners ?? collect())->values())
+                    @php
+                        $casePartners = ($ticket->partners ?? collect())->values();
+                    @endphp
                     @if ($casePartners->isEmpty())
                         -
                     @else
