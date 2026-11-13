@@ -82,15 +82,19 @@ class CaseActivity
     }
 
     /**
-     * Utility-rail feed of the signed-in user's recent case actions.
+     * Right-rail "Recent cases": one row per ticket the user recently touched.
      *
      * @return Collection<int, array<string, mixed>>
      */
-    public static function forUserRail(User $user, int $limit = 8): Collection
+    public static function forUserRail(User $user, int $limit = 8, ?int $excludeTicketId = null): Collection
     {
         $logs = AuditLog::query()
             ->where('user_id', $user->id)
             ->where('entity_type', 'support_ticket')
+            ->when(
+                $excludeTicketId !== null,
+                fn ($query) => $query->where('entity_id', '!=', $excludeTicketId)
+            )
             ->whereIn('action', [
                 'ticket.created',
                 'ticket.assign',
@@ -102,7 +106,7 @@ class CaseActivity
                 'ticket.partner.remove',
             ])
             ->latest('created_at')
-            ->limit($limit * 3)
+            ->limit(max(40, $limit * 8))
             ->get();
 
         if ($logs->isEmpty()) {
@@ -115,25 +119,39 @@ class CaseActivity
             ->get(['id', 'ticket_number', 'subject'])
             ->keyBy('id');
 
-        return $logs
-            ->map(function (AuditLog $log) use ($tickets) {
-                $ticket = $tickets->get($log->entity_id);
-                if (! $ticket) {
-                    return null;
-                }
+        $seen = [];
+        $items = collect();
 
-                return [
-                    'title' => self::labelFor($log, $ticket),
-                    'meta' => $ticket->ticket_number.' · '.$ticket->subject,
-                    'href' => route('helpdesk.show', $ticket).(
-                        $log->action === 'ticket.comment' ? '#notes' : '#activity'
-                    ),
-                    'when' => optional($log->created_at)->diffForHumans(),
-                ];
-            })
-            ->filter()
-            ->take($limit)
-            ->values();
+        foreach ($logs as $log) {
+            $ticketId = (int) $log->entity_id;
+            if (isset($seen[$ticketId])) {
+                continue;
+            }
+
+            $ticket = $tickets->get($ticketId);
+            if (! $ticket) {
+                continue;
+            }
+
+            $seen[$ticketId] = true;
+            $anchor = match ($log->action) {
+                'ticket.comment', 'ticket.comment.update' => '#notes',
+                default => '#activity',
+            };
+
+            $items->push([
+                'title' => $ticket->subject,
+                'meta' => $ticket->ticket_number.' · '.self::labelFor($log),
+                'href' => route('helpdesk.show', $ticket).$anchor,
+                'when' => optional($log->created_at)->diffForHumans(),
+            ]);
+
+            if ($items->count() >= $limit) {
+                break;
+            }
+        }
+
+        return $items->values();
     }
 
     public static function labelFor(AuditLog $log, ?SupportTicket $ticket = null): string

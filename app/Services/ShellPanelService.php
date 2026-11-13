@@ -151,7 +151,8 @@ class ShellPanelService
 
     private function activity(User $user, bool $employee): Collection
     {
-        $mine = \App\Support\CaseActivity::forUserRail($user, 8);
+        $excludeTicketId = $this->currentCaseId();
+        $mine = \App\Support\CaseActivity::forUserRail($user, 8, $excludeTicketId);
         if ($mine->isNotEmpty()) {
             return $mine;
         }
@@ -160,6 +161,10 @@ class ShellPanelService
         $tickets = SupportTicket::query()
             ->visibleTo($user)
             ->with(['requester', 'assignee'])
+            ->when(
+                $excludeTicketId !== null,
+                fn ($query) => $query->whereKeyNot($excludeTicketId)
+            )
             ->latest('updated_at')
             ->limit(6)
             ->get();
@@ -176,6 +181,20 @@ class ShellPanelService
                 'when' => optional($ticket->updated_at)->diffForHumans(),
             ];
         });
+    }
+
+    private function currentCaseId(): ?int
+    {
+        if (! request()->routeIs('helpdesk.show')) {
+            return null;
+        }
+
+        $ticket = request()->route('ticket');
+        if ($ticket instanceof SupportTicket) {
+            return (int) $ticket->id;
+        }
+
+        return is_numeric($ticket) ? (int) $ticket : null;
     }
 
     private function stats(User $user, bool $employee): array
