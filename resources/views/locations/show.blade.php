@@ -39,10 +39,13 @@
         @if (auth()->user()->hasPermission('network.view'))
             <a class="{{ $filter === 'network' ? 'active' : '' }}" href="{{ route('locations.show', ['location' => $location, 'filter' => 'network']) }}">Network ({{ $deviceCount }})</a>
         @endif
+        @if (auth()->user()->hasAnyPermission(['tickets.view.own', 'tickets.view.department', 'tickets.view.all']))
+            <a class="{{ $filter === 'cases' ? 'active' : '' }}" href="{{ route('locations.show', ['location' => $location, 'filter' => 'cases']) }}">Cases ({{ $caseCount }})</a>
+        @endif
     </div>
 
     <div class="row g-3">
-        @if (auth()->user()->hasPermission('assets.view') && $filter !== 'network')
+        @if (auth()->user()->hasPermission('assets.view') && ! in_array($filter, ['network', 'cases'], true))
             <div class="col-lg-6">
                 <section class="pg-card">
                     <div class="pg-card-pad"><h2 class="pg-section-title mb-0">Assets here</h2></div>
@@ -64,7 +67,7 @@
             </div>
         @endif
 
-        @if (auth()->user()->hasPermission('network.view') && $filter !== 'assets')
+        @if (auth()->user()->hasPermission('network.view') && ! in_array($filter, ['assets', 'cases'], true))
             <div class="col-lg-6">
                 <section class="pg-card">
                     <div class="pg-card-pad"><h2 class="pg-section-title mb-0">Network devices here</h2></div>
@@ -79,6 +82,49 @@
                             </tr>
                         @empty
                             <tr><td colspan="3" class="text-muted">No network devices at this location.</td></tr>
+                        @endforelse
+                        </tbody>
+                    </table>
+                </section>
+            </div>
+        @endif
+
+        @if (auth()->user()->hasAnyPermission(['tickets.view.own', 'tickets.view.department', 'tickets.view.all']) && ! in_array($filter, ['assets', 'network'], true))
+            <div class="{{ $filter === 'cases' ? 'col-12' : 'col-12' }}">
+                <section class="pg-card">
+                    <div class="pg-card-pad d-flex flex-wrap justify-content-between gap-2 align-items-center">
+                        <h2 class="pg-section-title mb-0">Cases linked to assets here</h2>
+                        @if ($filter !== 'cases' && $caseCount > ($cases?->count() ?? 0))
+                            <a class="btn btn-pg-line btn-sm" href="{{ route('locations.show', ['location' => $location, 'filter' => 'cases']) }}">View all cases</a>
+                        @endif
+                    </div>
+                    <table class="pg-table">
+                        <thead>
+                            <tr>
+                                <th>Case</th>
+                                <th>Subject</th>
+                                <th>Asset</th>
+                                <th>Owner</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        @forelse ($cases as $case)
+                            <tr>
+                                <td><a class="pg-mono" href="{{ route('helpdesk.show', $case) }}">{{ $case->ticket_number }}</a></td>
+                                <td><a href="{{ route('helpdesk.show', $case) }}">{{ $case->subject }}</a></td>
+                                <td>
+                                    @if ($case->asset)
+                                        <a class="pg-mono" href="{{ route('assets.show', $case->asset) }}">{{ $case->asset->asset_tag }}</a>
+                                    @else
+                                        —
+                                    @endif
+                                </td>
+                                <td>{{ $case->assignee->name ?? 'Unassigned' }}</td>
+                                <td>{!! \App\Support\Labels::badge($case->status) !!}</td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="5" class="text-muted">No cases currently linked to assets at this location.</td></tr>
                         @endforelse
                         </tbody>
                     </table>

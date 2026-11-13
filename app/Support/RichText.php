@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Asset;
+use App\Models\Location;
 use App\Models\NetworkDevice;
 use App\Models\Server;
 use App\Models\SupportTicket;
@@ -61,7 +62,7 @@ class RichText
 
         $escaped = e($text);
         $escaped = preg_replace_callback(
-            '/@\[(.*?)\]\((people|user|case|asset|device|server):(\d+)\)/u',
+            '/@\[(.*?)\]\((people|user|case|asset|device|server|location):(\d+)\)/u',
             function (array $match) {
                 $label = $match[1];
                 $type = $match[2] === 'user' ? 'people' : $match[2];
@@ -143,6 +144,23 @@ class RichText
             $escaped
         ) ?? $escaped;
 
+        $escaped = preg_replace_callback(
+            '/(?<![\w\/#-])#?([A-Z]{2,6}-[A-Z0-9]{2,6})\b/u',
+            function (array $match) {
+                $code = strtoupper($match[1]);
+                if (str_starts_with($code, 'PG-') || str_starts_with($code, 'PLT-')) {
+                    return $match[0];
+                }
+                $location = self::locationsByCode()->get($code);
+                if (! $location) {
+                    return $match[0];
+                }
+
+                return '<a class="pg-mention pg-mention-location" href="'.e(route('locations.show', $location)).'">'.e($location->name).' ('.$code.')</a>';
+            },
+            $escaped
+        ) ?? $escaped;
+
         $escaped = self::applyInlineMarkup($escaped);
 
         return nl2br($escaped, false);
@@ -181,8 +199,21 @@ class RichText
             'asset' => ($asset = Asset::query()->find($id)) ? route('assets.show', $asset) : null,
             'device' => ($device = NetworkDevice::query()->find($id)) ? route('network.show', $device) : null,
             'server' => ($server = Server::query()->find($id)) ? route('servers.show', $server) : null,
+            'location' => ($location = Location::query()->find($id)) ? route('locations.show', $location) : null,
             default => null,
         };
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<string, Location>
+     */
+    private static function locationsByCode()
+    {
+        return Cache::remember('richtext.locations.codes', 30, function () {
+            return Location::query()
+                ->get(['id', 'code', 'name'])
+                ->mapWithKeys(fn (Location $location) => [strtoupper((string) $location->code) => $location]);
+        });
     }
 
     /**

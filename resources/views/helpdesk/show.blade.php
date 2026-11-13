@@ -161,7 +161,7 @@
                             Paraphrase
                         </button>
                     </div>
-                    <textarea class="form-control pg-note-textarea" id="comment" name="comment" rows="4" required data-ai-assist data-mentions data-format-toolbar placeholder="Write a note. Use @ to mention people, and # to reference cases, assets or hosts…">{{ old('comment') }}</textarea>
+                    <textarea class="form-control pg-note-textarea" id="comment" name="comment" rows="4" required data-ai-assist data-mentions data-format-toolbar placeholder="Write a note. Use @ for people, # for cases, assets, hosts, or plant locations…">{{ old('comment') }}</textarea>
                     <div class="pg-attach-composer" data-attach-composer>
                         <label class="pg-attach-drop" for="attachment">
                             <input class="pg-attach-input" id="attachment" name="attachment" type="file" accept=".pdf,.png,.jpg,.jpeg,.txt,.doc,.docx,image/*" data-attach-input>

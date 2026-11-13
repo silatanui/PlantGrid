@@ -916,7 +916,8 @@ a:hover { color: var(--pg-navy-deep); }
 .pg-mention-case,
 .pg-mention-asset,
 .pg-mention-device,
-.pg-mention-server {
+.pg-mention-server,
+.pg-mention-location {
     border-radius: 8px;
     border: 1px solid color-mix(in srgb, var(--pg-navy) 28%, #fff);
     background: #fff;
@@ -928,6 +929,11 @@ a:hover { color: var(--pg-navy-deep); }
 .pg-mention-case {
     border-color: color-mix(in srgb, #b54708 35%, #fff);
     color: #8c4b02;
+}
+.pg-mention-location {
+    border-color: color-mix(in srgb, #0f766e 35%, #fff);
+    color: #0f5f59;
+    font-family: inherit;
 }
 .pg-mention-asset::before,
 .pg-mention-device::before,

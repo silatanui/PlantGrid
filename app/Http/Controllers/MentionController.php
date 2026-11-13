@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Asset;
+use App\Models\Location;
 use App\Models\NetworkDevice;
 use App\Models\Server;
 use App\Models\SupportTicket;
@@ -161,6 +162,31 @@ class MentionController extends Controller
                     'meta' => '',
                     'insert' => $server->hostname,
                     'url' => route('servers.show', $server),
+                ];
+            }
+        }
+
+        if (in_array($trigger, ['#', 'all'], true) && $user?->hasAnyPermission(['assets.view', 'network.view'])) {
+            $locationLimit = $trigger === '#' ? 40 : 10;
+            $locations = Location::query()
+                ->when($term !== '', function ($query) use ($like) {
+                    $query->where(function ($inner) use ($like) {
+                        $inner->where('code', 'like', $like)
+                            ->orWhere('name', 'like', $like)
+                            ->orWhere('description', 'like', $like);
+                    });
+                })
+                ->orderBy('code')
+                ->limit($locationLimit)
+                ->get(['id', 'code', 'name']);
+
+            foreach ($locations as $location) {
+                $items[] = [
+                    'type' => 'location',
+                    'label' => $location->code,
+                    'meta' => (string) $location->name,
+                    'insert' => $location->code,
+                    'url' => route('locations.show', $location),
                 ];
             }
         }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Location;
+use App\Models\SupportTicket;
 use App\Support\Labels;
 use App\Support\PlantMap;
 use Illuminate\Http\Request;
@@ -35,7 +36,7 @@ class LocationController extends Controller
         $this->authorizeMap($request);
 
         $filter = $request->input('filter', 'all');
-        if (! in_array($filter, ['all', 'assets', 'network'], true)) {
+        if (! in_array($filter, ['all', 'assets', 'network', 'cases'], true)) {
             $filter = 'all';
         }
 
@@ -47,6 +48,21 @@ class LocationController extends Controller
             ? $location->networkDevices()->orderBy('hostname')->get()
             : collect();
 
+        $cases = collect();
+        $caseCount = 0;
+        if ($request->user()?->hasAnyPermission(['tickets.view.own', 'tickets.view.department', 'tickets.view.all'])) {
+            $assetIds = $location->assets()->pluck('id');
+            $casesQuery = SupportTicket::query()
+                ->visibleTo($request->user())
+                ->with(['assignee:id,name', 'requester:id,name', 'asset:id,asset_tag,name'])
+                ->whereIn('asset_id', $assetIds)
+                ->latest('reported_at');
+            $caseCount = (clone $casesQuery)->count();
+            $cases = $filter === 'cases' || $filter === 'all'
+                ? $casesQuery->limit($filter === 'cases' ? 50 : 12)->get()
+                : collect();
+        }
+
         $locations = Location::query()
             ->withCount(['assets', 'networkDevices'])
             ->orderBy('name')
@@ -56,10 +72,12 @@ class LocationController extends Controller
             'title' => $location->name,
             'location' => $location,
             'locations' => $locations,
-            'assets' => $filter === 'network' ? collect() : $assets,
-            'devices' => $filter === 'assets' ? collect() : $devices,
+            'assets' => in_array($filter, ['network', 'cases'], true) ? collect() : $assets,
+            'devices' => in_array($filter, ['assets', 'cases'], true) ? collect() : $devices,
+            'cases' => $filter === 'assets' || $filter === 'network' ? collect() : $cases,
             'assetCount' => $assets->count(),
             'deviceCount' => $devices->count(),
+            'caseCount' => $caseCount,
             'filter' => $filter,
             'zones' => PlantMap::zones(),
             'activeZone' => $location->map_zone,
