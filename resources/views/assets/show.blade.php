@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+    @include('partials.nav-back-crumb')
     <div class="d-flex flex-wrap justify-content-between gap-2 mb-3">
         <div>
             <h1 class="pg-page-title">{{ $asset->asset_tag }}</h1>

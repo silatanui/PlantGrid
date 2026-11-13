@@ -6,6 +6,7 @@ use App\Models\DirectMessage;
 use App\Models\MonitoringAlert;
 use App\Monitoring\Contracts\MonitoringProvider;
 use App\Monitoring\Providers\SimulatedMonitoringProvider;
+use App\Services\NavigationHistory;
 use App\Services\PresenceService;
 use App\Services\ShellPanelService;
 use App\Services\WorkspaceTabService;
@@ -62,6 +63,7 @@ class AppServiceProvider extends ServiceProvider
 
             $shell = app(ShellPanelService::class);
             $workspace = app(WorkspaceTabService::class);
+            $navHistory = app(NavigationHistory::class);
             $navBadges = NavBadges::for($user);
 
             $openCasesHref = $user->isEmployeeRequester()
@@ -86,6 +88,7 @@ class AppServiceProvider extends ServiceProvider
                 'rightPanel' => $shell->right($user),
                 'workspaceTabs' => $workspace->all(),
                 'workspaceTabService' => $workspace,
+                'navPrevious' => $navHistory->previous(request()),
                 'openCasesHref' => $openCasesHref,
             ]);
         });

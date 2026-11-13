@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsurePermission;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\TrackLastSeen;
+use App\Http\Middleware\TrackNavigationHistory;
 use App\Http\Middleware\TrackWorkspaceTabs;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -19,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
             EnsureUserIsActive::class,
             TrackLastSeen::class,
             TrackWorkspaceTabs::class,
+            TrackNavigationHistory::class,
         ]);
         $middleware->alias([
             'permission' => EnsurePermission::class,

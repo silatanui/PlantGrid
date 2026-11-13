@@ -195,7 +195,29 @@
             </div>
         </div>
 
-        <div class="pg-navrow {{ ($workspaceTabs ?? collect())->isNotEmpty() ? 'has-workspace-tabs' : '' }}">
+        <div class="pg-navrow {{ ($workspaceTabs ?? collect())->isNotEmpty() ? 'has-workspace-tabs' : '' }} {{ !empty($navPrevious) ? 'has-nav-back' : '' }}">
+            @if (!empty($navPrevious))
+                <a
+                    class="pg-nav-back"
+                    href="{{ $navPrevious['url'] }}"
+                    title="Back to {{ $navPrevious['label'] }} ({{ $navPrevious['path'] }})"
+                    data-nav-back
+                >
+                    <i data-lucide="arrow-left"></i>
+                    <span>Back</span>
+                </a>
+            @else
+                <a
+                    class="pg-nav-back pg-nav-back--fallback"
+                    href="#"
+                    title="Go back"
+                    data-nav-back-fallback
+                    hidden
+                >
+                    <i data-lucide="arrow-left"></i>
+                    <span>Back</span>
+                </a>
+            @endif
             <nav class="pg-tabs" aria-label="Primary">
                 @foreach ($primaryNavigation as $item)
                     @php

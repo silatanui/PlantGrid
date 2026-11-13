@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\Models\Asset;
+use App\Models\Location;
 use App\Models\NetworkDevice;
+use App\Models\Server;
 use App\Models\SupportTicket;
 use App\Models\User;
 use App\Support\DocumentationCatalog;
@@ -142,6 +144,51 @@ class WorkspaceTabService
                     'url' => route('network.show', $device),
                 ]);
             }
+
+            return;
+        }
+
+        if ($request->routeIs('servers.show')) {
+            $server = $request->route('server');
+            if ($server instanceof Server) {
+                $this->open([
+                    'key' => 'server:'.$server->id,
+                    'type' => 'server',
+                    'label' => $server->hostname,
+                    'meta' => 'Server',
+                    'icon' => 'server',
+                    'url' => route('servers.show', $server),
+                ]);
+            }
+
+            return;
+        }
+
+        if ($request->routeIs('locations.show')) {
+            $location = $request->route('location');
+            if ($location instanceof Location) {
+                $this->open([
+                    'key' => 'location:'.$location->id,
+                    'type' => 'location',
+                    'label' => $location->name,
+                    'meta' => 'Location',
+                    'icon' => 'map-pin',
+                    'url' => route('locations.show', $location),
+                ]);
+            }
+
+            return;
+        }
+
+        if ($request->routeIs('locations.index')) {
+            $this->open([
+                'key' => 'location:map',
+                'type' => 'location-map',
+                'label' => 'Plant map',
+                'meta' => 'Locations',
+                'icon' => 'map',
+                'url' => route('locations.index'),
+            ]);
         }
     }
 
@@ -180,6 +227,11 @@ class WorkspaceTabService
                 && (string) optional($request->route('asset'))->getKey() === (string) Str::after($tab['key'] ?? '', 'asset:'),
             'network' => $request->routeIs('network.show')
                 && (string) optional($request->route('device'))->getKey() === (string) Str::after($tab['key'] ?? '', 'network:'),
+            'server' => $request->routeIs('servers.show')
+                && (string) optional($request->route('server'))->getKey() === (string) Str::after($tab['key'] ?? '', 'server:'),
+            'location' => $request->routeIs('locations.show')
+                && (string) optional($request->route('location'))->getKey() === (string) Str::after($tab['key'] ?? '', 'location:'),
+            'location-map' => $request->routeIs('locations.index'),
             default => rtrim($request->url(), '/') === rtrim((string) ($tab['url'] ?? ''), '/'),
         };
     }

@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+    @include('partials.nav-back-crumb')
     <h1 class="pg-page-title">{{ $device->hostname }}</h1>
     <p class="pg-page-lead">{{ \App\Support\Labels::status($device->device_type) }} · documented record</p>
     @include('partials.device-media', ['media' => \App\Support\DeviceMedia::forNetworkDevice($device->loadMissing('asset.category'))])
