@@ -1006,19 +1006,19 @@ a:hover { color: var(--pg-navy-deep); }
     position: relative;
 }
 .pg-mention-panel {
-    position: absolute;
-    z-index: 30;
-    width: min(420px, 100%);
-    max-height: min(420px, 55vh);
+    position: fixed;
+    z-index: 80;
+    width: min(320px, calc(100vw - 24px));
+    max-height: min(200px, 32vh);
     overflow: auto;
     border: 1px solid #c2cad2;
     background: #fff;
-    box-shadow: 0 8px 20px rgba(24, 24, 24, 0.14);
+    box-shadow: 0 10px 28px rgba(24, 24, 24, 0.16);
 }
 .pg-mention-item {
     display: block;
     width: 100%;
-    padding: 8px 12px;
+    padding: 6px 10px;
     border: 0;
     border-bottom: 1px solid #f0f0f0;
     background: #fff;
@@ -1331,9 +1331,6 @@ a:hover { color: var(--pg-navy-deep); }
 }
 .pg-note-editor .pg-format-host {
     margin-bottom: 8px;
-}
-.pg-note-wysiwyg-shell .pg-mention-panel {
-    z-index: 20;
 }
 .pg-note-composer-actions {
     display: flex;

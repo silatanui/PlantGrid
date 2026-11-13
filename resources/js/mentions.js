@@ -1,43 +1,11 @@
+import { caretRectFromTextarea, placeMentionPanel } from './mention-panel';
+
 function escapeHtml(value) {
     return String(value)
         .replaceAll('&', '&amp;')
         .replaceAll('<', '&lt;')
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;');
-}
-
-function caretCoordinates(textarea, position) {
-    const div = document.createElement('div');
-    const style = window.getComputedStyle(textarea);
-    const properties = [
-        'boxSizing', 'width', 'height', 'overflowX', 'overflowY',
-        'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth',
-        'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
-        'fontStyle', 'fontVariant', 'fontWeight', 'fontStretch', 'fontSize', 'fontSizeAdjust',
-        'lineHeight', 'fontFamily', 'textAlign', 'textTransform', 'textIndent',
-        'textDecoration', 'letterSpacing', 'wordSpacing', 'tabSize', 'MozTabSize',
-    ];
-
-    div.style.position = 'absolute';
-    div.style.visibility = 'hidden';
-    div.style.whiteSpace = 'pre-wrap';
-    div.style.wordWrap = 'break-word';
-    properties.forEach((prop) => {
-        div.style[prop] = style[prop];
-    });
-
-    div.textContent = textarea.value.slice(0, position);
-    const marker = document.createElement('span');
-    marker.textContent = textarea.value.slice(position) || '.';
-    div.appendChild(marker);
-    document.body.appendChild(div);
-
-    const coordinates = {
-        top: marker.offsetTop - textarea.scrollTop + Number.parseFloat(style.borderTopWidth),
-        left: marker.offsetLeft - textarea.scrollLeft + Number.parseFloat(style.borderLeftWidth),
-    };
-    document.body.removeChild(div);
-    return coordinates;
 }
 
 export function initMentions(root = document) {
@@ -49,7 +17,7 @@ export function initMentions(root = document) {
     const suggestUrl = document.body.dataset.mentionsUrl || '/PlantGrid/mentions/suggest';
 
     fields.forEach((textarea) => {
-        if (textarea.closest('.pg-mention-host') || textarea.dataset.mentionsReady === '1') {
+        if (!(textarea instanceof HTMLTextAreaElement) || textarea.dataset.mentionsReady === '1') {
             return;
         }
         textarea.dataset.mentionsReady = '1';
@@ -61,7 +29,7 @@ export function initMentions(root = document) {
         const panel = document.createElement('div');
         panel.className = 'pg-mention-panel';
         panel.hidden = true;
-        host.appendChild(panel);
+        document.body.appendChild(panel);
 
         let timer = null;
         let activeIndex = -1;
@@ -104,20 +72,20 @@ export function initMentions(root = document) {
             items = list;
             if (!items.length) {
                 panel.innerHTML = `<div class="pg-mention-empty">No matches</div>`;
-                panel.hidden = false;
-                return;
+            } else {
+                panel.innerHTML = items.map((item, index) => `
+                    <button type="button" class="pg-mention-item" data-mention-item data-index="${index}">
+                        <span class="pg-mention-copy">
+                            <strong>${escapeHtml(item.label)}</strong>
+                            ${item.meta ? `<span class="pg-mention-meta">${escapeHtml(item.meta)}</span>` : ''}
+                        </span>
+                    </button>
+                `).join('');
             }
 
-            panel.innerHTML = items.map((item, index) => `
-                <button type="button" class="pg-mention-item" data-mention-item data-index="${index}">
-                    <span class="pg-mention-copy">
-                        <strong>${escapeHtml(item.label)}</strong>
-                        ${item.meta ? `<span class="pg-mention-meta">${escapeHtml(item.meta)}</span>` : ''}
-                    </span>
-                </button>
-            `).join('');
-            panel.hidden = false;
-            activeIndex = 0;
+            const caret = textarea.selectionStart ?? 0;
+            placeMentionPanel(panel, caretRectFromTextarea(textarea, caret));
+            activeIndex = items.length ? 0 : -1;
             syncActive();
 
             panel.querySelectorAll('[data-mention-item]').forEach((button) => {
@@ -163,9 +131,6 @@ export function initMentions(root = document) {
             trigger = match[2];
             mentionStart = caret - match[2].length - match[3].length;
             const query = match[3];
-            const coords = caretCoordinates(textarea, caret);
-            panel.style.top = `${Math.min(coords.top + 22, textarea.offsetHeight - 8)}px`;
-            panel.style.left = `${Math.min(coords.left, Math.max(8, textarea.clientWidth - 280))}px`;
 
             window.clearTimeout(timer);
             timer = window.setTimeout(() => fetchItems(query, trigger), 120);
@@ -173,6 +138,11 @@ export function initMentions(root = document) {
 
         textarea.addEventListener('input', detectMention);
         textarea.addEventListener('click', detectMention);
+        textarea.addEventListener('scroll', () => {
+            if (!panel.hidden) {
+                placeMentionPanel(panel, caretRectFromTextarea(textarea, textarea.selectionStart ?? 0));
+            }
+        });
         textarea.addEventListener('blur', () => window.setTimeout(close, 120));
         textarea.addEventListener('keydown', (event) => {
             if (panel.hidden || !items.length) {

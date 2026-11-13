@@ -1,3 +1,5 @@
+import { caretRectFromContentEditable, placeMentionPanel } from './mention-panel';
+
 function escapeHtml(value) {
     return String(value)
         .replaceAll('&', '&amp;')
@@ -199,12 +201,11 @@ export function mountNoteWysiwyg(host, { html = '', suggestUrl = '' } = {}) {
         });
     });
 
-    // Mentions autocomplete for contenteditable
+    // Mentions autocomplete for contenteditable — fixed near caret, not over the note.
     const panel = document.createElement('div');
     panel.className = 'pg-mention-panel';
     panel.hidden = true;
-    host.style.position = host.style.position || 'relative';
-    host.appendChild(panel);
+    document.body.appendChild(panel);
 
     let timer = null;
     let items = [];
@@ -229,21 +230,20 @@ export function mountNoteWysiwyg(host, { html = '', suggestUrl = '' } = {}) {
         items = list;
         if (!items.length) {
             panel.innerHTML = '<div class="pg-mention-empty">No matches</div>';
-            panel.hidden = false;
-            mentionActive = true;
-            return;
+        } else {
+            panel.innerHTML = items.map((item, index) => `
+                <button type="button" class="pg-mention-item" data-mention-item data-index="${index}">
+                    <span class="pg-mention-copy">
+                        <strong>${escapeHtml(item.label)}</strong>
+                        ${item.meta ? `<span class="pg-mention-meta">${escapeHtml(item.meta)}</span>` : ''}
+                    </span>
+                </button>
+            `).join('');
         }
-        panel.innerHTML = items.map((item, index) => `
-            <button type="button" class="pg-mention-item" data-mention-item data-index="${index}">
-                <span class="pg-mention-copy">
-                    <strong>${escapeHtml(item.label)}</strong>
-                    ${item.meta ? `<span class="pg-mention-meta">${escapeHtml(item.meta)}</span>` : ''}
-                </span>
-            </button>
-        `).join('');
-        panel.hidden = false;
+        const anchor = caretRectFromContentEditable() || surface.getBoundingClientRect();
+        placeMentionPanel(panel, anchor);
         mentionActive = true;
-        activeIndex = 0;
+        activeIndex = items.length ? 0 : -1;
         syncActive();
         panel.querySelectorAll('[data-mention-item]').forEach((button) => {
             button.addEventListener('mousedown', (event) => {
@@ -286,8 +286,6 @@ export function mountNoteWysiwyg(host, { html = '', suggestUrl = '' } = {}) {
         }
         const trigger = match[2];
         const query = match[3];
-        panel.style.top = `${Math.min(surface.offsetTop + surface.clientHeight - 8, 120)}px`;
-        panel.style.left = '12px';
         window.clearTimeout(timer);
         timer = window.setTimeout(() => fetchItems(query, trigger), 120);
     };
