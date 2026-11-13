@@ -3788,19 +3788,37 @@ button.btn {
 button.pg-path-step {
     cursor: pointer;
 }
-.pg-path .is-complete .pg-path-step {
-    background: var(--pg-navy);
-    color: var(--pg-on-accent);
-}
-.pg-path .is-current .pg-path-step {
-    background: var(--pg-navy-deep);
+/* Passed stages stay dark even when they are also clickable (is-available). */
+.pg-path .is-complete .pg-path-step,
+.pg-path .is-complete.is-available .pg-path-step {
+    background: color-mix(in srgb, var(--pg-navy) 82%, #0f1720);
     color: #fff;
 }
-.pg-path .is-available .pg-path-step {
+.pg-path .is-complete .pg-path-index,
+.pg-path .is-complete.is-available .pg-path-index {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.7);
+}
+.pg-path .is-complete.is-available .pg-path-step:hover {
+    background: color-mix(in srgb, var(--pg-navy) 70%, #0f1720);
+    color: #fff;
+}
+.pg-path .is-current .pg-path-step,
+.pg-path .is-current.is-available .pg-path-step,
+.pg-path .is-current.is-complete .pg-path-step {
+    background: var(--pg-navy-deep);
+    color: #fff;
+    box-shadow: inset 0 0 0 2px color-mix(in srgb, #fff 28%, transparent);
+}
+.pg-path .is-current .pg-path-index {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: #fff;
+}
+.pg-path .is-available:not(.is-complete):not(.is-current) .pg-path-step {
     background: var(--pg-teal-soft);
     color: var(--pg-navy-deep);
 }
-.pg-path .is-available .pg-path-step:hover {
+.pg-path .is-available:not(.is-complete):not(.is-current) .pg-path-step:hover {
     background: #d8ebfa;
     color: var(--pg-navy-deep);
 }
