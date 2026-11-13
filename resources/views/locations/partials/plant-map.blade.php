@@ -55,10 +55,10 @@
                     <path fill="url(#pg-paving)" d="M300 320 H320 V470 H300 Z"/>
                     <path fill="url(#pg-paving)" d="M520 320 H860 V350 H520 Z"/>
                     <path fill="url(#pg-paving)" d="M200 410 H300 V430 H200 Z"/>
-                    <path fill="url(#pg-paving)" d="M200 700 H200 V720 H380 V700 H560 V720 H70 V780 H70 V720 H200 Z"/>
+                    <path fill="url(#pg-paving)" d="M180 700 H240 V720 H360 V700 H420 V722 H180 Z"/>
                     <path fill="url(#pg-paving)" d="M470 40 H580 V70 H470 Z"/>
-                    <path fill="#b8c0ca" d="M40 760 H400 V790 H40 Z"/>
-                    <text class="pg-plant-amenity-label" x="220" y="778">Service driveway</text>
+                    <path fill="#b8c0ca" d="M40 760 H420 V790 H40 Z"/>
+                    <text class="pg-plant-amenity-label" x="230" y="778">Service driveway</text>
                 </g>
 
                 <text class="pg-plant-map-brand" x="40" y="36">Northridge Processing · Campus plan</text>
