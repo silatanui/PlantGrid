@@ -219,6 +219,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/administration/locations', [AdminController::class, 'storeLocation'])->name('admin.locations.store');
         Route::post('/administration/settings', [AdminController::class, 'updateSettings'])->name('admin.settings.update');
         Route::post('/administration/identity', [AdminController::class, 'updateIdentity'])->name('admin.identity.update');
+        Route::post('/administration/live-pulse', [AdminController::class, 'updateLivePulse'])
+            ->middleware('permission:roles.manage')
+            ->name('admin.live-pulse.update');
     });
 
     Route::get('/audit-logs', [AuditController::class, 'index'])

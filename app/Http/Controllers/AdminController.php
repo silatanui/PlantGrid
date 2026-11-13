@@ -11,6 +11,7 @@ use App\Models\SystemSetting;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\IdentityService;
+use App\Services\LivePulse\LivePulseService;
 use App\Services\PresenceService;
 use App\Services\TicketService;
 use App\Support\TableSort;
@@ -42,6 +43,7 @@ class AdminController extends Controller
             'locations' => Location::query()->with('department')->orderBy('name')->get(),
             'plantName' => SystemSetting::getValue('plant_name', 'Northridge Processing'),
             'identity' => app(IdentityService::class)->adminState(),
+            'livePulse' => app(LivePulseService::class)->status(),
             'sort' => $sort,
         ]);
     }
@@ -231,5 +233,23 @@ class AdminController extends Controller
         ]);
 
         return back()->with('status', 'Identity settings saved.');
+    }
+
+    public function updateLivePulse(Request $request, LivePulseService $pulse, AuditLogger $audit)
+    {
+        abort_unless($request->user()->hasPermission('roles.manage'), 403);
+        $data = $request->validate([
+            'live_pulse_enabled' => ['nullable', 'boolean'],
+        ]);
+
+        $enabled = $request->boolean('live_pulse_enabled');
+        $pulse->setEnabled($enabled, $request->user());
+        $audit->log('settings.live_pulse', 'system_setting', null, [], [
+            'live_pulse_enabled' => $enabled,
+        ]);
+
+        return back()->with('status', $enabled
+            ? 'Live Pulse is on until '.$pulse->endsAt()->toDayDateTimeString().'.'
+            : 'Live Pulse is off.');
     }
 }

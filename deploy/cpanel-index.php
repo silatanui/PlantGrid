@@ -16,6 +16,10 @@
  *
  * Skipping the sync leaves the site pointing at new /build/assets hashes that
  * are not in the subdomain folder yet (blank / unstyled pages).
+ *
+ * Cron (required for Live Pulse + SLA):
+ *   * * * * * cd ~/plantgrid_app && php artisan schedule:run >> /dev/null 2>&1
+ * See deploy/CRON.md.
  */
 
 use Illuminate\Foundation\Application;

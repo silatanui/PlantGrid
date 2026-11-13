@@ -133,6 +133,26 @@
             <input class="form-control" id="plant_name" name="plant_name" value="{{ $plantName }}" required>
             <button class="btn btn-pg mt-3" type="submit">Save name</button>
         </form>
+        <form class="pg-card pg-card-pad mb-3" method="post" action="{{ route('admin.live-pulse.update') }}">
+            @csrf
+            <h2 class="pg-section-title">Live Pulse</h2>
+            <p class="text-muted small mb-2">
+                Portfolio demo activity: randomized cases, notes, messages, and SLA pressure through
+                <span class="pg-mono">{{ $livePulse['ends_at'] ?? '2026-12-31' }}</span>.
+                Requires a cPanel cron for <span class="pg-mono">php artisan schedule:run</span>.
+            </p>
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" value="1" id="live_pulse_enabled" name="live_pulse_enabled" @checked($livePulse['enabled'] ?? false)>
+                <label class="form-check-label" for="live_pulse_enabled">Enable Live Pulse</label>
+            </div>
+            <dl class="pg-kv mb-2">
+                <dt>Window</dt><dd>{{ ($livePulse['active'] ?? false) ? 'Active' : 'Inactive' }}</dd>
+                <dt>Open cases</dt><dd>{{ $livePulse['open_cases'] ?? 0 }}</dd>
+                <dt>Last run</dt><dd class="small">{{ $livePulse['last_run'] ?: '—' }}</dd>
+                <dt>Last event</dt><dd class="small">{{ $livePulse['last_event'] ?: '—' }}</dd>
+            </dl>
+            <button class="btn btn-pg" type="submit">Save Live Pulse</button>
+        </form>
         <form class="pg-card pg-card-pad mb-3" method="post" action="{{ route('admin.identity.update') }}">
             @csrf
             <h2 class="pg-section-title">Identity · Microsoft Entra ID</h2>
