@@ -19,6 +19,7 @@ import { initFormDrafts } from './form-drafts';
 import { initPlantMap } from './plant-map';
 import { initNavBack } from './nav-back';
 import { initPartnersSummary } from './partners-summary';
+import { initCaseWorkspace } from './case-workspace';
 
 Chart.register(...registerables);
 Chart.defaults.font.family = 'system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
@@ -46,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
         initWorkspaceTabs(refreshIcons);
         initAttachPreview(refreshIcons);
         initCaseTriage(refreshIcons);
+        initCaseWorkspace();
         initPlantMap();
         initNavBack();
         initPartnersSummary();

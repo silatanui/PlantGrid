@@ -85,8 +85,33 @@
             </li>
         @endforeach
     </ol>
-    <div class="row g-3">
-        <div class="col-lg-7">
+    @php
+        $ownerOptionLabel = static function ($person) use ($presence) {
+            $parts = [$person->name];
+            $role = $person->roleLabel();
+            if ($role) {
+                $parts[] = $role;
+            }
+            if ($person->department?->code) {
+                $parts[] = $person->department->code;
+            }
+            if (isset($presence) && $presence->isOnline($person)) {
+                $parts[] = 'Online';
+            }
+
+            return implode(' · ', $parts);
+        };
+        $canManagePartners = auth()->user()->hasPermission('tickets.assign')
+            || ! empty($isCasePartner)
+            || ((int) $ticket->requester_id === (int) auth()->id())
+            || ((int) $ticket->assigned_to === (int) auth()->id());
+        $showOwnership = ! empty($canTakeOwnership) || ! empty($canTransferOwnership);
+        $showStatus = $transitions !== [];
+        $showWorkflow = $showOwnership || $canManagePartners || $showStatus;
+        $canCloseDuplicate = in_array('closed', $transitions, true);
+    @endphp
+    <div class="pg-case-workspace" data-case-workspace @if (! $showWorkflow) data-case-workspace-single @endif>
+        <div class="pg-case-primary" data-case-pane="primary">
             <section class="pg-card pg-card-pad mb-3">
                 <h2 class="pg-section-title">Request</h2>
                 <div class="pg-rich-note">{{-- description may include tags --}}{!! \App\Support\RichText::render($ticket->description) !!}</div>
@@ -333,35 +358,16 @@
                 </section>
             </section>
         </div>
-        <div class="col-lg-5">
-            @php
-                $ownerOptionLabel = static function ($person) use ($presence) {
-                    $parts = [$person->name];
-                    $role = $person->roleLabel();
-                    if ($role) {
-                        $parts[] = $role;
-                    }
-                    if ($person->department?->code) {
-                        $parts[] = $person->department->code;
-                    }
-                    if (isset($presence) && $presence->isOnline($person)) {
-                        $parts[] = 'Online';
-                    }
-
-                    return implode(' · ', $parts);
-                };
-            @endphp
-            @php
-                $canManagePartners = auth()->user()->hasPermission('tickets.assign')
-                    || ! empty($isCasePartner)
-                    || ((int) $ticket->requester_id === (int) auth()->id())
-                    || ((int) $ticket->assigned_to === (int) auth()->id());
-                $showOwnership = ! empty($canTakeOwnership) || ! empty($canTransferOwnership);
-                $showStatus = $transitions !== [];
-                $showWorkflow = $showOwnership || $canManagePartners || $showStatus;
-                $canCloseDuplicate = in_array('closed', $transitions, true);
-            @endphp
-            @if ($showWorkflow)
+        @if ($showWorkflow)
+            <div
+                class="pg-case-resize"
+                data-case-resize
+                role="separator"
+                aria-orientation="vertical"
+                aria-label="Resize Request and Notes versus Case workflow"
+                title="Drag to resize"
+            ></div>
+            <div class="pg-case-aside" data-case-pane="workflow">
                 <section
                     class="pg-card pg-card-pad mb-3 pg-case-workflow"
                     data-case-workflow
@@ -576,7 +582,7 @@
                         </script>
                     @endif
                 </section>
-            @endif
-        </div>
+            </div>
+        @endif
     </div>
 @endsection

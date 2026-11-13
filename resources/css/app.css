@@ -2413,6 +2413,53 @@ body.is-shell-navigating [data-workspace-tabs] {
 .pg-object-icon--dashboard { background: var(--pg-navy-deep); }
 .pg-object-icon--default { background: var(--pg-navy); }
 
+.pg-case-workspace {
+    --pg-case-workflow: 380px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 6px var(--pg-case-workflow);
+    column-gap: 0.75rem;
+    align-items: start;
+}
+.pg-case-workspace[data-case-workspace-single] {
+    grid-template-columns: minmax(0, 1fr);
+}
+.pg-case-primary,
+.pg-case-aside {
+    min-width: 0;
+}
+.pg-case-primary > .pg-card:last-child,
+.pg-case-aside > .pg-card:last-child {
+    margin-bottom: 0;
+}
+.pg-case-resize {
+    width: 6px;
+    margin-inline: -3px;
+    min-height: 8rem;
+    align-self: stretch;
+    border-radius: 999px;
+    cursor: col-resize;
+    touch-action: none;
+    background: transparent;
+}
+.pg-case-resize:hover,
+.pg-case-resize:focus-visible,
+body.is-case-resizing .pg-case-resize {
+    background: color-mix(in srgb, var(--pg-navy) 18%, transparent);
+}
+body.is-case-resizing {
+    cursor: col-resize;
+    user-select: none;
+}
+@media (max-width: 991.98px) {
+    .pg-case-workspace {
+        grid-template-columns: minmax(0, 1fr);
+        row-gap: 1rem;
+    }
+    .pg-case-resize {
+        display: none;
+    }
+}
+
 .pg-case-workflow {
     display: grid;
     gap: 0;
