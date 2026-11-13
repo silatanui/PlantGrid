@@ -36,9 +36,10 @@ function applyRailWidths(shell) {
 function initResizeHandles(shell) {
     document.querySelectorAll('[data-rail-resize]').forEach((handle) => {
         const side = handle.dataset.railResize;
-        if (!side || !WIDTH_LIMITS[side]) {
+        if (!side || !WIDTH_LIMITS[side] || handle.dataset.resizeReady === '1') {
             return;
         }
+        handle.dataset.resizeReady = '1';
 
         let startX = 0;
         let startWidth = 0;
@@ -122,6 +123,11 @@ function initSectionReorder(container, side) {
 
     applySectionOrder(container, side);
 
+    if (container.dataset.railReorderReady === '1') {
+        return;
+    }
+    container.dataset.railReorderReady = '1';
+
     let dragging = null;
 
     container.querySelectorAll(':scope > [data-rail-section]').forEach((section) => {
@@ -175,6 +181,18 @@ function initSectionReorder(container, side) {
     });
 }
 
+export function refreshRightRailChrome(shell = document.body) {
+    if (!shell?.classList?.contains('pg-shell')) {
+        return;
+    }
+    const right = document.querySelector('#shell-right');
+    if (!right) {
+        return;
+    }
+    initResizeHandles(shell);
+    initSectionReorder(right.querySelector('[data-rail-sections="right"]'), 'right');
+}
+
 export function initShellPanels(refreshIcons = () => {}) {
     const shell = document.body.classList.contains('pg-shell') ? document.body : null;
     if (!shell) {
@@ -187,6 +205,7 @@ export function initShellPanels(refreshIcons = () => {}) {
     initResizeHandles(shell);
     initSectionReorder(document.querySelector('[data-rail-sections="left"]'), 'left');
     initSectionReorder(document.querySelector('[data-rail-sections="right"]'), 'right');
+    document.querySelector('#shell-right')?.setAttribute('data-rail-chrome-ready', '1');
 
     return {
         applyRailWidths: () => applyRailWidths(shell),

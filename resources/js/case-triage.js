@@ -495,6 +495,10 @@ function renderSectionSuggestion(root, focus, suggestion) {
 
 function initLiveCaseForms() {
     document.querySelectorAll('[data-live-case-form]').forEach((form) => {
+        if (form.dataset.liveCaseFormReady === '1') {
+            return;
+        }
+        form.dataset.liveCaseFormReady = '1';
         form.addEventListener('submit', async (event) => {
             event.preventDefault();
             const status = form.parentElement?.querySelector('[data-live-case-status]');
@@ -549,36 +553,41 @@ function initLiveCaseForms() {
         });
     });
 
-    document.querySelector('[data-case-partner-list]')?.addEventListener('click', async (event) => {
-        const button = event.target.closest('[data-remove-partner]');
-        if (!button) {
+    document.querySelectorAll('[data-case-partner-list]').forEach((list) => {
+        if (list.dataset.partnerRemoveReady === '1') {
             return;
         }
+        list.dataset.partnerRemoveReady = '1';
+        list.addEventListener('click', async (event) => {
+            const button = event.target.closest('[data-remove-partner]');
+            if (!button) {
+                return;
+            }
 
-        const list = button.closest('[data-case-partner-list]');
-        const status = list?.parentElement?.querySelector('[data-live-case-status]');
-        const partnerId = button.dataset.partnerId;
-        const partnerName = button.dataset.partnerName || 'this partner';
-        const url = partnerRemoveUrl(list, partnerId);
-        if (!url || !partnerId) {
-            return;
-        }
+            const status = list.parentElement?.querySelector('[data-live-case-status]');
+            const partnerId = button.dataset.partnerId;
+            const partnerName = button.dataset.partnerName || 'this partner';
+            const url = partnerRemoveUrl(list, partnerId);
+            if (!url || !partnerId) {
+                return;
+            }
 
-        if (!window.confirm(`Remove ${partnerName} from this case?`)) {
-            return;
-        }
+            if (!window.confirm(`Remove ${partnerName} from this case?`)) {
+                return;
+            }
 
-        button.disabled = true;
-        flashStatus(status, `Removing ${partnerName}…`);
-        try {
-            const payload = await deleteJson(url);
-            updateCasePartners(payload.partners || []);
-            applyCaseActivity(payload);
-            flashStatus(status, payload.message || 'Partner removed.');
-        } catch (error) {
-            flashStatus(status, error.message || 'Could not remove partner.', { error: true });
-            button.disabled = false;
-        }
+            button.disabled = true;
+            flashStatus(status, `Removing ${partnerName}…`);
+            try {
+                const payload = await deleteJson(url);
+                updateCasePartners(payload.partners || []);
+                applyCaseActivity(payload);
+                flashStatus(status, payload.message || 'Partner removed.');
+            } catch (error) {
+                flashStatus(status, error.message || 'Could not remove partner.', { error: true });
+                button.disabled = false;
+            }
+        });
     });
 }
 
@@ -586,6 +595,10 @@ export function initCaseTriage(refreshIcons = () => {}) {
     initLiveCaseForms();
 
     document.querySelectorAll('[data-case-workflow][data-triage-url], [data-case-triage][data-triage-url]').forEach((root) => {
+        if (root.dataset.caseTriageReady === '1') {
+            return;
+        }
+        root.dataset.caseTriageReady = '1';
         const ticketId = root.dataset.ticketId || 'case';
         const status = root.querySelector('[data-triage-status]');
         let latest = null;

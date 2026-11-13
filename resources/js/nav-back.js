@@ -1,8 +1,9 @@
 export function initNavBack() {
     const fallback = document.querySelector('[data-nav-back-fallback]');
-    if (!fallback) {
+    if (!fallback || fallback.dataset.navBackReady === '1') {
         return;
     }
+    fallback.dataset.navBackReady = '1';
 
     try {
         const referrer = document.referrer ? new URL(document.referrer) : null;

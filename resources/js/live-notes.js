@@ -130,9 +130,10 @@ function syncNotesCount(root, list) {
 
 export function initLiveNotes(refreshIcons = () => {}) {
     const root = document.querySelector('[data-live-notes]');
-    if (!root) {
+    if (!root || root.dataset.liveNotesReady === '1') {
         return;
     }
+    root.dataset.liveNotesReady = '1';
 
     const list = root.querySelector('[data-notes-list]');
     const form = root.querySelector('[data-notes-form]');

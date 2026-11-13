@@ -59,7 +59,14 @@ function closeAll(except = null) {
     });
 }
 
+let partnersSummaryReady = false;
+
 export function initPartnersSummary(root = document) {
+    if (partnersSummaryReady) {
+        return;
+    }
+    partnersSummaryReady = true;
+
     root.addEventListener('click', (event) => {
         const toggle = event.target.closest('[data-partners-more]');
         if (toggle) {

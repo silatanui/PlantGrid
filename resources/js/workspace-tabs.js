@@ -1,8 +1,18 @@
+let workspaceChromeBound = false;
+let syncOverflowActive = null;
+
 export function initWorkspaceTabs(refreshIcons = () => {}) {
     const root = document.querySelector('[data-workspace-tabs]');
     if (!root) {
+        syncOverflowActive = null;
         return;
     }
+
+    if (root.dataset.tabsReady === '1') {
+        syncOverflowActive?.();
+        return;
+    }
+    root.dataset.tabsReady = '1';
 
     const track = root.querySelector('[data-workspace-tab-track]');
     const more = root.querySelector('[data-workspace-more]');
@@ -135,6 +145,8 @@ export function initWorkspaceTabs(refreshIcons = () => {}) {
         refreshIcons();
     };
 
+    syncOverflowActive = syncOverflow;
+
     track.addEventListener('dragstart', (event) => {
         const tab = event.target.closest('[data-tab-key]');
         if (!tab || event.target.closest('.pg-workspace-tab-close')) {
@@ -192,12 +204,6 @@ export function initWorkspaceTabs(refreshIcons = () => {}) {
         refreshIcons();
     });
 
-    document.addEventListener('click', (event) => {
-        if (!more?.contains(event.target)) {
-            closeMore();
-        }
-    });
-
     // Stop the tab link from stealing the close click.
     root.addEventListener('click', (event) => {
         const closeButton = event.target.closest('.pg-workspace-tab-close button');
@@ -206,9 +212,24 @@ export function initWorkspaceTabs(refreshIcons = () => {}) {
         }
     });
 
-    window.addEventListener('resize', () => {
-        window.requestAnimationFrame(syncOverflow);
-    });
+    if (!workspaceChromeBound) {
+        workspaceChromeBound = true;
+        document.addEventListener('click', (event) => {
+            const currentMore = document.querySelector('[data-workspace-more]');
+            if (!currentMore?.contains(event.target)) {
+                const menu = document.querySelector('[data-workspace-more-menu]');
+                const button = document.querySelector('[data-workspace-more-toggle]');
+                if (menu && button) {
+                    menu.hidden = true;
+                    button.setAttribute('aria-expanded', 'false');
+                    currentMore.hidden = menu.children.length === 0;
+                }
+            }
+        });
+        window.addEventListener('resize', () => {
+            window.requestAnimationFrame(() => syncOverflowActive?.());
+        });
+    }
 
     syncOverflow();
 }

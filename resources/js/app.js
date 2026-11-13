@@ -6,7 +6,8 @@ import { initGlobalSearch } from './global-search';
 import { initMentions } from './mentions';
 import { initLiveNotes } from './live-notes';
 import { initCaseActivity } from './case-activity';
-import { initShellPanels } from './shell-panels';
+import { initShellPanels, refreshRightRailChrome } from './shell-panels';
+import { initShellNav } from './shell-nav';
 import { initPresence } from './presence';
 import { initLiveInbox } from './live-inbox';
 import { initFormatToolbars } from './format-toolbar';
@@ -30,20 +31,33 @@ document.addEventListener('DOMContentLoaded', () => {
     refreshIcons();
     initAiAssistant(refreshIcons);
     initGlobalSearch();
-    initMentions();
-    initLiveNotes(refreshIcons);
-    initCaseActivity();
     const shellLayout = initShellPanels(refreshIcons);
+    initShellNav();
     initPresence();
     initLiveInbox();
-    initFormatToolbars();
-    initWorkspaceTabs(refreshIcons);
-    initAttachPreview(refreshIcons);
-    initCaseTriage(refreshIcons);
     initFormDrafts();
-    initPlantMap();
-    initNavBack();
-    initPartnersSummary();
+
+    const bootPage = () => {
+        refreshIcons();
+        initMentions();
+        initLiveNotes(refreshIcons);
+        initCaseActivity();
+        initFormatToolbars();
+        initWorkspaceTabs(refreshIcons);
+        initAttachPreview(refreshIcons);
+        initCaseTriage(refreshIcons);
+        initPlantMap();
+        initNavBack();
+        initPartnersSummary();
+        refreshRightRailChrome();
+        shellLayout.applyRailWidths();
+        bootCharts();
+        bootMapChrome();
+    };
+
+    // Defined below after chart/map helpers; called once helpers exist.
+    let bootCharts = () => {};
+    let bootMapChrome = () => {};
 
     const emailInput = document.querySelector('#email');
     const demoButtons = () => document.querySelectorAll('[data-demo-email]');
@@ -157,16 +171,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    document.querySelectorAll('[data-deadline-filter]').forEach((button) => {
-        button.addEventListener('click', () => {
-            const kind = button.dataset.deadlineFilter;
+    document.addEventListener('click', (event) => {
+        const deadlineButton = event.target.closest('[data-deadline-filter]');
+        if (deadlineButton) {
+            const kind = deadlineButton.dataset.deadlineFilter;
             document.querySelectorAll('[data-deadline-filter]').forEach((item) => {
-                item.classList.toggle('active', item === button);
+                item.classList.toggle('active', item === deadlineButton);
             });
             document.querySelectorAll('[data-deadline]').forEach((card) => {
                 card.hidden = kind !== 'all' && card.dataset.deadline !== kind;
             });
-        });
+            return;
+        }
+
+        const layerButton = event.target.closest('[data-layer-filter]');
+        if (layerButton) {
+            const kind = layerButton.dataset.layerFilter;
+            document.querySelectorAll('[data-layer-filter]').forEach((item) => {
+                item.classList.toggle('active', item === layerButton);
+            });
+            document.querySelectorAll('[data-layer-board]').forEach((board) => {
+                board.hidden = board.dataset.layerBoard !== kind;
+            });
+        }
     });
 
     const themeColor = (name, fallback) => {
@@ -195,100 +222,95 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    document.querySelectorAll('[data-chart]').forEach((node) => {
-        const canvas = node.querySelector('canvas');
-        if (!canvas || !node.dataset.chart) {
-            return;
-        }
+    bootCharts = () => {
+        document.querySelectorAll('[data-chart]').forEach((node) => {
+            const canvas = node.querySelector('canvas');
+            if (!canvas || !node.dataset.chart) {
+                return;
+            }
 
-        const accent = themeColor('--pg-navy', '#7d259d');
-        const deep = themeColor('--pg-navy-deep', '#5a1a72');
-        const soft = themeColor('--pg-teal-soft', '#f3e9f7');
-        const muted = themeColor('--pg-muted', '#5a6773');
-        const warning = themeColor('--pg-warning', '#b54708');
-        const success = themeColor('--pg-success', '#0b8f9c');
-        const critical = themeColor('--pg-critical', '#b42318');
-        const info = themeColor('--pg-info', accent);
-        const palette = {
-            'pg-accent': accent,
-            'pg-deep': deep,
-            'pg-accent-soft': soft,
-            'pg-muted': muted,
-            'pg-warning': warning,
-            'pg-success': success,
-            'pg-critical': critical,
-            'pg-info': info,
-        };
+            const existing = Chart.getChart(canvas);
+            if (existing) {
+                existing.destroy();
+            }
 
-        const config = JSON.parse(node.dataset.chart);
-        config.options = {
-            responsive: true,
-            maintainAspectRatio: false,
-            ...(config.options || {}),
-        };
-        bindChartTickCallbacks(config.options);
-        config.data?.datasets?.forEach((dataset) => {
-            if (dataset.backgroundColor !== undefined) {
-                dataset.backgroundColor = paintChartColors(dataset.backgroundColor, palette);
-            }
-            if (dataset.borderColor !== undefined) {
-                dataset.borderColor = paintChartColors(dataset.borderColor, palette);
-            }
-            if (dataset.borderRadius === undefined && config.type === 'bar') {
-                dataset.borderRadius = 6;
-                dataset.borderSkipped = false;
-            }
-            if (dataset.maxBarThickness === undefined && config.type === 'bar') {
-                dataset.maxBarThickness = 44;
-            }
-        });
-
-        const centerTotal = node.dataset.chartTotal;
-        if (centerTotal !== undefined && centerTotal !== '' && config.type === 'doughnut') {
-            const centerLabel = node.dataset.chartTotalLabel || '';
-            const centerPlugin = {
-                id: `pg-center-${Math.random().toString(36).slice(2, 8)}`,
-                afterDraw(chart) {
-                    const { ctx, chartArea } = chart;
-                    if (!chartArea) {
-                        return;
-                    }
-                    const x = (chartArea.left + chartArea.right) / 2;
-                    const y = (chartArea.top + chartArea.bottom) / 2;
-                    ctx.save();
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillStyle = accent;
-                    ctx.font = '700 28px IBM Plex Sans, system-ui, sans-serif';
-                    ctx.fillText(String(centerTotal), x, y - (centerLabel ? 8 : 0));
-                    if (centerLabel) {
-                        ctx.fillStyle = muted;
-                        ctx.font = '700 10px IBM Plex Sans, system-ui, sans-serif';
-                        ctx.fillText(centerLabel.toUpperCase(), x, y + 14);
-                    }
-                    ctx.restore();
-                },
+            const accent = themeColor('--pg-navy', '#7d259d');
+            const deep = themeColor('--pg-navy-deep', '#5a1a72');
+            const soft = themeColor('--pg-teal-soft', '#f3e9f7');
+            const muted = themeColor('--pg-muted', '#5a6773');
+            const warning = themeColor('--pg-warning', '#b54708');
+            const success = themeColor('--pg-success', '#0b8f9c');
+            const critical = themeColor('--pg-critical', '#b42318');
+            const info = themeColor('--pg-info', accent);
+            const palette = {
+                'pg-accent': accent,
+                'pg-deep': deep,
+                'pg-accent-soft': soft,
+                'pg-muted': muted,
+                'pg-warning': warning,
+                'pg-success': success,
+                'pg-critical': critical,
+                'pg-info': info,
             };
-            config.plugins = [...(config.plugins || []), centerPlugin];
-        }
 
-        Chart.defaults.color = muted;
-        Chart.defaults.borderColor = 'rgba(18, 38, 63, 0.08)';
-        Chart.defaults.font.family = 'IBM Plex Sans, system-ui, sans-serif';
-        new Chart(canvas, config);
-    });
+            const config = JSON.parse(node.dataset.chart);
+            config.options = {
+                responsive: true,
+                maintainAspectRatio: false,
+                ...(config.options || {}),
+            };
+            bindChartTickCallbacks(config.options);
+            config.data?.datasets?.forEach((dataset) => {
+                if (dataset.backgroundColor !== undefined) {
+                    dataset.backgroundColor = paintChartColors(dataset.backgroundColor, palette);
+                }
+                if (dataset.borderColor !== undefined) {
+                    dataset.borderColor = paintChartColors(dataset.borderColor, palette);
+                }
+                if (dataset.borderRadius === undefined && config.type === 'bar') {
+                    dataset.borderRadius = 6;
+                    dataset.borderSkipped = false;
+                }
+                if (dataset.maxBarThickness === undefined && config.type === 'bar') {
+                    dataset.maxBarThickness = 44;
+                }
+            });
 
-    document.querySelectorAll('[data-layer-filter]').forEach((button) => {
-        button.addEventListener('click', () => {
-            const kind = button.dataset.layerFilter;
-            document.querySelectorAll('[data-layer-filter]').forEach((item) => {
-                item.classList.toggle('active', item === button);
-            });
-            document.querySelectorAll('[data-layer-board]').forEach((board) => {
-                board.hidden = board.dataset.layerBoard !== kind;
-            });
+            const centerTotal = node.dataset.chartTotal;
+            if (centerTotal !== undefined && centerTotal !== '' && config.type === 'doughnut') {
+                const centerLabel = node.dataset.chartTotalLabel || '';
+                const centerPlugin = {
+                    id: `pg-center-${Math.random().toString(36).slice(2, 8)}`,
+                    afterDraw(chart) {
+                        const { ctx, chartArea } = chart;
+                        if (!chartArea) {
+                            return;
+                        }
+                        const x = (chartArea.left + chartArea.right) / 2;
+                        const y = (chartArea.top + chartArea.bottom) / 2;
+                        ctx.save();
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillStyle = accent;
+                        ctx.font = '700 28px IBM Plex Sans, system-ui, sans-serif';
+                        ctx.fillText(String(centerTotal), x, y - (centerLabel ? 8 : 0));
+                        if (centerLabel) {
+                            ctx.fillStyle = muted;
+                            ctx.font = '700 10px IBM Plex Sans, system-ui, sans-serif';
+                            ctx.fillText(centerLabel.toUpperCase(), x, y + 14);
+                        }
+                        ctx.restore();
+                    },
+                };
+                config.plugins = [...(config.plugins || []), centerPlugin];
+            }
+
+            Chart.defaults.color = muted;
+            Chart.defaults.borderColor = 'rgba(18, 38, 63, 0.08)';
+            Chart.defaults.font.family = 'IBM Plex Sans, system-ui, sans-serif';
+            new Chart(canvas, config);
         });
-    });
+    };
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const packetFlows = new Map();
@@ -428,24 +450,36 @@ document.addEventListener('DOMContentLoaded', () => {
         button.classList.toggle('btn-pg-line', !running);
     };
 
-    document.querySelectorAll('[data-packet-flow]').forEach((svg) => {
-        const flow = createPacketFlow(svg);
-        if (!flow) {
+    bootMapChrome = () => {
+        packetFlows.forEach((flow) => flow.stop());
+        packetFlows.clear();
+
+        document.querySelectorAll('[data-packet-flow]').forEach((svg) => {
+            if (svg.dataset.packetReady === '1') {
+                return;
+            }
+            svg.dataset.packetReady = '1';
+            const flow = createPacketFlow(svg);
+            if (!flow) {
+                return;
+            }
+            packetFlows.set(svg, flow);
+            const section = svg.closest('section') || document;
+            const toggle = section.querySelector('[data-packet-toggle]');
+            syncPacketToggle(toggle, flow);
+            toggle?.addEventListener('click', () => {
+                flow.setRunning(!flow.isRunning());
+                syncPacketToggle(toggle, flow);
+            });
+        });
+
+        const topologyHost = document.querySelector('[data-topology-graph]');
+        const topologyCanvas = document.querySelector('[data-topology-canvas]');
+        if (!topologyHost || !topologyCanvas || !topologyHost.dataset.topologyGraph || topologyHost.dataset.topologyReady === '1') {
             return;
         }
-        packetFlows.set(svg, flow);
-        const section = svg.closest('section') || document;
-        const toggle = section.querySelector('[data-packet-toggle]');
-        syncPacketToggle(toggle, flow);
-        toggle?.addEventListener('click', () => {
-            flow.setRunning(!flow.isRunning());
-            syncPacketToggle(toggle, flow);
-        });
-    });
-
-    const topologyHost = document.querySelector('[data-topology-graph]');
-    const topologyCanvas = document.querySelector('[data-topology-canvas]');
-    if (topologyHost && topologyCanvas && topologyHost.dataset.topologyGraph) {
+        topologyHost.dataset.topologyReady = '1';
+        {
         const graph = JSON.parse(topologyHost.dataset.topologyGraph);
         const positions = {};
         const nodeWidth = 188;
@@ -677,7 +711,11 @@ document.addEventListener('DOMContentLoaded', () => {
             seedPositions();
             draw();
         });
-    }
+        }
+    };
+
+    bootPage();
+    document.addEventListener('plantgrid:page', () => bootPage());
 
     if (document.body.classList.contains('pg-home')) {
         const homeBar = document.querySelector('[data-home-bar]');

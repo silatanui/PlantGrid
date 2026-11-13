@@ -4,9 +4,10 @@ function csrfToken() {
 
 function initSharedMediaDelete() {
     const feed = document.querySelector('[data-media-feed]');
-    if (!feed) {
+    if (!feed || feed.dataset.mediaDeleteReady === '1') {
         return;
     }
+    feed.dataset.mediaDeleteReady = '1';
 
     const status = feed.querySelector('[data-media-status]');
     const grid = feed.querySelector('[data-media-grid]');
@@ -73,6 +74,9 @@ export function initAttachPreview(refreshIcons = () => {}) {
     initSharedMediaDelete();
 
     document.querySelectorAll('[data-attach-composer]').forEach((composer) => {
+        if (composer.dataset.attachReady === '1') {
+            return;
+        }
         const input = composer.querySelector('[data-attach-input]');
         const pending = composer.querySelector('[data-attach-pending]');
         const media = composer.querySelector('[data-attach-pending-media]');
@@ -83,6 +87,7 @@ export function initAttachPreview(refreshIcons = () => {}) {
         if (!input || !pending || !media || !nameEl || !sizeEl) {
             return;
         }
+        composer.dataset.attachReady = '1';
 
         let objectUrl = null;
 

@@ -77,23 +77,35 @@ export function refreshCaseActivity() {
         .catch(() => {});
 }
 
+let caseActivityListenersBound = false;
+let caseActivityPollTimer = null;
+
 export function initCaseActivity() {
     const list = document.querySelector('[data-case-activity]');
+
+    if (!caseActivityListenersBound) {
+        caseActivityListenersBound = true;
+        document.addEventListener('plantgrid:case-activity', (event) => {
+            if (event.detail?.activity) {
+                renderCaseActivity(event.detail.activity);
+                return;
+            }
+            refreshCaseActivity();
+        });
+    }
+
+    if (caseActivityPollTimer) {
+        window.clearInterval(caseActivityPollTimer);
+        caseActivityPollTimer = null;
+    }
+
     if (!list) {
         return;
     }
 
-    document.addEventListener('plantgrid:case-activity', (event) => {
-        if (event.detail?.activity) {
-            renderCaseActivity(event.detail.activity);
-            return;
-        }
-        refreshCaseActivity();
-    });
-
     const pollMs = Number(list.dataset.activityPoll || 12000);
     if (pollMs > 0) {
-        window.setInterval(() => {
+        caseActivityPollTimer = window.setInterval(() => {
             if (document.hidden) {
                 return;
             }

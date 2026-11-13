@@ -1941,6 +1941,16 @@ body.is-rail-resizing {
 body.is-rail-resizing iframe {
     pointer-events: none;
 }
+body.is-shell-navigating {
+    cursor: progress;
+}
+body.is-shell-navigating .pg-main,
+body.is-shell-navigating #shell-right,
+body.is-shell-navigating [data-workspace-tabs] {
+    opacity: 0.72;
+    pointer-events: none;
+    transition: opacity 0.12s ease;
+}
 
 .pg-rail-body {
     display: flex;
