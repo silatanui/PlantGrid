@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Asset;
+use App\Models\Department;
 use App\Models\Location;
 use App\Models\NetworkDevice;
 use App\Models\Server;
@@ -13,11 +14,11 @@ use Illuminate\Support\Facades\Cache;
 class RichText
 {
     /**
-     * Active users explicitly addressed in note text (@handle or @[Name](people:id)).
+     * Active users explicitly addressed in note text (@handle, @everyone, @department, or structured tokens).
      *
      * @return \Illuminate\Support\Collection<int, User>
      */
-    public static function mentionedUsers(?string $text)
+    public static function mentionedUsers(?string $text, ?SupportTicket $ticket = null)
     {
         $text = (string) $text;
         if (trim($text) === '') {
@@ -32,13 +33,43 @@ class RichText
             }
         }
 
+        if (preg_match_all('/@\[(.*?)\]\(department:(\d+)\)/u', $text, $departments)) {
+            foreach ($departments[2] as $departmentId) {
+                foreach (self::userIdsForDepartment((int) $departmentId) as $id) {
+                    $ids[] = $id;
+                }
+            }
+        }
+
+        $wantsEveryone = (bool) preg_match('/(^|[\s(>])@everyone\b/iu', $text)
+            || (bool) preg_match('/@\[everyone\]\(everyone\)/iu', $text);
+
         if (preg_match_all('/(^|[\s(>])@([a-z0-9._-]+)/iu', $text, $handles)) {
             $people = self::peopleByHandle();
+            $deptByAlias = self::departmentsByAlias();
             foreach ($handles[2] as $handle) {
-                $person = $people->get(mb_strtolower($handle));
+                $key = mb_strtolower($handle);
+                if ($key === 'everyone') {
+                    $wantsEveryone = true;
+                    continue;
+                }
+                $person = $people->get($key);
                 if ($person) {
                     $ids[] = (int) $person->id;
+                    continue;
                 }
+                $department = $deptByAlias->get($key);
+                if ($department) {
+                    foreach (self::userIdsForDepartment((int) $department->id) as $id) {
+                        $ids[] = $id;
+                    }
+                }
+            }
+        }
+
+        if ($wantsEveryone) {
+            foreach (self::everyoneUserIds($ticket) as $id) {
+                $ids[] = $id;
             }
         }
 
@@ -62,13 +93,22 @@ class RichText
 
         $escaped = e($text);
         $escaped = preg_replace_callback(
-            '/@\[(.*?)\]\((people|user|case|asset|device|server|location):(\d+)\)/u',
+            '/@\[(.*?)\]\((people|user|case|asset|device|server|location|department):(\d+)\)/u',
             function (array $match) {
                 $label = $match[1];
                 $type = $match[2] === 'user' ? 'people' : $match[2];
                 $id = (int) $match[3];
-                $url = self::urlFor($type, $id);
+                if ($type === 'department') {
+                    $department = Department::query()->find($id);
+                    if (! $department) {
+                        return e('@'.$label);
+                    }
+                    $token = '@['.$department->name.'](department:'.$department->id.')';
 
+                    return self::mentionChip('department', '@'.$department->code, $token);
+                }
+
+                $url = self::urlFor($type, $id);
                 if ($url === null) {
                     return e('@'.$label);
                 }
@@ -82,18 +122,35 @@ class RichText
         ) ?? $escaped;
 
         $escaped = preg_replace_callback(
+            '/@\[everyone\]\(everyone\)/iu',
+            fn () => self::mentionChip('everyone', '@everyone', '@everyone'),
+            $escaped
+        ) ?? $escaped;
+
+        $escaped = preg_replace_callback(
             '/(^|[\s(>])@([a-z0-9._-]+)/iu',
             function (array $match) {
                 $prefix = $match[1];
-                $handle = $match[2];
-                $person = self::peopleByHandle()->get(mb_strtolower($handle));
-                if (! $person) {
-                    return $match[0];
+                $handle = mb_strtolower($match[2]);
+                if ($handle === 'everyone') {
+                    return $prefix.self::mentionChip('everyone', '@everyone', '@everyone');
                 }
 
-                $token = '@['.$person->name.'](people:'.$person->id.')';
+                $person = self::peopleByHandle()->get($handle);
+                if ($person) {
+                    $token = '@['.$person->name.'](people:'.$person->id.')';
 
-                return $prefix.self::mentionAnchor('people', route('people.show', $person), '@'.$person->name, $token);
+                    return $prefix.self::mentionAnchor('people', route('people.show', $person), '@'.$person->name, $token);
+                }
+
+                $department = self::departmentsByAlias()->get($handle);
+                if ($department) {
+                    $token = '@['.$department->name.'](department:'.$department->id.')';
+
+                    return $prefix.self::mentionChip('department', '@'.$department->code, $token);
+                }
+
+                return $match[0];
             },
             $escaped
         ) ?? $escaped;
@@ -179,6 +236,81 @@ class RichText
     private static function mentionAnchor(string $type, string $url, string $label, string $token): string
     {
         return '<a class="pg-mention pg-mention-'.$type.'" href="'.e($url).'" data-pg-token="'.e($token).'" contenteditable="false">'.e($label).'</a>';
+    }
+
+    private static function mentionChip(string $type, string $label, string $token): string
+    {
+        return '<span class="pg-mention pg-mention-'.$type.'" data-pg-token="'.e($token).'" contenteditable="false">'.e($label).'</span>';
+    }
+
+    /**
+     * @return list<int>
+     */
+    private static function everyoneUserIds(?SupportTicket $ticket): array
+    {
+        if ($ticket) {
+            $ticket->loadMissing('partners:id');
+
+            return collect([
+                $ticket->requester_id,
+                $ticket->assigned_to,
+            ])
+                ->merge($ticket->partners->pluck('id'))
+                ->filter()
+                ->map(fn ($id) => (int) $id)
+                ->unique()
+                ->values()
+                ->all();
+        }
+
+        return User::query()->where('status', 'active')->limit(200)->pluck('id')->map(fn ($id) => (int) $id)->all();
+    }
+
+    /**
+     * @return list<int>
+     */
+    private static function userIdsForDepartment(int $departmentId): array
+    {
+        return User::query()
+            ->where('status', 'active')
+            ->where('department_id', $departmentId)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<string, Department>
+     */
+    private static function departmentsByAlias()
+    {
+        return Cache::remember('richtext.departments.aliases', 30, function () {
+            $map = collect();
+            foreach (Department::query()->where('status', 'active')->get(['id', 'name', 'code']) as $department) {
+                $code = mb_strtolower((string) $department->code);
+                $slug = mb_strtolower(str_replace(' ', '_', (string) $department->name));
+                $aliases = array_unique(array_filter([
+                    $code,
+                    $slug,
+                    $code.'_department',
+                    $slug.'_department',
+                ]));
+
+                // Friendly ICT aliases recruiters expect.
+                if ($code === 'ict') {
+                    $aliases = array_merge($aliases, ['it', 'it_department', 'ict_department']);
+                }
+                if ($code === 'prd') {
+                    $aliases = array_merge($aliases, ['production', 'production_department']);
+                }
+
+                foreach ($aliases as $alias) {
+                    $map[$alias] = $department;
+                }
+            }
+
+            return $map;
+        });
     }
 
     private static function applyInlineMarkup(string $text): string

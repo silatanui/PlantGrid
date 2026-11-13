@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Asset;
+use App\Models\Department;
 use App\Models\Location;
 use App\Models\NetworkDevice;
 use App\Models\Server;
@@ -27,6 +28,46 @@ class MentionController extends Controller
         $items = [];
 
         if (in_array($trigger, ['@', 'all'], true)) {
+            $needle = mb_strtolower($term);
+            if ($needle === '' || str_contains('everyone', $needle) || str_contains($needle, 'every')) {
+                $items[] = [
+                    'type' => 'everyone',
+                    'label' => 'everyone',
+                    'meta' => 'Notify everyone on this case (requester, owner, partners)',
+                    'insert' => '@everyone',
+                    'token' => '@everyone',
+                    'url' => null,
+                ];
+            }
+
+            $departments = Department::query()
+                ->where('status', 'active')
+                ->when($term !== '', function ($query) use ($like, $needle) {
+                    $query->where(function ($inner) use ($like, $needle) {
+                        $inner->where('name', 'like', $like)
+                            ->orWhere('code', 'like', $like);
+                        if ($needle !== '' && (str_contains('it_department', $needle) || str_contains('ict', $needle) || $needle === 'it')) {
+                            $inner->orWhere('code', 'ICT');
+                        }
+                    });
+                })
+                ->orderBy('name')
+                ->limit(12)
+                ->get(['id', 'name', 'code']);
+
+            foreach ($departments as $department) {
+                $code = strtolower((string) $department->code);
+                $alias = $code === 'ict' ? 'it_department' : $code.'_department';
+                $items[] = [
+                    'type' => 'department',
+                    'label' => $department->code,
+                    'meta' => $department->name.' · @'.$alias,
+                    'insert' => '@'.$alias,
+                    'token' => '@['.$department->name.'](department:'.$department->id.')',
+                    'url' => null,
+                ];
+            }
+
             $people = User::query()
                 ->with(['roles:id,name', 'department:id,code'])
                 ->where('status', 'active')

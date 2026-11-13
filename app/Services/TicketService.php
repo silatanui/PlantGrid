@@ -367,10 +367,11 @@ class TicketService
         }
 
         $before = $entry->only(['comment', 'visibility']);
-        $entry->update([
+        $entry->forceFill([
             'comment' => $comment,
             'visibility' => $visibility,
-        ]);
+            'updated_at' => now(),
+        ])->save();
 
         $entry->ticket?->touch();
 

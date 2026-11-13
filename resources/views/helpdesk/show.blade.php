@@ -185,7 +185,7 @@
                             Paraphrase
                         </button>
                     </div>
-                    <textarea class="form-control pg-note-textarea" id="comment" name="comment" rows="4" required data-ai-assist data-mentions data-format-toolbar placeholder="Write a note. Use @ for people, # for cases, assets, hosts, or plant locations…">{{ old('comment') }}</textarea>
+                    <textarea class="form-control pg-note-textarea" id="comment" name="comment" rows="4" required data-ai-assist data-mentions data-format-toolbar placeholder="Write a note. Use @people, @everyone, @it_department, or # for cases/assets/locations…">{{ old('comment') }}</textarea>
                     <div class="pg-attach-composer" data-attach-composer>
                         <label class="pg-attach-drop" for="attachment">
                             <input class="pg-attach-input" id="attachment" name="attachment" type="file" accept=".pdf,.png,.jpg,.jpeg,.txt,.doc,.docx,image/*" data-attach-input>
@@ -549,9 +549,15 @@
             <section class="pg-card" id="activity">
                 <div class="pg-card-pad">
                     <h2 class="pg-section-title mb-0">Activity</h2>
-                    <p class="text-muted small mb-0">Notes, ownership changes, partners, and status updates on this case.</p>
+                    <p class="text-muted small mb-0">Notes, ownership changes, partners, and status updates — updates live without reloading.</p>
                 </div>
-                <ul class="pg-timeline px-3" data-case-history data-case-activity>
+                <ul
+                    class="pg-timeline px-3"
+                    data-case-history
+                    data-case-activity
+                    data-activity-url="{{ route('helpdesk.activity', $ticket) }}"
+                    data-activity-poll="12000"
+                >
                     @forelse (($caseActivity ?? collect()) as $item)
                         <li @if (! empty($item['note_id'])) data-activity-note="{{ $item['note_id'] }}" @endif>
                             {!! \App\Support\Labels::badge((string) ($item['badge'] ?? 'update')) !!}

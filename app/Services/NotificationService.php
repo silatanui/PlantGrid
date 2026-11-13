@@ -72,7 +72,7 @@ class NotificationService
 
     public function caseCommented(SupportTicket $ticket, TicketComment $comment, User $author): void
     {
-        $mentioned = RichText::mentionedUsers($comment->comment)
+        $mentioned = RichText::mentionedUsers($comment->comment, $ticket)
             ->reject(fn (User $user) => (int) $user->id === (int) $author->id)
             ->values();
 

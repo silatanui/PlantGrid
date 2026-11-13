@@ -1,3 +1,4 @@
+import { applyCaseActivity, refreshCaseActivity } from './case-activity';
 import { partnersSummaryHtml } from './partners-summary';
 
 function csrfToken() {
@@ -434,6 +435,7 @@ function initLiveCaseForms() {
                     }
                     updateCasePartners(existing);
                 }
+                applyCaseActivity(payload);
                 flashStatus(status, payload.message || 'Saved.');
                 form.dispatchEvent(new CustomEvent('plantgrid:draft-clear', { bubbles: true }));
                 document.dispatchEvent(new CustomEvent('plantgrid:draft-clear', { detail: { form } }));
@@ -474,6 +476,7 @@ function initLiveCaseForms() {
         try {
             const payload = await deleteJson(url);
             updateCasePartners(payload.partners || []);
+            applyCaseActivity(payload);
             flashStatus(status, payload.message || 'Partner removed.');
         } catch (error) {
             flashStatus(status, error.message || 'Could not remove partner.', { error: true });
@@ -670,6 +673,11 @@ export function initCaseTriage(refreshIcons = () => {}) {
                 }
                 prependNote(payload.comment);
                 prependHistory(payload.history);
+                if (payload.activity) {
+                    applyCaseActivity(payload);
+                } else {
+                    refreshCaseActivity();
+                }
 
                 setStatus(payload.message || 'Triage applied. Panel kept open for more edits.');
                 persist();

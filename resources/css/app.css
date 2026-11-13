@@ -913,6 +913,17 @@ a:hover { color: var(--pg-navy-deep); }
 .pg-mention-people {
     background: var(--pg-teal-soft);
 }
+.pg-mention-everyone,
+.pg-mention-department {
+    background: color-mix(in srgb, var(--pg-navy) 12%, #fff);
+    color: var(--pg-navy-deep);
+    border: 1px solid color-mix(in srgb, var(--pg-navy) 22%, #fff);
+}
+.pg-mention-everyone {
+    background: color-mix(in srgb, #0b8f9c 16%, #fff);
+    border-color: color-mix(in srgb, #0b8f9c 28%, #fff);
+    color: #0a6b74;
+}
 .pg-mention-case,
 .pg-mention-asset,
 .pg-mention-device,

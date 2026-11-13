@@ -128,7 +128,7 @@ class HelpdeskController extends Controller
         $ticket->load(['requester', 'assignee', 'partners', 'department', 'category', 'asset.category', 'asset.location', 'application', 'histories.changer', 'attachments.uploader', 'duplicateOf']);
         $canSeeInternal = $request->user()->hasAnyPermission(['tickets.update', 'audit.view'])
             || $ticket->isPartner($request->user());
-        $comments = $ticket->comments()->with(['author.roles:id,name'])->latest()
+        $comments = $ticket->comments()->with(['author.roles:id,name'])->latest('updated_at')
             ->when(! $canSeeInternal, fn ($query) => $query->where('visibility', 'requester_visible'))
             ->get();
 
@@ -200,6 +200,7 @@ class HelpdeskController extends Controller
                     'source' => 'manual',
                 ],
                 'partners' => $this->partnerPayload($ticket),
+                'activity' => $this->activityPayload($ticket, $request->user()),
             ]);
         }
 
@@ -247,6 +248,7 @@ class HelpdeskController extends Controller
                 'message' => $partner->name.' was removed from case partners.',
                 'removed_partner_id' => $partner->id,
                 'partners' => $this->partnerPayload($ticket),
+                'activity' => $this->activityPayload($ticket, $request->user()),
             ]);
         }
 
@@ -284,6 +286,7 @@ class HelpdeskController extends Controller
                 'assigned_to' => $request->user()->id,
                 'status' => $ticket->status,
                 'status_badge' => \App\Support\Labels::badge((string) $ticket->status),
+                'activity' => $this->activityPayload($ticket, $request->user()),
             ]);
         }
 
@@ -325,6 +328,7 @@ class HelpdeskController extends Controller
                     'url' => route('people.show', $person),
                     'source' => $person->pivot->source ?? 'manual',
                 ])->values()->all(),
+                'activity' => $this->activityPayload($ticket, $request->user()),
             ]);
         }
 
@@ -389,6 +393,7 @@ class HelpdeskController extends Controller
                 'ok' => true,
                 'message' => 'Note posted.',
                 'comment' => $this->commentPayload($entry, $request->user()),
+                'activity' => $this->activityPayload($ticket, $request->user()),
             ]);
         }
 
@@ -419,6 +424,7 @@ class HelpdeskController extends Controller
                 'ok' => true,
                 'message' => 'Note updated.',
                 'comment' => $this->commentPayload($entry, $request->user()),
+                'activity' => $this->activityPayload($ticket, $request->user()),
             ]);
         }
 
@@ -438,10 +444,49 @@ class HelpdeskController extends Controller
                 'ok' => true,
                 'message' => 'Note deleted.',
                 'comment_id' => $comment->id,
+                'activity' => $this->activityPayload($ticket, $request->user()),
             ]);
         }
 
         return back()->with('status', 'Note deleted.');
+    }
+
+    public function activity(Request $request, SupportTicket $ticket)
+    {
+        $this->visible($request, $ticket);
+
+        return response()->json([
+            'ok' => true,
+            'activity' => $this->activityPayload($ticket, $request->user()),
+        ]);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function activityPayload(SupportTicket $ticket, $user): array
+    {
+        $ticket->loadMissing(['histories.changer']);
+        $canSeeInternal = $user->hasAnyPermission(['tickets.update', 'audit.view'])
+            || $ticket->isPartner($user);
+        $comments = $ticket->comments()->with(['author.roles:id,name'])->latest('updated_at')
+            ->when(! $canSeeInternal, fn ($query) => $query->where('visibility', 'requester_visible'))
+            ->get();
+
+        return \App\Support\CaseActivity::forTicket($ticket, $comments)
+            ->map(fn (array $item) => [
+                'type' => $item['type'] ?? 'update',
+                'label' => $item['label'] ?? 'Update',
+                'badge' => $item['badge'] ?? 'update',
+                'badge_html' => \App\Support\Labels::badge((string) ($item['badge'] ?? 'update')),
+                'body' => $item['body'] ?? null,
+                'html' => $item['html'] ?? null,
+                'actor' => $item['actor'] ?? 'System',
+                'at' => \App\Support\Format::date($item['at'] ?? null),
+                'note_id' => $item['note_id'] ?? null,
+            ])
+            ->values()
+            ->all();
     }
 
     /**

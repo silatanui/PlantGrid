@@ -51,7 +51,7 @@
                     <label class="form-label" for="subject">Subject</label>
                     <input class="form-control mb-2" id="subject" name="subject" value="{{ old('subject', str_starts_with($message->subject, 'Re:') ? $message->subject : 'Re: '.$message->subject) }}" required maxlength="180">
                     <label class="form-label" for="body">Message</label>
-                    <textarea class="form-control mb-2" id="body" name="body" rows="6" required maxlength="4000" data-ai-assist data-mentions placeholder="Write a reply. Use @ for people, # for cases/assets…">{{ old('body') }}</textarea>
+                    <textarea class="form-control mb-2" id="body" name="body" rows="6" required maxlength="4000" data-ai-assist data-mentions placeholder="Write a reply. Use @people, @everyone, @it_department, or # for cases/assets…">{{ old('body') }}</textarea>
                     <div class="pg-ai-field-actions mb-2" data-ai-field-actions>
                         <button class="btn btn-sm btn-pg-line" type="button" data-ai-action="refine" data-ai-target="body">Refine with AI</button>
                         <button class="btn btn-sm btn-pg-line" type="button" data-ai-action="paraphrase" data-ai-target="body">Paraphrase</button>

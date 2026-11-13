@@ -61,7 +61,7 @@
                         <button class="btn btn-sm btn-pg-line" type="button" data-ai-action="paraphrase" data-ai-target="description">Paraphrase</button>
                     </div>
                 </div>
-                <textarea class="form-control mt-2" id="description" name="description" rows="5" required data-ai-assist data-mentions placeholder="Describe the issue. Tag people with @ and assets/cases with their IDs…">{{ old('description') }}</textarea>
+                <textarea class="form-control mt-2" id="description" name="description" rows="5" required data-ai-assist data-mentions placeholder="Describe the issue. Use @people, @everyone, @it_department, or # for assets/cases…">{{ old('description') }}</textarea>
                 <p class="pg-mention-hint mt-1 mb-0">Examples: <span class="pg-mono">@faith.cheruiyot</span>, <span class="pg-mono">PG-LBL-0142</span>, <span class="pg-mono">PG-2026-0148</span></p>
             </div>
         </div>

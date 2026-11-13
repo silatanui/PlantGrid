@@ -5,6 +5,7 @@ import { initAiAssistant } from './ai-assistant';
 import { initGlobalSearch } from './global-search';
 import { initMentions } from './mentions';
 import { initLiveNotes } from './live-notes';
+import { initCaseActivity } from './case-activity';
 import { initPresence } from './presence';
 import { initLiveInbox } from './live-inbox';
 import { initFormatToolbars } from './format-toolbar';
@@ -30,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initGlobalSearch();
     initMentions();
     initLiveNotes(refreshIcons);
+    initCaseActivity();
     initPresence();
     initLiveInbox();
     initFormatToolbars();

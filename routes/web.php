@@ -148,6 +148,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/helpdesk/create', [HelpdeskController::class, 'create'])->middleware('permission:tickets.create')->name('helpdesk.create');
         Route::post('/helpdesk', [HelpdeskController::class, 'store'])->middleware('permission:tickets.create')->name('helpdesk.store');
         Route::get('/helpdesk/{ticket}', [HelpdeskController::class, 'show'])->name('helpdesk.show');
+        Route::get('/helpdesk/{ticket}/activity', [HelpdeskController::class, 'activity'])->name('helpdesk.activity');
         Route::post('/helpdesk/{ticket}/take-ownership', [HelpdeskController::class, 'takeOwnership'])->name('helpdesk.take-ownership');
         Route::post('/helpdesk/{ticket}/transfer', [HelpdeskController::class, 'transfer'])->name('helpdesk.transfer');
         Route::post('/helpdesk/{ticket}/transition', [HelpdeskController::class, 'transition'])->name('helpdesk.transition');

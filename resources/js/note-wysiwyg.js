@@ -27,7 +27,7 @@ function serializeNode(node) {
         return '\n';
     }
 
-    if (el.matches?.('a.pg-mention') || el.dataset?.pgToken) {
+    if (el.matches?.('a.pg-mention, span.pg-mention') || el.dataset?.pgToken) {
         return el.dataset.pgToken || el.textContent || '';
     }
 
@@ -148,14 +148,22 @@ function insertChip(editor, item) {
     }
 
     const token = item.token || item.insert;
-    const chip = document.createElement('a');
-    chip.className = `pg-mention pg-mention-${item.type || 'case'}`;
-    chip.href = item.url || '#';
+    const chipType = item.type || 'case';
+    const useSpan = chipType === 'everyone' || chipType === 'department' || !item.url;
+    const chip = document.createElement(useSpan ? 'span' : 'a');
+    chip.className = `pg-mention pg-mention-${chipType}`;
+    if (!useSpan) {
+        chip.href = item.url;
+    }
     chip.dataset.pgToken = token;
     chip.contentEditable = 'false';
-    if (item.type === 'people') {
+    if (chipType === 'people') {
         chip.textContent = `@${item.label}`;
-    } else if (item.type === 'location') {
+    } else if (chipType === 'everyone') {
+        chip.textContent = '@everyone';
+    } else if (chipType === 'department') {
+        chip.textContent = item.insert || `@${item.label}`;
+    } else if (chipType === 'location') {
         chip.textContent = item.meta ? `${item.meta} (${item.label})` : item.label;
     } else {
         chip.textContent = item.label;
@@ -196,7 +204,7 @@ export function mountNoteWysiwyg(host, { html = '', suggestUrl = '' } = {}) {
         return { getMarkup: () => '', surface: null };
     }
 
-    surface.querySelectorAll('a.pg-mention').forEach((link) => {
+    surface.querySelectorAll('a.pg-mention, span.pg-mention').forEach((link) => {
         link.contentEditable = 'false';
         link.addEventListener('click', (event) => event.preventDefault());
     });

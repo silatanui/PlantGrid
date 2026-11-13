@@ -1,3 +1,4 @@
+import { applyCaseActivity } from './case-activity';
 import { mountNoteWysiwyg } from './note-wysiwyg';
 
 function csrfToken() {
@@ -389,6 +390,8 @@ export function initLiveNotes(refreshIcons = () => {}) {
                     throw new Error(payload?.message || 'Could not update the note.');
                 }
                 applyComment(article, payload.comment);
+                list?.prepend(article);
+                applyCaseActivity(payload);
                 closeEditor();
                 setStatus(status, 'Note updated.');
             } catch (error) {
@@ -436,6 +439,7 @@ export function initLiveNotes(refreshIcons = () => {}) {
                 list.appendChild(empty);
             }
             syncNotesCount(root, list);
+            applyCaseActivity(payload);
             setStatus(status, 'Note deleted.');
         } catch (error) {
             setStatus(status, error.message || 'Could not delete the note.', true);
@@ -526,6 +530,7 @@ export function initLiveNotes(refreshIcons = () => {}) {
             list?.prepend(article);
             resetComposer({ close: true });
             syncNotesCount(root, list);
+            applyCaseActivity(payload);
             refreshIcons();
             setStatus(status, 'Note posted. Only you can edit it; you or an admin can delete it.');
         } catch (error) {
