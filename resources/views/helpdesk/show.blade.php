@@ -546,37 +546,6 @@
                     </div>
                 </section>
             @endif
-            <section class="pg-card" id="activity">
-                <div class="pg-card-pad">
-                    <h2 class="pg-section-title mb-0">Activity</h2>
-                    <p class="text-muted small mb-0">Notes, ownership changes, partners, and status updates — updates live without reloading.</p>
-                </div>
-                <ul
-                    class="pg-timeline px-3"
-                    data-case-history
-                    data-case-activity
-                    data-activity-url="{{ route('helpdesk.activity', $ticket) }}"
-                    data-activity-poll="12000"
-                >
-                    @forelse (($caseActivity ?? collect()) as $item)
-                        <li @if (! empty($item['note_id'])) data-activity-note="{{ $item['note_id'] }}" @endif>
-                            {!! \App\Support\Labels::badge((string) ($item['badge'] ?? 'update')) !!}
-                            <strong class="pg-activity-label">{{ $item['label'] }}</strong>
-                            @if (! empty($item['html']))
-                                <div class="pg-rich-note">{!! $item['html'] !!}</div>
-                            @elseif (! empty($item['body']))
-                                <div class="text-muted">{{ $item['body'] }}</div>
-                            @endif
-                            <div class="text-muted">{{ \App\Support\Format::date($item['at']) }} · {{ $item['actor'] }}</div>
-                            @if (! empty($item['note_id']))
-                                <a class="small" href="#note-{{ $item['note_id'] }}">View note</a>
-                            @endif
-                        </li>
-                    @empty
-                        <li class="text-muted">No activity recorded on this case yet.</li>
-                    @endforelse
-                </ul>
-            </section>
         </div>
     </div>
 @endsection

@@ -136,7 +136,6 @@ class HelpdeskController extends Controller
             'title' => $ticket->ticket_number,
             'ticket' => $ticket,
             'comments' => $comments,
-            'caseActivity' => \App\Support\CaseActivity::forTicket($ticket, $comments),
             'canSeeInternal' => $canSeeInternal,
             'transitions' => $tickets->allowedTransitions($ticket, $request->user()),
             'canTakeOwnership' => $tickets->canTakeOwnership($ticket, $request->user()),

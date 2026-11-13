@@ -26,7 +26,7 @@ class ShellPanelService
         return [
             'guidance' => $this->guidance($user, $employee),
             'actions' => $this->actions($user, $employee),
-            'activity' => $this->activity($user, $employee),
+            'caseTimeline' => $this->caseTimeline($user),
             'alerts' => $employee || ! $user->hasPermission('monitoring.view')
                 ? collect()
                 : MonitoringAlert::query()
@@ -149,52 +149,38 @@ class ShellPanelService
         return $actions;
     }
 
-    private function activity(User $user, bool $employee): Collection
-    {
-        $excludeTicketId = $this->currentCaseId();
-        $mine = \App\Support\CaseActivity::forUserRail($user, 8, $excludeTicketId);
-        if ($mine->isNotEmpty()) {
-            return $mine;
-        }
-
-        // Fallback when the signed-in user has no audited actions yet.
-        $tickets = SupportTicket::query()
-            ->visibleTo($user)
-            ->with(['requester', 'assignee'])
-            ->when(
-                $excludeTicketId !== null,
-                fn ($query) => $query->whereKeyNot($excludeTicketId)
-            )
-            ->latest('updated_at')
-            ->limit(6)
-            ->get();
-
-        return $tickets->map(function (SupportTicket $ticket) use ($employee) {
-            $actor = $employee
-                ? ($ticket->assignee->name ?? 'ICT')
-                : ($ticket->requester->name ?? 'Requester');
-
-            return [
-                'title' => $ticket->subject,
-                'meta' => $ticket->ticket_number.' · '.$actor.' · '.ucwords(str_replace('_', ' ', $ticket->status)),
-                'href' => route('helpdesk.show', $ticket),
-                'when' => optional($ticket->updated_at)->diffForHumans(),
-            ];
-        });
-    }
-
-    private function currentCaseId(): ?int
+    /**
+     * Case Activity for the utility rail when viewing a ticket.
+     *
+     * @return array{ticket: SupportTicket, items: Collection<int, array<string, mixed>>, activity_url: string}|null
+     */
+    private function caseTimeline(User $user): ?array
     {
         if (! request()->routeIs('helpdesk.show')) {
             return null;
         }
 
-        $ticket = request()->route('ticket');
-        if ($ticket instanceof SupportTicket) {
-            return (int) $ticket->id;
+        $param = request()->route('ticket');
+        $ticket = $param instanceof SupportTicket
+            ? $param
+            : SupportTicket::query()->whereKey($param)->first();
+
+        if (! $ticket) {
+            return null;
         }
 
-        return is_numeric($ticket) ? (int) $ticket : null;
+        $ticket->loadMissing(['histories.changer']);
+        $canSeeInternal = $user->hasAnyPermission(['tickets.update', 'audit.view'])
+            || $ticket->isPartner($user);
+        $comments = $ticket->comments()->with(['author.roles:id,name'])->latest('updated_at')
+            ->when(! $canSeeInternal, fn ($query) => $query->where('visibility', 'requester_visible'))
+            ->get();
+
+        return [
+            'ticket' => $ticket,
+            'items' => \App\Support\CaseActivity::forTicket($ticket, $comments),
+            'activity_url' => route('helpdesk.activity', $ticket),
+        ];
     }
 
     private function stats(User $user, bool $employee): array

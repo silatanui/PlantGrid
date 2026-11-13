@@ -6,6 +6,7 @@ import { initGlobalSearch } from './global-search';
 import { initMentions } from './mentions';
 import { initLiveNotes } from './live-notes';
 import { initCaseActivity } from './case-activity';
+import { initShellPanels } from './shell-panels';
 import { initPresence } from './presence';
 import { initLiveInbox } from './live-inbox';
 import { initFormatToolbars } from './format-toolbar';
@@ -32,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initMentions();
     initLiveNotes(refreshIcons);
     initCaseActivity();
+    const shellLayout = initShellPanels(refreshIcons);
     initPresence();
     initLiveInbox();
     initFormatToolbars();
@@ -92,12 +94,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 shell.classList.add('pg-right-collapsed');
             }
 
+            shellLayout.applyRailWidths();
             createIcons({ icons });
         };
 
         const applyShellSide = (side, collapsed) => {
             shell.classList.toggle(`pg-${side}-collapsed`, collapsed);
             localStorage.setItem(shellKey(side), collapsed ? '1' : '0');
+            shellLayout.applyRailWidths();
             if (side === 'left' && !desktopLeft()) {
                 shell.classList.toggle('pg-left-open', !collapsed);
                 if (shellMask) {
@@ -140,6 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         shellMask.hidden = true;
                     }
                 }
+                shellLayout.applyRailWidths();
                 createIcons({ icons });
             });
         });
