@@ -74,8 +74,9 @@ class RichText
                 }
 
                 $prefix = $type === 'people' ? '@' : '';
+                $token = '@['.$label.']('.$type.':'.$id.')';
 
-                return '<a class="pg-mention pg-mention-'.$type.'" href="'.e($url).'">'.$prefix.e($label).'</a>';
+                return self::mentionAnchor($type, $url, $prefix.$label, $token);
             },
             $escaped
         ) ?? $escaped;
@@ -90,7 +91,9 @@ class RichText
                     return $match[0];
                 }
 
-                return $prefix.'<a class="pg-mention pg-mention-people" href="'.e(route('people.show', $person)).'">@'.e($person->name).'</a>';
+                $token = '@['.$person->name.'](people:'.$person->id.')';
+
+                return $prefix.self::mentionAnchor('people', route('people.show', $person), '@'.$person->name, $token);
             },
             $escaped
         ) ?? $escaped;
@@ -104,7 +107,7 @@ class RichText
                     return e($match[0]);
                 }
 
-                return '<a class="pg-mention pg-mention-case" href="'.e(route('helpdesk.show', $ticket)).'">'.e($number).'</a>';
+                return self::mentionAnchor('case', route('helpdesk.show', $ticket), $number, $number);
             },
             $escaped
         ) ?? $escaped;
@@ -121,7 +124,7 @@ class RichText
                     return e($match[0]);
                 }
 
-                return '<a class="pg-mention pg-mention-asset" href="'.e(route('assets.show', $asset)).'">'.e($tag).'</a>';
+                return self::mentionAnchor('asset', route('assets.show', $asset), $tag, $tag);
             },
             $escaped
         ) ?? $escaped;
@@ -132,11 +135,11 @@ class RichText
                 $host = strtoupper($match[1]);
                 $device = self::devicesByHost()->get($host);
                 if ($device) {
-                    return '<a class="pg-mention pg-mention-device" href="'.e(route('network.show', $device)).'">'.e($host).'</a>';
+                    return self::mentionAnchor('device', route('network.show', $device), $host, $host);
                 }
                 $server = self::serversByHost()->get($host);
                 if ($server) {
-                    return '<a class="pg-mention pg-mention-server" href="'.e(route('servers.show', $server)).'">'.e($host).'</a>';
+                    return self::mentionAnchor('server', route('servers.show', $server), $host, $host);
                 }
 
                 return e($match[0]);
@@ -156,7 +159,14 @@ class RichText
                     return $match[0];
                 }
 
-                return '<a class="pg-mention pg-mention-location" href="'.e(route('locations.show', $location)).'">'.e($location->name).' ('.$code.')</a>';
+                $token = '@['.$location->name.'](location:'.$location->id.')';
+
+                return self::mentionAnchor(
+                    'location',
+                    route('locations.show', $location),
+                    $location->name.' ('.$code.')',
+                    $token
+                );
             },
             $escaped
         ) ?? $escaped;
@@ -164,6 +174,11 @@ class RichText
         $escaped = self::applyInlineMarkup($escaped);
 
         return nl2br($escaped, false);
+    }
+
+    private static function mentionAnchor(string $type, string $url, string $label, string $token): string
+    {
+        return '<a class="pg-mention pg-mention-'.$type.'" href="'.e($url).'" data-pg-token="'.e($token).'" contenteditable="false">'.e($label).'</a>';
     }
 
     private static function applyInlineMarkup(string $text): string

@@ -1,5 +1,4 @@
-import { initMentions } from './mentions';
-import { initFormatToolbars } from './format-toolbar';
+import { mountNoteWysiwyg } from './note-wysiwyg';
 
 function csrfToken() {
     return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
@@ -323,16 +322,11 @@ export function initLiveNotes(refreshIcons = () => {}) {
             return;
         }
 
-        let body = '';
-        try {
-            body = JSON.parse(article.dataset.noteBody || '""');
-        } catch {
-            body = article.dataset.noteBody || '';
-        }
         const visibility = article.dataset.noteVisibility || 'requester_visible';
+        const rendered = html?.innerHTML || '';
         editor.innerHTML = `
-            <label class="form-label" for="note-edit-${article.dataset.noteId}">Edit note</label>
-            <textarea class="form-control pg-note-textarea mb-2" id="note-edit-${article.dataset.noteId}" rows="4" data-mentions data-ai-assist data-format-toolbar required></textarea>
+            <label class="form-label">Edit note</label>
+            <div class="pg-note-wysiwyg-shell mb-2" data-note-wysiwyg-shell></div>
             ${visibilityControls(canInternal, visibility)}
             <div class="pg-note-composer-actions is-inline">
                 <button class="btn btn-sm btn-pg-line" type="button" data-note-cancel>Cancel</button>
@@ -347,18 +341,18 @@ export function initLiveNotes(refreshIcons = () => {}) {
             actions.hidden = true;
         }
         openEditor = article;
-        const textareaSeed = editor.querySelector('textarea');
-        if (textareaSeed) {
-            textareaSeed.value = body;
-        }
-        initFormatToolbars(editor);
-        initMentions(editor);
+
+        const shell = editor.querySelector('[data-note-wysiwyg-shell]');
+        const wysiwyg = mountNoteWysiwyg(shell, {
+            html: rendered,
+            suggestUrl: document.body.dataset.mentionsUrl || '',
+        });
         refreshIcons();
+        window.requestAnimationFrame(() => wysiwyg.focus?.());
 
         editor.querySelector('[data-note-cancel]')?.addEventListener('click', closeEditor);
         editor.querySelector('[data-note-save]')?.addEventListener('click', async () => {
-            const textarea = editor.querySelector('textarea');
-            const nextBody = textarea?.value.trim() || '';
+            const nextBody = (wysiwyg.getMarkup?.() || '').trim();
             if (nextBody.length < 1) {
                 setStatus(status, 'Note text is required.', true);
                 return;

@@ -56,6 +56,7 @@ class MentionController extends Controller
                     'label' => $person->name,
                     'meta' => $meta,
                     'insert' => '@'.$handle,
+                    'token' => '@['.$person->name.'](people:'.$person->id.')',
                     'url' => route('people.show', $person),
                 ];
             }
@@ -88,6 +89,7 @@ class MentionController extends Controller
                     'label' => $asset->asset_tag,
                     'meta' => (string) ($asset->name ?: ''),
                     'insert' => $asset->asset_tag,
+                    'token' => $asset->asset_tag,
                     'url' => route('assets.show', $asset),
                 ];
             }
@@ -113,6 +115,7 @@ class MentionController extends Controller
                     'label' => $ticket->ticket_number,
                     'meta' => (string) ($ticket->subject ?: ''),
                     'insert' => $ticket->ticket_number,
+                    'token' => $ticket->ticket_number,
                     'url' => route('helpdesk.show', $ticket),
                 ];
             }
@@ -137,6 +140,7 @@ class MentionController extends Controller
                     'label' => $device->hostname,
                     'meta' => '',
                     'insert' => $device->hostname,
+                    'token' => $device->hostname,
                     'url' => route('network.show', $device),
                 ];
             }
@@ -161,6 +165,7 @@ class MentionController extends Controller
                     'label' => $server->hostname,
                     'meta' => '',
                     'insert' => $server->hostname,
+                    'token' => $server->hostname,
                     'url' => route('servers.show', $server),
                 ];
             }
@@ -186,6 +191,7 @@ class MentionController extends Controller
                     'label' => $location->code,
                     'meta' => (string) $location->name,
                     'insert' => $location->code,
+                    'token' => '@['.$location->name.'](location:'.$location->id.')',
                     'url' => route('locations.show', $location),
                 ];
             }
