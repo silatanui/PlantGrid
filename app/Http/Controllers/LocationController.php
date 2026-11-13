@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Location;
+use App\Support\Labels;
 use App\Support\PlantMap;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class LocationController extends Controller
@@ -24,7 +26,7 @@ class LocationController extends Controller
             'locations' => $locations,
             'zones' => PlantMap::zones(),
             'activeZone' => null,
-            'pins' => $this->pinsFor($locations),
+            'pins' => $this->locationPins($locations),
         ]);
     }
 
@@ -61,7 +63,7 @@ class LocationController extends Controller
             'filter' => $filter,
             'zones' => PlantMap::zones(),
             'activeZone' => $location->map_zone,
-            'pins' => $this->pinsFor(collect([$location]), $assets, $devices),
+            'pins' => $this->devicePins($location, $assets, $devices),
         ]);
     }
 
@@ -74,57 +76,35 @@ class LocationController extends Controller
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int, Location>  $locations
-     * @param  \Illuminate\Support\Collection<int, \App\Models\Asset>|null  $assets
-     * @param  \Illuminate\Support\Collection<int, \App\Models\NetworkDevice>|null  $devices
-     * @return list<array{x: float, y: float, label: string, kind: string, url: string}>
+     * @param  Collection<int, Location>  $locations
+     * @return list<array<string, mixed>>
      */
-    private function pinsFor($locations, $assets = null, $devices = null): array
+    private function locationPins(Collection $locations): array
     {
         $pins = [];
 
-        if ($assets !== null || $devices !== null) {
-            $location = $locations->first();
-            $baseX = (float) ($location?->map_x ?? 500);
-            $baseY = (float) ($location?->map_y ?? 320);
-            $index = 0;
-
-            foreach ($assets ?? [] as $asset) {
-                $offset = $this->pinOffset($index++);
-                $pins[] = [
-                    'x' => $baseX + $offset[0],
-                    'y' => $baseY + $offset[1],
-                    'label' => $asset->asset_tag,
-                    'kind' => 'asset',
-                    'url' => route('assets.show', $asset),
-                ];
-            }
-
-            foreach ($devices ?? [] as $device) {
-                $offset = $this->pinOffset($index++);
-                $pins[] = [
-                    'x' => $baseX + $offset[0],
-                    'y' => $baseY + $offset[1],
-                    'label' => $device->hostname,
-                    'kind' => 'device',
-                    'url' => route('network.show', $device),
-                ];
-            }
-
-            return $pins;
-        }
-
         foreach ($locations as $location) {
-            if ($location->map_x === null || $location->map_y === null) {
+            $zone = PlantMap::zone((string) $location->map_zone);
+            if ($zone === null) {
                 continue;
             }
 
             $pins[] = [
-                'x' => (float) $location->map_x,
-                'y' => (float) $location->map_y,
+                'x' => $zone['x'],
+                'y' => $zone['y'],
                 'label' => $location->code,
                 'kind' => 'location',
                 'url' => route('locations.show', $location),
+                'title' => $location->name,
+                'subtitle' => ($location->department->name ?? 'Plant area').' · '.$location->code,
+                'status' => Labels::status((string) $location->status),
+                'description' => $location->description
+                    ?: 'Campus zone on the Northridge plant plan.',
+                'meta' => sprintf(
+                    '%d assets · %d network devices',
+                    (int) $location->assets_count,
+                    (int) $location->network_devices_count
+                ),
             ];
         }
 
@@ -132,17 +112,53 @@ class LocationController extends Controller
     }
 
     /**
-     * @return array{0: float, 1: float}
+     * @param  Collection<int, \App\Models\Asset>  $assets
+     * @param  Collection<int, \App\Models\NetworkDevice>  $devices
+     * @return list<array<string, mixed>>
      */
-    private function pinOffset(int $index): array
+    private function devicePins(Location $location, Collection $assets, Collection $devices): array
     {
-        $ring = intdiv($index, 6) + 1;
-        $step = $index % 6;
-        $angle = deg2rad($step * 60);
+        $slots = PlantMap::pinSlots((string) ($location->map_zone ?: ''));
+        $pins = [];
+        $index = 0;
 
-        return [
-            cos($angle) * 18 * $ring,
-            sin($angle) * 14 * $ring,
-        ];
+        foreach ($assets as $asset) {
+            $slot = $slots[$index % count($slots)];
+            $index++;
+            $pins[] = [
+                'x' => $slot[0],
+                'y' => $slot[1],
+                'label' => $asset->asset_tag,
+                'kind' => 'asset',
+                'url' => route('assets.show', $asset),
+                'title' => $asset->name,
+                'subtitle' => $asset->asset_tag.' · '.($asset->category->name ?? 'Asset'),
+                'status' => Labels::status((string) $asset->status),
+                'description' => trim(($asset->manufacturer ? $asset->manufacturer.' ' : '').($asset->model ?? ''))
+                    ?: 'ICT asset installed at '.$location->name.'.',
+                'meta' => 'Condition: '.Labels::status((string) $asset->condition),
+            ];
+        }
+
+        foreach ($devices as $device) {
+            $slot = $slots[$index % count($slots)];
+            $index++;
+            $pins[] = [
+                'x' => $slot[0] + (($index % 2) * 4),
+                'y' => $slot[1] + (($index % 3) * 3),
+                'label' => $device->hostname,
+                'kind' => 'device',
+                'url' => route('network.show', $device),
+                'title' => $device->hostname,
+                'subtitle' => Labels::status((string) $device->device_type)
+                    .($device->management_ip ? ' · '.$device->management_ip : ''),
+                'status' => Labels::status((string) $device->status),
+                'description' => trim((string) ($device->notes ?: ''))
+                    ?: (($device->manufacturer ?: 'Network device').' at '.$location->name.'.'),
+                'meta' => trim(($device->manufacturer ?? '').' '.($device->model ?? '')),
+            ];
+        }
+
+        return $pins;
     }
 }

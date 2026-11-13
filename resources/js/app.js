@@ -13,6 +13,7 @@ import { initWorkspaceTabs } from './workspace-tabs';
 import { initAttachPreview } from './attach-preview';
 import { initCaseTriage } from './case-triage';
 import { initFormDrafts } from './form-drafts';
+import { initPlantMap } from './plant-map';
 
 Chart.register(...registerables);
 Chart.defaults.font.family = 'system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
@@ -34,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initAttachPreview(refreshIcons);
     initCaseTriage(refreshIcons);
     initFormDrafts();
+    initPlantMap();
 
     const emailInput = document.querySelector('#email');
     const demoButtons = () => document.querySelectorAll('[data-demo-email]');

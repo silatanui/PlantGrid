@@ -5,7 +5,7 @@
         <div>
             <div class="pg-object">Infrastructure</div>
             <h1 class="pg-page-title">Plant map</h1>
-            <p class="pg-page-lead">Interactive Northridge floor schematic. Open a zone to see what is installed there.</p>
+            <p class="pg-page-lead">Campus plan with gardens, paths, and doors. Zoom, pan, and click pins for device details.</p>
         </div>
         @if (auth()->user()->hasPermission('reports.view'))
             <a class="btn btn-pg-line" href="{{ route('reports.index', ['report' => 'assets']) }}">Asset report</a>
