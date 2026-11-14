@@ -228,11 +228,14 @@ export function mountNoteWysiwyg(host, { html = '', suggestUrl = '' } = {}) {
     document.body.appendChild(panel);
 
     let timer = null;
+    let catalog = [];
     let items = [];
     let activeIndex = -1;
     let mentionActive = false;
     let requestId = 0;
     let latestQuery = '';
+    let lastAnchor = null;
+    let detecting = false;
 
     const filterItems = (list, query) => {
         const parts = String(query || '')
@@ -252,13 +255,27 @@ export function mountNoteWysiwyg(host, { html = '', suggestUrl = '' } = {}) {
         });
     };
 
+    const parseMention = (text) => {
+        const atMatch = text.match(/(^|[\s(])@([a-zA-Z0-9._\s-]*)$/);
+        if (atMatch) {
+            return { trigger: '@', query: (atMatch[2] || '').trim() };
+        }
+        const hashMatch = text.match(/(^|[\s(])#([a-zA-Z0-9._-]*)$/);
+        if (hashMatch) {
+            return { trigger: '#', query: (hashMatch[2] || '').trim() };
+        }
+        return null;
+    };
+
     const closePanel = () => {
         panel.hidden = true;
         panel.innerHTML = '';
+        catalog = [];
         items = [];
         activeIndex = -1;
         mentionActive = false;
         latestQuery = '';
+        lastAnchor = null;
     };
 
     const syncActive = () => {
@@ -267,7 +284,7 @@ export function mountNoteWysiwyg(host, { html = '', suggestUrl = '' } = {}) {
         });
     };
 
-    const renderPanel = (list) => {
+    const renderPanel = (list, { reposition = true } = {}) => {
         items = list;
         if (!items.length) {
             panel.innerHTML = '<div class="pg-mention-empty">No matches</div>';
@@ -281,10 +298,17 @@ export function mountNoteWysiwyg(host, { html = '', suggestUrl = '' } = {}) {
                 </button>
             `).join('');
         }
-        const anchor = caretRectFromContentEditable() || surface.getBoundingClientRect();
-        placeMentionPanel(panel, anchor);
+
+        if (reposition || !lastAnchor) {
+            lastAnchor = caretRectFromContentEditable(surface) || surface.getBoundingClientRect();
+        }
+        placeMentionPanel(panel, lastAnchor || surface.getBoundingClientRect());
         mentionActive = true;
-        activeIndex = items.length ? 0 : -1;
+        if (!items.length) {
+            activeIndex = -1;
+        } else if (activeIndex < 0 || activeIndex >= items.length) {
+            activeIndex = 0;
+        }
         syncActive();
         panel.querySelectorAll('[data-mention-item]').forEach((button) => {
             button.addEventListener('mousedown', (event) => {
@@ -314,58 +338,95 @@ export function mountNoteWysiwyg(host, { html = '', suggestUrl = '' } = {}) {
                 return;
             }
             if (!payload?.ok) {
-                closePanel();
+                if (!mentionActive || !items.length) {
+                    closePanel();
+                }
                 return;
             }
-            renderPanel(filterItems(payload.items || [], latestQuery));
+            catalog = payload.items || [];
+            renderPanel(filterItems(catalog, latestQuery), { reposition: !mentionActive });
         } catch {
-            if (id === requestId) {
+            if (id === requestId && (!mentionActive || !items.length)) {
                 closePanel();
             }
         }
     };
 
     const detectMention = () => {
-        const { text } = textBeforeCaret(surface);
-        const atMatch = text.match(/(^|[\s(])@([a-zA-Z0-9._\s-]*)$/);
-        const hashMatch = text.match(/(^|[\s(])#([a-zA-Z0-9._-]*)$/);
-        if (!atMatch && !hashMatch) {
-            closePanel();
+        if (detecting) {
             return;
         }
-        const trigger = atMatch ? '@' : '#';
-        const query = ((atMatch?.[2] ?? hashMatch?.[2]) || '').trim();
-        latestQuery = query;
+        detecting = true;
+        try {
+            const { text } = textBeforeCaret(surface);
+            const parsed = parseMention(text);
+            if (!parsed) {
+                closePanel();
+                return;
+            }
 
-        if (!panel.hidden && items.length) {
-            renderPanel(filterItems(items, latestQuery));
+            latestQuery = parsed.query;
+
+            // Keep the menu open and filter the last catalog while @/# is still active.
+            if (catalog.length) {
+                renderPanel(filterItems(catalog, latestQuery), { reposition: !mentionActive });
+            }
+
+            window.clearTimeout(timer);
+            timer = window.setTimeout(() => fetchItems(parsed.query, parsed.trigger), 120);
+        } finally {
+            detecting = false;
         }
-
-        window.clearTimeout(timer);
-        timer = window.setTimeout(() => fetchItems(query, trigger), 90);
     };
 
+    // Keep focus in the editor when clicking suggestions.
+    panel.addEventListener('mousedown', (event) => {
+        event.preventDefault();
+    });
+
     surface.addEventListener('input', detectMention);
-    surface.addEventListener('keyup', detectMention);
+    surface.addEventListener('keyup', (event) => {
+        // Arrow/Enter handled below; still refresh after normal typing.
+        if (['ArrowDown', 'ArrowUp', 'Enter', 'Tab', 'Escape'].includes(event.key)) {
+            return;
+        }
+        detectMention();
+    });
     surface.addEventListener('click', detectMention);
-    surface.addEventListener('blur', () => window.setTimeout(closePanel, 150));
+    surface.addEventListener('blur', () => {
+        window.setTimeout(() => {
+            if (panel.contains(document.activeElement) || panel.matches(':hover')) {
+                return;
+            }
+            const { text } = textBeforeCaret(surface);
+            if (!parseMention(text)) {
+                closePanel();
+            }
+        }, 180);
+    });
     surface.addEventListener('keydown', (event) => {
-        if (!mentionActive || panel.hidden || !items.length) {
+        if (!mentionActive || panel.hidden) {
             return;
         }
         if (event.key === 'ArrowDown') {
+            if (!items.length) {
+                return;
+            }
             event.preventDefault();
             activeIndex = (activeIndex + 1) % items.length;
             syncActive();
             return;
         }
         if (event.key === 'ArrowUp') {
+            if (!items.length) {
+                return;
+            }
             event.preventDefault();
             activeIndex = activeIndex <= 0 ? items.length - 1 : activeIndex - 1;
             syncActive();
             return;
         }
-        if (event.key === 'Enter' || event.key === 'Tab') {
+        if ((event.key === 'Enter' || event.key === 'Tab') && items.length) {
             event.preventDefault();
             insertChip(surface, items[Math.max(0, activeIndex)]);
             closePanel();

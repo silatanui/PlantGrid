@@ -96,24 +96,34 @@ export function caretRectFromTextarea(textarea, position) {
     };
 }
 
-export function caretRectFromContentEditable() {
+/**
+ * Read caret screen position without mutating the contenteditable.
+ * (Inserting a probe node was collapsing the mention menu mid-typing.)
+ */
+export function caretRectFromContentEditable(fallbackEl = null) {
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) {
-        return null;
+        return fallbackEl?.getBoundingClientRect?.() || null;
     }
+
     const range = selection.getRangeAt(0).cloneRange();
-    if (range.collapsed) {
-        const probe = document.createElement('span');
-        probe.textContent = '\u200b';
-        range.insertNode(probe);
-        const rect = probe.getBoundingClientRect();
-        probe.parentNode?.removeChild(probe);
-        selection.removeAllRanges();
-        selection.addRange(range);
-        if (rect.width || rect.height || rect.top || rect.left) {
-            return rect;
-        }
-    }
     const rects = range.getClientRects();
-    return rects.length ? rects[rects.length - 1] : range.getBoundingClientRect();
+    if (rects.length) {
+        return rects[rects.length - 1];
+    }
+
+    const bounds = range.getBoundingClientRect();
+    if (bounds && (bounds.width || bounds.height || bounds.top || bounds.left)) {
+        return bounds;
+    }
+
+    const node = range.startContainer;
+    if (node?.nodeType === Node.TEXT_NODE && node.parentElement) {
+        return node.parentElement.getBoundingClientRect();
+    }
+    if (node?.nodeType === Node.ELEMENT_NODE) {
+        return node.getBoundingClientRect();
+    }
+
+    return fallbackEl?.getBoundingClientRect?.() || null;
 }

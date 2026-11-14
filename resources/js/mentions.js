@@ -69,19 +69,25 @@ export function initMentions(root = document) {
 
         let timer = null;
         let activeIndex = -1;
-        let items = [];
+        let catalog = []; // last full server payload for this trigger session
+        let items = []; // currently displayed (filtered) rows
         let mentionStart = -1;
         let trigger = '@';
         let requestId = 0;
         let latestQuery = '';
+        let open = false;
+        let lastAnchor = null;
 
         const close = () => {
+            open = false;
             panel.hidden = true;
             panel.innerHTML = '';
+            catalog = [];
             items = [];
             activeIndex = -1;
             mentionStart = -1;
             latestQuery = '';
+            lastAnchor = null;
         };
 
         const syncActive = () => {
@@ -108,7 +114,7 @@ export function initMentions(root = document) {
             close();
         };
 
-        const render = (list) => {
+        const render = (list, { reposition = true } = {}) => {
             items = list;
             if (!items.length) {
                 panel.innerHTML = `<div class="pg-mention-empty">No matches</div>`;
@@ -123,9 +129,16 @@ export function initMentions(root = document) {
                 `).join('');
             }
 
-            const caret = textarea.selectionStart ?? 0;
-            placeMentionPanel(panel, caretRectFromTextarea(textarea, caret));
-            activeIndex = items.length ? 0 : -1;
+            open = true;
+            if (reposition || !lastAnchor) {
+                const caret = textarea.selectionStart ?? 0;
+                lastAnchor = caretRectFromTextarea(textarea, caret);
+            }
+            placeMentionPanel(panel, lastAnchor || textarea.getBoundingClientRect());
+            activeIndex = items.length ? Math.min(Math.max(activeIndex, 0), items.length - 1) : -1;
+            if (activeIndex < 0 && items.length) {
+                activeIndex = 0;
+            }
             syncActive();
 
             panel.querySelectorAll('[data-mention-item]').forEach((button) => {
@@ -155,13 +168,16 @@ export function initMentions(root = document) {
                     return;
                 }
                 if (!payload?.ok) {
-                    close();
+                    // Keep the panel if we already have matches for this query.
+                    if (!open || !items.length) {
+                        close();
+                    }
                     return;
                 }
-                // Re-apply client filter against the latest typed query.
-                render(filterMentionItems(payload.items || [], latestQuery));
+                catalog = payload.items || [];
+                render(filterMentionItems(catalog, latestQuery), { reposition: !open });
             } catch {
-                if (id === requestId) {
+                if (id === requestId && (!open || !items.length)) {
                     close();
                 }
             }
@@ -181,41 +197,66 @@ export function initMentions(root = document) {
             mentionStart = caret - parsed.matchLen;
             latestQuery = query.trim();
 
-            // Instant local filter of whatever is already on screen while the request runs.
-            if (!panel.hidden && items.length) {
-                render(filterMentionItems(items, latestQuery));
+            // Keep filtering the last catalog while the query is still an active @/# mention.
+            if (catalog.length) {
+                render(filterMentionItems(catalog, latestQuery), { reposition: !open });
             }
 
             window.clearTimeout(timer);
-            timer = window.setTimeout(() => fetchItems(latestQuery, trigger), 90);
+            timer = window.setTimeout(() => fetchItems(latestQuery, trigger), 120);
         };
+
+        // Prevent blur-close when clicking a suggestion.
+        panel.addEventListener('mousedown', (event) => {
+            event.preventDefault();
+        });
 
         textarea.addEventListener('input', detectMention);
         textarea.addEventListener('click', detectMention);
-        textarea.addEventListener('keyup', detectMention);
         textarea.addEventListener('scroll', () => {
-            if (!panel.hidden) {
-                placeMentionPanel(panel, caretRectFromTextarea(textarea, textarea.selectionStart ?? 0));
+            if (!open) {
+                return;
             }
+            const caret = textarea.selectionStart ?? 0;
+            lastAnchor = caretRectFromTextarea(textarea, caret);
+            placeMentionPanel(panel, lastAnchor);
         });
-        textarea.addEventListener('blur', () => window.setTimeout(close, 120));
+        textarea.addEventListener('blur', () => {
+            window.setTimeout(() => {
+                if (panel.contains(document.activeElement) || panel.matches(':hover')) {
+                    return;
+                }
+                // Only dismiss when the caret is no longer in an @/# mention.
+                const caret = textarea.selectionStart ?? 0;
+                const before = textarea.value.slice(0, caret);
+                if (!parseMentionBeforeCaret(before)) {
+                    close();
+                }
+            }, 180);
+        });
         textarea.addEventListener('keydown', (event) => {
-            if (panel.hidden || !items.length) {
+            if (!open) {
                 return;
             }
             if (event.key === 'ArrowDown') {
+                if (!items.length) {
+                    return;
+                }
                 event.preventDefault();
                 activeIndex = (activeIndex + 1) % items.length;
                 syncActive();
                 return;
             }
             if (event.key === 'ArrowUp') {
+                if (!items.length) {
+                    return;
+                }
                 event.preventDefault();
                 activeIndex = activeIndex <= 0 ? items.length - 1 : activeIndex - 1;
                 syncActive();
                 return;
             }
-            if (event.key === 'Enter' || event.key === 'Tab') {
+            if ((event.key === 'Enter' || event.key === 'Tab') && items.length) {
                 event.preventDefault();
                 insertItem(items[Math.max(0, activeIndex)]);
                 return;
