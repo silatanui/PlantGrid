@@ -76,11 +76,18 @@ function initResizeHandles(shell) {
     });
 }
 
+function preferCaseActivityFirst(order) {
+    if (!order.includes('case-activity')) {
+        return order;
+    }
+    return ['case-activity', ...order.filter((id) => id !== 'case-activity')];
+}
+
 function readOrder(side, defaults) {
     try {
         const parsed = JSON.parse(localStorage.getItem(ORDER_KEY(side)) || 'null');
         if (!Array.isArray(parsed) || parsed.length === 0) {
-            return defaults;
+            return preferCaseActivityFirst(defaults);
         }
         const known = new Set(defaults);
         const ordered = parsed.filter((id) => known.has(id));
@@ -95,9 +102,9 @@ function readOrder(side, defaults) {
                 ordered.push(id);
             }
         });
-        return ordered;
+        return preferCaseActivityFirst(ordered);
     } catch {
-        return defaults;
+        return preferCaseActivityFirst(defaults);
     }
 }
 
