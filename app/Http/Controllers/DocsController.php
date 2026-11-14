@@ -28,6 +28,19 @@ class DocsController extends Controller
 
         $related = DocumentationCatalog::collection()
             ->reject(fn (array $item) => $item['slug'] === $slug)
+            ->sortByDesc(function (array $item) use ($doc) {
+                $score = 0;
+                if (($item['audience'] ?? '') === ($doc['audience'] ?? '')) {
+                    $score += 2;
+                }
+                $shared = array_intersect(
+                    array_map('strtolower', $item['keywords'] ?? []),
+                    array_map('strtolower', $doc['keywords'] ?? [])
+                );
+                $score += min(3, count($shared));
+
+                return $score;
+            })
             ->take(4)
             ->values();
 

@@ -137,7 +137,7 @@ class SearchPages
             [
                 'title' => 'Documentation',
                 'summary' => 'Guides for cases, ownership, notes and SLA.',
-                'keywords' => ['docs', 'documentation', 'guides', 'how to'],
+                'keywords' => ['docs', 'documentation', 'guides', 'how to', 'getting started', 'glossary', 'beginner'],
                 'url' => route('docs.index'),
                 'permission' => 'dashboard.view',
             ],

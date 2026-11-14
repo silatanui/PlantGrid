@@ -8,13 +8,13 @@
         <div class="pg-object-home-copy">
             <div class="pg-object">Help</div>
             <h1 class="pg-page-title">Documentation</h1>
-            <p class="pg-page-lead">Step-by-step templates for cases, notes, ownership, duplicates, escalations and the Assistant.</p>
+            <p class="pg-page-lead">Start with the novice guides if you are new, then use the step-by-step templates for cases, notes, ownership, duplicates, escalations and the Assistant.</p>
         </div>
     </section>
 
     <form class="pg-docs-search mb-3" method="get" action="{{ route('docs.index') }}">
         <label class="visually-hidden" for="docs-q">Search documentation</label>
-        <input class="form-control" id="docs-q" name="q" value="{{ $term }}" placeholder="Search guides — create case, duplicate, SLA…">
+        <input class="form-control" id="docs-q" name="q" value="{{ $term }}" placeholder="Search guides — getting started, report issue, SLA…">
         <button class="btn btn-pg" type="submit">Search</button>
     </form>
 
