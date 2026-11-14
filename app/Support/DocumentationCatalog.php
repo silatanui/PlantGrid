@@ -40,7 +40,7 @@ class DocumentationCatalog
                 'title' => 'Choosing a demo role',
                 'summary' => 'Pick the right sample account so the menus and buttons match the story you want to walk through.',
                 'audience' => 'Novice users',
-                'keywords' => ['roles', 'permissions', 'demo account', 'sign in', 'amina', 'faith', 'employee', 'administrator'],
+                'keywords' => ['roles', 'permissions', 'demo account', 'sign in', 'amina', 'faith', 'employee', 'administrator', 'ceo', 'tanui'],
                 'sections' => [
                     [
                         'heading' => 'Why roles matter',
@@ -48,7 +48,7 @@ class DocumentationCatalog
                     ],
                     [
                         'heading' => 'Accounts to try',
-                        'body' => "• System Administrator (Amina Okello) - best starting point for the full console: users, settings, cases, assets.\n• ICT Manager (Daniel Mwangi) - operations view across assets, network, cases and monitoring.\n• ICT Technician (Faith Cheruiyot) - day-to-day case work, notes and ownership.\n• Department Manager (Peter Kamau) - department-facing view of requests and people.\n• General Employee (Grace Wanjiku) - self-service: report issues and follow My cases.\n• Auditor (Helen Achieng) - read-focused review of records and assurance areas.\n\nPassword for every demo account: PlantGrid-Demo.",
+                        'body' => "• CEO (Sila Kipngetich Tanui / Mr. Tanui) - plant chief with executive visibility across cases, assets and reports.\n• System Administrator (Amina Okello) - best starting point for the full console: users, settings, cases, assets.\n• ICT Manager (Daniel Mwangi) - operations view across assets, network, cases and monitoring.\n• ICT Technician (Faith Cheruiyot) - day-to-day case work, notes and ownership.\n• Department Manager (Peter Kamau) - department-facing view of requests and people.\n• General Employee (Grace Wanjiku) - self-service: report issues and follow My cases.\n• Auditor (Helen Achieng) - read-focused review of records and assurance areas.\n\nPassword for every demo account: PlantGrid-Demo.",
                     ],
                     [
                         'heading' => 'How to switch',

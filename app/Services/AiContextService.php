@@ -98,6 +98,8 @@ class AiContextService
             'Scheduled/in-progress maintenance: '.$maintenanceDue->count(),
             'People directory size: '.$people->count().' (demo contacts: name, email, job title, phone, mobile, extension, address, role, department)',
             '',
+            ...$this->leadershipLines($people),
+            '',
             'People directory (name · email · role · department · status):',
             ...$people->map(fn (User $person) => $this->personLine($person))->all(),
             '',
@@ -188,6 +190,10 @@ class AiContextService
         $docHits = $this->lookupDocumentation($message);
         if ($docHits !== []) {
             array_push($lookups, ...$docHits);
+        }
+        $leadershipHits = $this->lookupLeadership($message, $people);
+        if ($leadershipHits !== []) {
+            array_push($lookups, ...$leadershipHits);
         }
         if ($lookups !== []) {
             array_push($lines, '', 'LOOKUP HITS for the current question:', ...$lookups);
@@ -387,6 +393,90 @@ class AiContextService
         }
 
         return $matched->unique('id')->values();
+    }
+
+    /**
+     * @param  Collection<int, User>  $people
+     * @return list<string>
+     */
+    private function leadershipLines(Collection $people): array
+    {
+        $ceo = $people->first(fn (User $person) => $person->roles->contains('name', 'CEO'));
+        $admin = $people->first(fn (User $person) => $person->roles->contains('name', 'System Administrator'));
+        $manager = $people->first(fn (User $person) => $person->roles->contains('name', 'ICT Manager'));
+
+        $lines = [
+            'DEMO ORG LEADERSHIP (use this for CEO / leader / team lead / boss / who runs PlantGrid questions):',
+        ];
+
+        if ($ceo) {
+            $handle = mb_strtolower((string) strtok((string) $ceo->email, '@')) ?: 'n/a';
+            $lines[] = sprintf(
+                '- CEO / plant chief: %s (Mr. Tanui, @%s) · role CEO · treat as the main leader of PlantGrid / Northridge Processing.',
+                $ceo->name,
+                $handle
+            );
+        }
+
+        if ($manager) {
+            $handle = mb_strtolower((string) strtok((string) $manager->email, '@')) ?: 'n/a';
+            $lines[] = sprintf(
+                '- ICT operations team lead: %s (@%s) · role ICT Manager · ICT desk lead under the CEO.',
+                $manager->name,
+                $handle
+            );
+        }
+
+        if ($admin) {
+            $handle = mb_strtolower((string) strtok((string) $admin->email, '@')) ?: 'n/a';
+            $lines[] = sprintf(
+                '- Overall PlantGrid / console admin: %s (@%s) · role System Administrator · full demo console access.',
+                $admin->name,
+                $handle
+            );
+        }
+
+        if (! $ceo && ! $manager && ! $admin) {
+            $lines[] = '- No CEO, System Administrator, or ICT Manager found in the People directory.';
+        }
+
+        return $lines;
+    }
+
+    /**
+     * @param  Collection<int, User>  $people
+     * @return list<string>
+     */
+    private function lookupLeadership(string $message, Collection $people): array
+    {
+        $needle = Str::lower(trim($message));
+        if ($needle === '') {
+            return [];
+        }
+
+        $asksLeadership = str_contains($needle, 'leader')
+            || str_contains($needle, 'team lead')
+            || str_contains($needle, 'boss')
+            || str_contains($needle, 'ceo')
+            || str_contains($needle, 'chief executive')
+            || str_contains($needle, 'mr. tanui')
+            || str_contains($needle, 'mr tanui')
+            || str_contains($needle, 'who runs')
+            || str_contains($needle, 'who manages')
+            || str_contains($needle, 'in charge')
+            || (str_contains($needle, 'manager') && (str_contains($needle, 'main') || str_contains($needle, 'head') || str_contains($needle, 'plantgrid') || str_contains($needle, 'ict')));
+
+        if (! $asksLeadership) {
+            return [];
+        }
+
+        $lines = $this->leadershipLines($people);
+        array_shift($lines); // drop the section header; LOOKUP HITS already labels the block
+
+        return array_map(
+            fn (string $line) => str_starts_with($line, '- ') ? $line : '- '.$line,
+            $lines
+        );
     }
 
     private function personLine(User $person): string

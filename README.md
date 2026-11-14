@@ -26,6 +26,7 @@ Preferred starting account:
 
 Other roles:
 
+- sila.tanui@northridge.example - CEO (Sila Kipngetich Tanui / Mr. Tanui)
 - daniel.mwangi@northridge.example - ICT Manager
 - faith.cheruiyot@northridge.example - ICT Technician
 - peter.kamau@northridge.example - Department Manager

@@ -5,6 +5,16 @@
         $defaultEmail = old('email', 'amina.okello@northridge.example');
         $accounts = [
             [
+                'key' => 'ceo',
+                'name' => 'Sila Kipngetich Tanui',
+                'label' => 'CEO',
+                'email' => 'sila.tanui@northridge.example',
+                'blurb' => 'Mr. Tanui: plant chief with executive visibility across cases, assets and reports.',
+                'access' => 'Executive',
+                'featured' => true,
+                'initials' => 'ST',
+            ],
+            [
                 'key' => 'admin',
                 'name' => 'Amina Okello',
                 'label' => 'System Administrator',
@@ -21,7 +31,7 @@
                 'email' => 'daniel.mwangi@northridge.example',
                 'blurb' => 'Full operations console: assets, network, cases and monitoring.',
                 'access' => 'Full console',
-                'featured' => true,
+                'featured' => false,
                 'initials' => 'DM',
             ],
             [

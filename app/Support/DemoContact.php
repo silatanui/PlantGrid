@@ -56,6 +56,7 @@ class DemoContact
         $dept = strtoupper((string) $departmentCode);
 
         return match (true) {
+            $role === 'CEO' => 'Chief Executive Officer',
             $role === 'System Administrator' => 'Platform administrator',
             $role === 'ICT Manager' => 'ICT manager',
             $role === 'ICT Technician' => 'ICT technician',

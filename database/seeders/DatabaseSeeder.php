@@ -52,6 +52,7 @@ class DatabaseSeeder extends Seeder
         $roles = $this->roles($permissions);
         [$departments, $locations] = $this->organisation();
         $users = $this->users($departments, $roles);
+        $this->call(CeoSeeder::class);
         $this->call(TeamMembersSeeder::class);
         $this->call(UserContactSeeder::class);
         $categories = $this->categories();
@@ -126,6 +127,11 @@ class DatabaseSeeder extends Seeder
                 'maintenance.view', 'production.view', 'security.view', 'backups.view', 'monitoring.view',
                 'reports.view', 'reports.export', 'audit.view',
             ],
+            'CEO' => [
+                'dashboard.view', 'assets.view', 'network.view', 'servers.view', 'tickets.view.all',
+                'maintenance.view', 'production.view', 'security.view', 'backups.view', 'monitoring.view',
+                'reports.view', 'reports.export', 'audit.view',
+            ],
         ];
 
         $roles = [];
@@ -190,6 +196,7 @@ class DatabaseSeeder extends Seeder
     {
         $password = 'PlantGrid-Demo';
         $people = [
+            'ceo' => ['Sila Kipngetich Tanui', 'sila.tanui@northridge.example', 'FIN', 'CEO'],
             'admin' => ['Amina Okello', 'amina.okello@northridge.example', 'ICT', 'System Administrator'],
             'manager' => ['Daniel Mwangi', 'daniel.mwangi@northridge.example', 'ICT', 'ICT Manager'],
             'technician' => ['Faith Cheruiyot', 'faith.cheruiyot@northridge.example', 'ICT', 'ICT Technician'],
