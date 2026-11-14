@@ -28,6 +28,8 @@ class LivePulseService
 
     public const SETTING_CAPS = 'live_pulse_caps';
 
+    public const SETTING_QUIET_UNTIL = 'live_pulse_quiet_until';
+
     public function __construct(
         private readonly TicketService $tickets,
         private readonly OpenAiService $ai,
@@ -92,6 +94,12 @@ class LivePulseService
 
         $this->refreshCapsIfNeeded($now);
 
+        if (! $forceOne && $this->isQuiet($now)) {
+            SystemSetting::putValue(self::SETTING_LAST_RUN, $now->toIso8601String(), null, 'Live Pulse last schedule run');
+
+            return ['ran' => true, 'reason' => 'quiet', 'events' => []];
+        }
+
         $count = $forceOne ? 1 : $this->eventsThisTick($now);
         $events = [];
 
@@ -118,6 +126,9 @@ class LivePulseService
         SystemSetting::putValue(self::SETTING_LAST_RUN, $now->toIso8601String(), null, 'Live Pulse last schedule run');
         if ($events !== []) {
             SystemSetting::putValue(self::SETTING_LAST_EVENT, $now->toIso8601String().' · '.$events[array_key_last($events)], null, 'Live Pulse last event');
+            if (! $forceOne) {
+                $this->maybeScheduleQuiet($now);
+            }
         }
 
         return ['ran' => true, 'events' => $events];
@@ -177,7 +188,7 @@ class LivePulseService
     }
 
     /**
-     * @return array{enabled: bool, active: bool, ends_at: string, last_run: ?string, last_event: ?string, caps: array<string, int>, open_cases: int}
+     * @return array{enabled: bool, active: bool, ends_at: string, last_run: ?string, last_event: ?string, quiet_until: ?string, caps: array<string, int>, open_cases: int}
      */
     public function status(?Carbon $now = null): array
     {
@@ -190,6 +201,7 @@ class LivePulseService
             'ends_at' => $this->endsAt()->toDateTimeString(),
             'last_run' => SystemSetting::getValue(self::SETTING_LAST_RUN),
             'last_event' => SystemSetting::getValue(self::SETTING_LAST_EVENT),
+            'quiet_until' => SystemSetting::getValue(self::SETTING_QUIET_UNTIL),
             'caps' => $caps['counts'],
             'open_cases' => SupportTicket::query()->whereNotIn('status', ['resolved', 'closed'])->count(),
         ];
@@ -204,6 +216,10 @@ class LivePulseService
     {
         $now = $now ?? now();
         if (! $this->isActiveWindow($now)) {
+            return null;
+        }
+
+        if ($this->isQuiet($now)) {
             return null;
         }
 
@@ -228,20 +244,66 @@ class LivePulseService
         $hour = (int) $local->format('G');
         $weekday = $local->isWeekday();
 
-        // Busy plant ICT desk during weekday daytime; quieter nights/weekends.
+        // Prefer quiet minutes and at most one or two events — not a burst every cron tick.
         if ($weekday && $hour >= 7 && $hour < 19) {
-            return mt_rand(2, 5);
+            $roll = mt_rand(1, 100);
+            if ($roll <= 50) {
+                return 0;
+            }
+            if ($roll <= 85) {
+                return 1;
+            }
+
+            return 2;
         }
 
         if ($weekday && $hour >= 19 && $hour < 22) {
-            return mt_rand(1, 3);
+            $roll = mt_rand(1, 100);
+            if ($roll <= 65) {
+                return 0;
+            }
+
+            return 1;
         }
 
         if (! $weekday && $hour >= 9 && $hour < 16) {
-            return mt_rand(1, 2);
+            return mt_rand(1, 100) <= 40 ? 1 : 0;
         }
 
-        return mt_rand(0, 1) === 1 ? 1 : 0;
+        return mt_rand(1, 100) <= 15 ? 1 : 0;
+    }
+
+    private function isQuiet(?Carbon $now = null): bool
+    {
+        $raw = SystemSetting::getValue(self::SETTING_QUIET_UNTIL);
+        if (! is_string($raw) || $raw === '') {
+            return false;
+        }
+
+        try {
+            return Carbon::parse($raw)->gt($now ?? now());
+        } catch (Throwable) {
+            return false;
+        }
+    }
+
+    private function maybeScheduleQuiet(Carbon $now): void
+    {
+        $chance = max(0, min(100, (int) config('plantgrid.live_pulse.quiet_chance_percent', 40)));
+        if ($chance === 0 || mt_rand(1, 100) > $chance) {
+            return;
+        }
+
+        $min = max(1, (int) config('plantgrid.live_pulse.quiet_minutes_min', 3));
+        $max = max($min, (int) config('plantgrid.live_pulse.quiet_minutes_max', 6));
+        $until = $now->copy()->addMinutes(mt_rand($min, $max));
+
+        SystemSetting::putValue(
+            self::SETTING_QUIET_UNTIL,
+            $until->toIso8601String(),
+            null,
+            'Live Pulse quiet window'
+        );
     }
 
     private function pickEventType(): ?string
@@ -317,15 +379,15 @@ class LivePulseService
             return null;
         }
 
-        $asset = Asset::query()
-            ->when($requester->department_id, fn ($q) => $q->where('department_id', $requester->department_id))
-            ->inRandomOrder()
-            ->first();
+        $asset = $this->pickAssetForCase($requester, $template);
+        $description = $template['description'];
+        if ($asset) {
+            $deviceLine = trim($asset->asset_tag.' — '.$asset->name.($asset->model ? ' ('.$asset->model.')' : ''));
+            $description .= "\n\nLinked device: ".$deviceLine
+                .($asset->location?->name ? "\nLocation: ".$asset->location->name : '');
+        }
 
-        $description = $this->maybePolish(
-            $this->tag($template['description']),
-            'case description'
-        );
+        $description = $this->maybePolish($this->tag($description), 'case description');
 
         $ticket = $this->tickets->create($requester, [
             'department_id' => $requester->department_id,
@@ -336,7 +398,7 @@ class LivePulseService
             'priority' => $template['priority'],
         ]);
 
-        return 'new_case '.$ticket->ticket_number;
+        return 'new_case '.$ticket->ticket_number.($asset ? ' @ '.$asset->asset_tag : '');
     }
 
     private function eventStarve(): ?string
@@ -377,6 +439,7 @@ class LivePulseService
     private function eventNote(string $visibility): ?string
     {
         $ticket = SupportTicket::query()
+            ->with(['asset.location'])
             ->whereNotIn('status', ['resolved', 'closed'])
             ->inRandomOrder()
             ->first();
@@ -390,7 +453,8 @@ class LivePulseService
             : $techs->random();
 
         $pool = $visibility === 'internal' ? EventCatalog::internalNotes() : EventCatalog::visibleNotes();
-        $body = $this->maybePolish($this->tag($pool[array_rand($pool)]), 'note');
+        $body = $this->contextualizeNote($pool[array_rand($pool)], $ticket);
+        $body = $this->maybePolish($this->tag($body), 'note');
 
         $this->tickets->comment($ticket, $author, $body, $visibility);
 
@@ -400,6 +464,7 @@ class LivePulseService
     private function eventAssign(): ?string
     {
         $ticket = SupportTicket::query()
+            ->with(['asset'])
             ->whereNotIn('status', ['resolved', 'closed'])
             ->whereNull('assigned_to')
             ->inRandomOrder()
@@ -410,13 +475,13 @@ class LivePulseService
 
         $tech = $this->technicians()->random();
         $actor = $this->assigners()->first() ?: $tech;
-
-        $this->tickets->assignTo(
+        $note = $this->tag($this->contextualizeNote(
+            EventCatalog::assignNotes()[array_rand(EventCatalog::assignNotes())],
             $ticket,
-            $tech,
-            $actor,
-            $this->tag($tech->name.' assigned via Live Pulse.')
-        );
+            ['owner' => $tech->name, 'from' => 'new', 'to' => 'assigned']
+        ));
+
+        $this->tickets->assignTo($ticket, $tech, $actor, $note);
 
         return 'assign '.$ticket->ticket_number.' → '.$tech->name;
     }
@@ -424,6 +489,7 @@ class LivePulseService
     private function eventProgress(): ?string
     {
         $ticket = SupportTicket::query()
+            ->with(['asset.location'])
             ->whereIn('status', ['new', 'assigned', 'in_progress', 'pending'])
             ->inRandomOrder()
             ->first();
@@ -442,24 +508,30 @@ class LivePulseService
         if (! $ticket->assigned_to) {
             try {
                 $actor = $this->assigners()->first() ?: $tech;
-                $this->tickets->assignTo($ticket, $tech, $actor, $this->tag('Claimed for active work.'));
+                $claim = $this->tag($this->contextualizeNote(
+                    EventCatalog::assignNotes()[array_rand(EventCatalog::assignNotes())],
+                    $ticket,
+                    ['owner' => $tech->name, 'from' => 'new', 'to' => 'assigned']
+                ));
+                $this->tickets->assignTo($ticket, $tech, $actor, $claim);
                 $ticket->refresh();
             } catch (Throwable) {
                 // Fall through to transition attempt.
             }
         }
 
-        $preferred = match ($ticket->status) {
+        $from = $ticket->status;
+        $preferred = match ($from) {
             'new', 'assigned' => ['in_progress', 'pending'],
-            'in_progress' => ['pending', 'in_progress'],
-            'pending' => ['in_progress', 'pending'],
+            'in_progress' => ['pending'],
+            'pending' => ['in_progress'],
             default => ['in_progress'],
         };
 
         $allowed = $this->tickets->allowedTransitions($ticket->fresh(), $tech);
         $target = null;
         foreach ($preferred as $status) {
-            if (in_array($status, $allowed, true) && $status !== $ticket->status) {
+            if (in_array($status, $allowed, true) && $status !== $from) {
                 $target = $status;
                 break;
             }
@@ -469,7 +541,14 @@ class LivePulseService
             return $this->eventNote('internal');
         }
 
-        $note = $this->tag(EventCatalog::progressNotes()[array_rand(EventCatalog::progressNotes())]);
+        $stagePool = EventCatalog::stageAdvanceNotes($from, $target);
+        $note = $this->tag($this->contextualizeNote(
+            $stagePool[array_rand($stagePool)],
+            $ticket,
+            ['from' => $from, 'to' => $target, 'owner' => $tech->name]
+        ));
+        $note = $this->maybePolish($note, 'progress');
+
         $this->tickets->transition($ticket->fresh(), $tech, $target, [
             'note' => $note,
             'internal_note' => $note,
@@ -481,38 +560,52 @@ class LivePulseService
 
     private function eventResolve(): ?string
     {
+        // Only close out work that has already been owned and progressed — not brand-new queue items.
         $ticket = SupportTicket::query()
-            ->whereIn('status', ['assigned', 'in_progress', 'pending', 'new'])
+            ->with(['asset.location'])
+            ->whereIn('status', ['in_progress', 'pending'])
+            ->whereNotNull('assigned_to')
+            ->whereHas('comments', fn ($query) => $query->where('visibility', 'internal'))
             ->inRandomOrder()
             ->first();
+
+        if (! $ticket) {
+            $ticket = SupportTicket::query()
+                ->with(['asset.location'])
+                ->whereIn('status', ['in_progress', 'pending'])
+                ->whereNotNull('assigned_to')
+                ->inRandomOrder()
+                ->first();
+        }
+
         if (! $ticket) {
             return null;
         }
 
-        $tech = $ticket->assigned_to
-            ? (User::query()->find($ticket->assigned_to) ?: $this->technicians()->first())
-            : $this->technicians()->random();
-
+        $tech = User::query()->find($ticket->assigned_to) ?: $this->technicians()->first();
         if (! $tech) {
             return null;
         }
 
-        if (! $ticket->assigned_to) {
-            try {
-                $actor = $this->assigners()->first() ?: $tech;
-                $this->tickets->assignTo($ticket, $tech, $actor, $this->tag('Claimed to resolve.'));
-                $ticket->refresh();
-            } catch (Throwable) {
-                // continue with transition attempt
-            }
-        }
-
-        $resolution = $this->maybePolish($this->tag(EventCatalog::resolveNotes()[array_rand(EventCatalog::resolveNotes())]), 'resolution');
-        $internal = $this->tag('Closing out after verification in the demonstration environment.');
+        $from = $ticket->status;
+        $resolution = $this->maybePolish(
+            $this->tag($this->contextualizeNote(
+                EventCatalog::resolveNotes()[array_rand(EventCatalog::resolveNotes())],
+                $ticket,
+                ['from' => $from, 'to' => 'resolved', 'owner' => $tech->name]
+            )),
+            'resolution'
+        );
+        $stagePool = EventCatalog::stageAdvanceNotes($from, 'resolved');
+        $internal = $this->tag($this->contextualizeNote(
+            $stagePool[array_rand($stagePool)],
+            $ticket,
+            ['from' => $from, 'to' => 'resolved', 'owner' => $tech->name]
+        ));
 
         $target = in_array('resolved', $this->tickets->allowedTransitions($ticket->fresh(), $tech), true)
             ? 'resolved'
-            : (in_array('closed', $this->tickets->allowedTransitions($ticket->fresh(), $tech), true) ? 'closed' : null);
+            : null;
 
         if ($target === null) {
             return null;
@@ -521,7 +614,7 @@ class LivePulseService
         $this->tickets->transition($ticket->fresh(), $tech, $target, [
             'resolution_notes' => $resolution,
             'internal_note' => $internal,
-            'note' => $this->tag('Live Pulse status advance'),
+            'note' => $internal,
         ]);
 
         return $target.' '.$ticket->ticket_number;
@@ -530,6 +623,7 @@ class LivePulseService
     private function eventClose(): ?string
     {
         $ticket = SupportTicket::query()
+            ->with(['asset.location'])
             ->where('status', 'resolved')
             ->inRandomOrder()
             ->first();
@@ -550,14 +644,82 @@ class LivePulseService
             return null;
         }
 
-        $closeNote = $this->tag('Requester confirmed; closing in the demonstration environment.');
+        $stagePool = EventCatalog::stageAdvanceNotes('resolved', 'closed');
+        $closeNote = $this->tag($this->contextualizeNote(
+            $stagePool[array_rand($stagePool)],
+            $ticket,
+            ['from' => 'resolved', 'to' => 'closed', 'owner' => $tech->name]
+        ));
         $this->tickets->transition($ticket, $tech, 'closed', [
             'note' => $closeNote,
-            'internal_note' => $this->tag('Closed after resolve verification.'),
+            'internal_note' => $closeNote,
             'resolution_notes' => $closeNote,
         ]);
 
         return 'closed '.$ticket->ticket_number;
+    }
+
+    /**
+     * @param  array{subject?: string, category?: string, asset_hints?: list<string>}  $template
+     */
+    private function pickAssetForCase(User $requester, array $template): ?Asset
+    {
+        $hints = $template['asset_hints'] ?? EventCatalog::assetHintsFor($template['subject'] ?? '', $template['category'] ?? '');
+
+        $base = Asset::query()->with(['location', 'category']);
+
+        if ($hints !== []) {
+            $matched = (clone $base)->where(function ($query) use ($hints) {
+                foreach ($hints as $hint) {
+                    $like = '%'.$hint.'%';
+                    $query->orWhere('name', 'like', $like)
+                        ->orWhere('asset_tag', 'like', $like)
+                        ->orWhere('model', 'like', $like)
+                        ->orWhere('manufacturer', 'like', $like);
+                }
+            })->inRandomOrder()->first();
+
+            if ($matched) {
+                return $matched;
+            }
+        }
+
+        $departmentAsset = (clone $base)
+            ->when($requester->department_id, fn ($query) => $query->where('department_id', $requester->department_id))
+            ->inRandomOrder()
+            ->first();
+
+        if ($departmentAsset) {
+            return $departmentAsset;
+        }
+
+        // Prefer linking a real plant device whenever the register has anything.
+        return (clone $base)->inRandomOrder()->first();
+    }
+
+    /**
+     * @param  array{from?: string, to?: string, owner?: string}  $context
+     */
+    private function contextualizeNote(string $template, SupportTicket $ticket, array $context = []): string
+    {
+        $ticket->loadMissing(['asset.location', 'assignee']);
+        $device = $ticket->asset
+            ? trim($ticket->asset->asset_tag.' ('.$ticket->asset->name.')')
+            : 'the reported endpoint (no asset linked yet)';
+        $location = $ticket->asset?->location?->name ?: 'the reported area';
+
+        $replacements = [
+            '{case}' => $ticket->ticket_number,
+            '{subject}' => $ticket->subject,
+            '{device}' => $device,
+            '{location}' => $location,
+            '{owner}' => $context['owner'] ?? ($ticket->assignee?->name ?? 'the on-duty technician'),
+            '{from}' => str_replace('_', ' ', (string) ($context['from'] ?? $ticket->status)),
+            '{to}' => str_replace('_', ' ', (string) ($context['to'] ?? '')),
+            '{priority}' => $ticket->priority,
+        ];
+
+        return strtr($template, $replacements);
     }
 
     private function eventMessage(): ?string

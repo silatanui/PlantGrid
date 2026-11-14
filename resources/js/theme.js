@@ -211,14 +211,19 @@ function applyTokenVars(hex, { forceInline = false } = {}) {
     return tokens;
 }
 
-function activeAccentColor() {
+export function activeAccentColor() {
     return getComputedStyle(document.documentElement).getPropertyValue('--pg-navy').trim() || DEFAULT_HEX;
 }
 
-export function updateBrandFavicon(color = activeAccentColor(), ink) {
+/** Current brand mark as a data-URL (matches the themed tab favicon). */
+export function brandFaviconDataUrl(color = activeAccentColor(), ink) {
     const tokens = themeTokens(color);
     const mark = ink || tokens.logoInk;
-    const href = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(FAVICON_SVG(color, mark))}`;
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(FAVICON_SVG(color, mark))}`;
+}
+
+export function updateBrandFavicon(color = activeAccentColor(), ink) {
+    const href = brandFaviconDataUrl(color, ink);
     document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]').forEach((link) => {
         link.setAttribute('href', href);
         link.setAttribute('type', 'image/svg+xml');

@@ -199,28 +199,14 @@ class EventCatalog
     public static function internalNotes(): array
     {
         return [
-            'Checked switch counters and reseated the floor patch. Still waiting on a hot-spare if the PSU is dead.',
-            'Synced with Packaging supervisor — they can hold one truck but not two. Priority stays high.',
-            'Left a spare IEC lead at the packaging bench. Will confirm after the next compressor cycle.',
-            'Escalating to ICT Manager if parts are not confirmed before the 14:00 shift change.',
-            'Verified PackLabel service on PLT-APP01; jobs leave the queue but never ACK from the device.',
-            'Captured a photo of the AP LED pattern for the admin-block roam complaint.',
-            'Status: Tier-1 complete. Rolling two test units back to the previous firmware build for comparison.',
-            'Power rail at the junction box is steady at 24V DC. Suspect application-layer freeze under high polling.',
-            'Cleared two zombie jobs stuck in Rendering. Correlating with the application-server memory case.',
-            'AD account unlocked; MFA shows one stale phone method. Offering temporary SMS for 48 hours.',
-            'CRC growth stopped after reseating the LC patch in SRV-RM. Leaving the old lead in the evidence bag.',
-            'Added plant.local search suffix on the QA desktop and remapped the templates share successfully.',
-            'Memory dropped to 64% after worker-pool recycle, then climbed again — concurrency cap still needed.',
-            'Drum life near end-of-life on this model family. Issuing a drum kit from ICT stores.',
-            'Vendor voucher logging confirmed for 90 days. Two vouchers printed for Maintenance reception.',
-            'Partnered with QA lead for certificate macro trusted-location restore after the Office update.',
-            'Assigned spare handheld forced to 2.4 GHz for the tunnel walk-test; do not move the whole fleet yet.',
-            'RMA logged against the demo vendor record. Hot-spare powered on first try.',
-            'Internal: do not authorize full-line rollback until Engineering reviews the diagnostic dump.',
-            'Shift handoff — open packaging cases have notes. Evening desk should take ownership if free.',
-            'Confirmed backup contention on D: was cleared; share latency returned to baseline in the simulation.',
-            'Service-account password rotated in the demo vault after confirming no scheduled job depends on it tonight.',
+            "Case {case} — field update on {device} at {location}.\n\nChecked interface counters and physical seating on the floor patch. Link lights are stable after reseat, but error counters had already climbed during the morning wave. Left the old lead bagged for evidence and tagged the port on the switch faceplate.\n\nNext: watch one full production cycle before we decide on a permanent lead swap. Priority remains {priority}.",
+            "Case {case} ({subject}).\n\nSpoke with the area supervisor at {location}. They can absorb a short delay on one truck window but not a second miss. Confirmed {device} is still the affected endpoint and that neighbouring kit on the same cabinet is healthy.\n\nAction: keep this case owned by {owner}; escalate to ICT Manager only if parts are unconfirmed before the 14:00 handoff.",
+            "Diagnostic pass for {case} on {device}.\n\nPower rail at the junction measured steady. Application-layer behaviour still matches a freeze under high polling rather than a dead PSU. Captured the on-screen state and a short note of what the operator saw before the drop.\n\nPlan: stage a hot-spare from ICT cage bay 3 and cut over during the next approved lull. Do not full-line rollback without Engineering review.",
+            "PackLabel / print path check for {case}.\n\nService on the app host accepts jobs and the queue drains, but {device} never ACKs. Cleared two zombie Rendering jobs and correlated with memory pressure on the application server story.\n\nInternal: keep requester updates calm — spare printer path is prepared; original job IDs stay valid until cutover is confirmed.",
+            "Identity / access note for {case}.\n\nAccount state reviewed in the demo directory. One stale MFA method was still registered; temporary SMS offered for 48 hours while the primary method is cleaned. No evidence of a broader directory outage — warehouse sessions remain healthy.\n\n{owner} retains ownership until the requester confirms a clean login from {location}.",
+            "Network path note for {case} / {device} at {location}.\n\nCRC growth stopped after reseating the LC patch in the server room side. Old lead retained. Will leave a 24-hour monitoring window on the uplink before we call the physical layer closed.\n\nIf flaps return during the afternoon intake rush, force the handheld / edge kit to 2.4 GHz for a controlled walk-test only — do not move the whole fleet yet.",
+            "Desktop / share remediation for {case}.\n\nAdded the plant search suffix on the QA desktop and remapped the templates share. Certificate macros open without the trusted-location block after the Office update preference restore.\n\nAsk the requester to reopen the workbook once and reply on this case. Keep {device} linked so Assets history stays accurate.",
+            "Shift handoff — {case} ({subject}).\n\nWork so far is documented against {device}. Evening desk should take ownership if free; do not resolve until the next production wave proves the fix. Pending items and parts are called out in prior notes.\n\nMarker kept for Live Pulse audit scrub.",
         ];
     }
 
@@ -230,21 +216,78 @@ class EventCatalog
     public static function visibleNotes(): array
     {
         return [
-            'We are investigating on site. You will get another update within the hour.',
-            'A technician is assigned. Please keep the affected device powered if safe to do so.',
-            'Temporary workaround: use the spare unit from ICT cage bay 3 until the primary is repaired.',
-            'Please confirm whether the issue still occurs after the lunch break restart.',
-            'Guest vouchers will be left at Maintenance reception before 08:30.',
-            'We recycled the PackLabel service briefly to clear memory pressure. Queued jobs should resume automatically.',
-            'Network path restored after reseating the floor patch. Please retry the scale PC and reply if it drops again.',
-            'Trusted location for QA templates has been restored. Please reopen the certificate workbook and confirm.',
-            'A spare printer is online. Keep using the original job IDs until PackLabel cutover is confirmed.',
-            'Access request is in progress. You will receive a confirmation when ERP read access and the share mapping are ready.',
-            'We are monitoring the packaging switch uplink for 24 hours before closing this case.',
-            'Please flatten curled invoices overnight so the scanner separation pad can feed single sheets.',
-            'Desktop suffix fix is applied. Map \\\\PLT-FS01\\qa-templates again and tell us if it fails.',
-            'Battery health shows end-of-life. A spare laptop can be issued from ICT stock on request.',
-            'Thank you for the update — we can keep weighing manually for now, but need a firm ETA before afternoon dispatch.',
+            'We are investigating on site for case {case}. You will get another update within the hour. Please keep {device} powered if it is safe to do so.',
+            'A technician ({owner}) is assigned to "{subject}". We will update this case as soon as the first on-site check at {location} is complete.',
+            'Temporary workaround: use the spare unit from ICT cage bay 3 until the primary ({device}) is repaired. Keep using your original job references.',
+            'Please confirm whether the issue on {device} still occurs after the lunch break restart, then reply on this case.',
+            'Guest vouchers will be left at Maintenance reception before 08:30. They remain isolated from the plant VLAN.',
+            'We recycled the PackLabel service briefly to clear memory pressure. Queued jobs for {device} should resume automatically — tell us if labels stay stuck.',
+            'Network path restored after reseating the floor patch at {location}. Please retry {device} and reply if it drops again.',
+            'Trusted location for QA templates has been restored. Please reopen the certificate workbook and confirm on this case.',
+            'Access work for "{subject}" is in progress. You will receive confirmation when ERP read access and the share mapping are ready.',
+            'We are monitoring the path for {device} for a short window before we close {case}. Thank you for the patience.',
+        ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function assignNotes(): array
+    {
+        return [
+            "Assigning {case} ({subject}) to {owner}.\n\nWhy now: the case is unowned in the ICT queue and matches this technician's plant area / skill. Linked device is {device} at {location}.\n\nExpected first actions: confirm the symptom on the floor, capture interface or device state, and post the next internal update before changing status again.",
+            "Ownership for {case} → {owner}.\n\nRationale: priority is {priority} and the requester needs a named owner before the next production window. {device} stays linked so Asset and case history stay aligned.\n\n{owner} should either start active work (in progress) or park with a clear pending reason — do not leave the case silent.",
+        ];
+    }
+
+    /**
+     * Rich internal notes used whenever Live Pulse advances a case stage.
+     *
+     * @return list<string>
+     */
+    public static function stageAdvanceNotes(string $from, string $to): array
+    {
+        $key = $from.'>'.$to;
+
+        $map = [
+            'new>assigned' => self::assignNotes(),
+            'assigned>in_progress' => [
+                "Moving {case} from assigned → in progress.\n\nWhy: {owner} has confirmed ownership and completed the first diagnostic pass on {device} at {location}. Symptom for \"{subject}\" is reproducible enough to work actively now.\n\nEvidence / next checks: counters or device state captured; spare path identified if hardware fails mid-shift. Requester-visible update will follow if downtime extends past the current wave.",
+                "Status advance {case}: assigned → in progress.\n\nWe are no longer waiting in the queue — hands-on work has started against {device}. Priority remains {priority}. If parts or a recycle window are required, we will move to pending with a dated next check rather than leaving the status ambiguous.",
+            ],
+            'assigned>pending' => [
+                "Parking {case} assigned → pending.\n\nWhy: work cannot finish without an external dependency (parts, requester confirmation, or an approved change window) related to {device} at {location}.\n\nClear next step: {owner} will re-check after the dependency clears and either resume in progress or resolve once verified. Do not treat pending as abandoned.",
+            ],
+            'new>in_progress' => [
+                "Claiming and starting {case} (new → in progress).\n\n{owner} takes ownership and begins active diagnosis on {device} for \"{subject}\". First checks focus on power, link, and application ACK behaviour at {location}.",
+            ],
+            'in_progress>pending' => [
+                "Moving {case} in progress → pending.\n\nWhy we are pausing active work: waiting on vendor parts, a controlled recycle window, or requester confirmation before touching {device} again. Floor impact and workaround (if any) are understood.\n\nNext check is owned by {owner}; case stays open until the dependency is cleared and service is re-validated.",
+                "Status {case}: in progress → pending.\n\nActive troubleshooting on {device} is paused with a documented reason. Monitoring continues where relevant. We will not resolve until the pending item is closed out and the production wave looks clean.",
+            ],
+            'pending>in_progress' => [
+                "Resuming {case} pending → in progress.\n\nThe blocking dependency is cleared (parts / window / confirmation). {owner} is back on {device} at {location} to finish \"{subject}\" and verify under load before any resolve.",
+                "Re-opening active work on {case}.\n\nPending hold lifted. Continuing remediation on {device}; will post resolve notes only after a clean verification pass.",
+            ],
+            'in_progress>resolved' => [
+                "Resolving {case} (in progress → resolved).\n\nWhy it is safe to resolve now: remediation on {device} is complete, verification under the current production conditions looks clean, and there is no outstanding dependency for \"{subject}\".\n\nClose-out: leave monitoring notes if a short watch window is still useful; requester-facing resolution text summarises the fix. Asset link retained for history.",
+                "Case {case} ready to resolve.\n\nWork finished on {device} at {location}. Root cause addressed in the demonstration environment; no further ICT action required unless the symptom returns. {owner} confirms the queue item can leave active work.",
+            ],
+            'pending>resolved' => [
+                "Resolving {case} (pending → resolved).\n\nThe pending dependency cleared and the final check on {device} succeeded. Nothing else remains for \"{subject}\" — resolving rather than sending the case back through idle assigned/new states.",
+            ],
+            'resolved>closed' => [
+                "Closing {case} (resolved → closed).\n\nRequester confirmation / monitoring window complete for {device}. No reopen signals. Archiving the case after resolve verification in the demonstration environment.",
+                "Final close for {case}.\n\nResolved work on \"{subject}\" stayed stable. Closing to keep the open queue honest; history and device link remain available for audit.",
+            ],
+        ];
+
+        if (isset($map[$key])) {
+            return $map[$key];
+        }
+
+        return [
+            "Advancing {case} from {from} → {to}.\n\nReason: continuing the ICT workflow for \"{subject}\" on {device} at {location}. {owner} remains accountable for the next verification step. This note records why the stage changed so the Activity and Notes panels stay aligned.",
         ];
     }
 
@@ -253,13 +296,38 @@ class EventCatalog
      */
     public static function progressNotes(): array
     {
-        return [
-            'Moving to in progress after confirming ownership and gathering the first diagnostic dump.',
-            'Waiting on vendor parts / requester confirmation — parking in pending with a clear next check time.',
-            'On-site checks completed; advancing status while we validate the fix under the next production wave.',
-            'Handing into active work now that the spare is staged and PackLabel alias cutover is prepared.',
-            'Pending a controlled recycle window approved by the floor lead before we touch the app pool.',
-        ];
+        return self::stageAdvanceNotes('assigned', 'in_progress');
+    }
+
+    /**
+     * Keyword hints used to attach a real asset when opening a Live Pulse case.
+     *
+     * @return list<string>
+     */
+    public static function assetHintsFor(string $subject, string $category = ''): array
+    {
+        $haystack = strtolower($subject.' '.$category);
+        $hints = [];
+
+        foreach ([
+            'label' => ['zebra', 'label', 'zt411', 'printer'],
+            'scanner' => ['scanner', 'handheld', 'scan'],
+            'switch' => ['switch', 'plt-sw', 'uplink'],
+            'server' => ['server', 'plt-app', 'plt-fs', 'plt-ad'],
+            'wifi' => ['wifi', 'wi-fi', 'ap ', 'ssid', 'wireless'],
+            'erp' => ['erp', 'desktop', 'pc', 'laptop'],
+            'camera' => ['cctv', 'nvr', 'camera'],
+            'scale' => ['scale', 'weigh', 'floorweigh'],
+        ] as $needles) {
+            foreach ($needles as $needle) {
+                if (str_contains($haystack, trim($needle))) {
+                    array_push($hints, ...$needles);
+                    break;
+                }
+            }
+        }
+
+        return array_values(array_unique($hints));
     }
 
     /**
@@ -342,16 +410,16 @@ class EventCatalog
     public static function resolveNotes(): array
     {
         return [
-            'Root cause confirmed and restored in the demonstration environment. Monitoring for recurrence this shift.',
-            'Replaced / reseated the failing component in the demo story. Service verified with the requester.',
-            'Configuration corrected and validated. Closing path opened after requester acknowledgement in the demo thread.',
-            'Hot-spare cutover completed and PackLabel jobs ACK again. Original unit tagged for vendor collection.',
-            'Trusted location / GPO preference restored. Macros open on two QA PCs without the block prompt.',
-            'Patch lead replaced and CRC growth stopped. Monitoring window complete with no further flaps.',
-            'Worker concurrency capped and memory pressure stayed under the warning line through the afternoon wave.',
-            'Share path remapped after DNS suffix fix. Certificate templates open normally from the lab desktop.',
-            'Shared mailbox permissions rebuilt and Outlook profiles re-added. Vendor mail flow restored in the simulation.',
-            'Scanner separation pad cleaned and thickness adjusted. Finance confirmed clean single-sheet feeds on flat stock.',
+            "Resolved {case}: root cause for \"{subject}\" confirmed and restored in the demonstration environment on {device} at {location}. Monitoring for recurrence this shift; no further ICT action unless the symptom returns.",
+            "Resolved {case}: replaced or reseated the failing component on {device}. Service verified with the area contact. Asset history retained for audit.",
+            "Resolved {case}: configuration corrected and validated for {device}. Closing path opened after acknowledgement in the demo thread.",
+            "Resolved {case}: hot-spare cutover completed; PackLabel / device jobs ACK again on the replacement path. Original unit tagged for vendor collection.",
+            "Resolved {case}: trusted location / preference restored. Workbooks and macros open cleanly on the linked desktop. Confirm once more if anything regresses after the next Office patch cycle.",
+            "Resolved {case}: patch lead replaced and CRC growth stopped on the path to {device}. Short monitoring window complete with no further flaps.",
+            "Resolved {case}: worker concurrency capped and memory pressure stayed under the warning line through the afternoon wave affecting this service.",
+            "Resolved {case}: share path remapped after DNS suffix fix. Templates open normally from the lab desktop linked to this case.",
+            "Resolved {case}: shared mailbox permissions rebuilt and Outlook profiles re-added. Mail flow restored in the simulation.",
+            "Resolved {case}: scanner separation pad cleaned and thickness adjusted on {device}. Finance confirmed clean single-sheet feeds on flat stock.",
         ];
     }
 }

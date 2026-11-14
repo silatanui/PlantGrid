@@ -188,12 +188,13 @@ class TicketService
 
             $this->notifications->syncPartners($ticket, [$assignee->id, $actor->id], 'ownership');
 
+            $historyNote = $note ?: $actor->name.' assigned the case to '.$assignee->name.'.';
             $this->history(
                 $ticket,
                 $previous,
                 $ticket->status,
                 $actor,
-                $note ?: $actor->name.' assigned the case to '.$assignee->name.'.'
+                $historyNote
             );
 
             $this->audit->log('ticket.assign', 'support_ticket', $ticket->id, [
@@ -209,6 +210,12 @@ class TicketService
             ]);
 
             $fresh = $ticket->fresh();
+
+            if (filled($note)) {
+                $this->comment($fresh, $actor, $note, 'internal');
+                $fresh = $fresh->fresh();
+            }
+
             $this->notifications->caseAssigned($fresh, $actor, $previousAssignee);
 
             return $ticket->fresh(['assignee', 'department', 'category', 'partners']);
@@ -336,6 +343,13 @@ class TicketService
             ]);
 
             $fresh = $ticket->fresh();
+
+            // Optional internal note for the Notes panel (history alone is not enough).
+            if ($previous !== $status && filled($options['internal_note'] ?? null)) {
+                $this->comment($fresh, $user, (string) $options['internal_note'], 'internal');
+                $fresh = $fresh->fresh();
+            }
+
             $exclude = [];
 
             if ($fresh->assigned_to && (int) $fresh->assigned_to !== (int) ($previousAssignee ?? 0)) {

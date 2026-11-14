@@ -1,3 +1,5 @@
+import { brandFaviconDataUrl } from './theme';
+
 const POLL_MS = 4000;
 
 function csrfToken() {
@@ -108,7 +110,8 @@ function maybeBrowserNotify(title, body) {
     }
     if (Notification.permission === 'granted') {
         try {
-            new Notification(title, { body: body || '', icon: '/images/favicon-32x32.png' });
+            // Use the themed P mark (same as the tab favicon), not the legacy static PNG.
+            new Notification(title, { body: body || '', icon: brandFaviconDataUrl() });
         } catch (error) {
             // Ignore browser notification failures.
         }

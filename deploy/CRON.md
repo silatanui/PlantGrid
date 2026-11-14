@@ -16,7 +16,7 @@ Paste only the command body into the cPanel “Command” field — do **not** p
 
 - `plantgrid:collect-metrics` — every 5 minutes  
 - `plantgrid:check-sla` — every 5 minutes (marks breached cases)  
-- `plantgrid:live-pulse` — every minute (busy autonomous demo desk through 31 Dec 2026)  
+- `plantgrid:live-pulse` — every minute (autonomous demo desk through 31 Dec 2026; often idle 3–6 minutes between bursts)  
 - `plantgrid:refresh-demo-timeline` — daily (keeps overdue gaps frozen)  
 - `plantgrid:prune-metrics` — daily  
 
