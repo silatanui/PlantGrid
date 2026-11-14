@@ -2392,15 +2392,26 @@ body.is-shell-navigating [data-workspace-tabs] {
 .pg-theme-dark-bg .pg-audit-entry,
 .pg-theme-dark-bg .pg-panel-card,
 .pg-theme-dark-bg .pg-note-composer,
-.pg-theme-dark-bg .pg-case-primary > .pg-card {
+.pg-theme-dark-bg .pg-case-primary > .pg-card,
+.pg-theme-dark-bg .pg-object-home,
+.pg-theme-dark-bg .pg-page-intro,
+.pg-theme-dark-bg .pg-audit-toolbar {
     background: #fff !important;
     color: #152028;
     border-color: #c2cad2;
 }
 .pg-theme-dark-bg .pg-card .text-muted,
 .pg-theme-dark-bg .pg-card .pg-page-lead,
-.pg-theme-dark-bg .pg-filters .form-label {
+.pg-theme-dark-bg .pg-filters .form-label,
+.pg-theme-dark-bg .pg-object-home .pg-page-lead,
+.pg-theme-dark-bg .pg-object-home .pg-object,
+.pg-theme-dark-bg .pg-page-intro .pg-page-lead {
     color: #5a6773 !important;
+}
+.pg-theme-dark-bg .pg-object-home .pg-page-title,
+.pg-theme-dark-bg .pg-page-intro .pg-page-title,
+.pg-theme-dark-bg .pg-main > .pg-page-title {
+    color: #181818 !important;
 }
 .pg-theme-dark-bg .pg-table th {
     background: #f7f9fb;
@@ -2409,19 +2420,19 @@ body.is-shell-navigating [data-workspace-tabs] {
 .pg-theme-dark-bg .pg-table tbody tr:hover {
     background: #f5faf9;
 }
-.pg-theme-dark-bg .pg-main > .pg-object-home .pg-page-title,
-.pg-theme-dark-bg .pg-main > .pg-page-title {
-    color: #f3f6f9;
-}
-.pg-theme-dark-bg .pg-main > .pg-object-home .pg-page-lead,
-.pg-theme-dark-bg .pg-main > .pg-object-home .pg-object,
-.pg-theme-dark-bg .pg-main > .pg-page-lead {
-    color: #b7c2cd;
-}
-.pg-theme-dark-bg .pg-docs-search {
-    padding: 8px 10px;
+.pg-theme-dark-bg .pg-docs-search,
+.pg-theme-dark-bg .pg-object-home,
+.pg-theme-dark-bg .pg-page-intro,
+.pg-theme-dark-bg .pg-audit-toolbar {
+    padding: 12px 14px;
     border: 1px solid #c2cad2;
-    background: #fff;
+}
+.pg-theme-dark-bg .pg-main > .pg-page-title {
+    display: inline-block;
+    padding: 12px 14px;
+    border: 1px solid #c2cad2;
+    background: #fff !important;
+    max-width: 100%;
 }
 
 .pg-metric .label {
@@ -2470,6 +2481,25 @@ body.is-shell-navigating [data-workspace-tabs] {
     gap: 14px;
     align-items: center;
     margin-bottom: 12px;
+    padding: 12px 14px;
+    background: #fff;
+    border: 1px solid var(--pg-border);
+    border-radius: var(--pg-radius);
+}
+.pg-page-intro {
+    display: grid;
+    gap: 4px;
+    margin-bottom: 12px;
+    padding: 12px 14px;
+    background: #fff;
+    border: 1px solid var(--pg-border);
+    border-radius: var(--pg-radius);
+}
+.pg-page-intro .pg-page-title {
+    margin: 0;
+}
+.pg-page-intro .pg-page-lead {
+    margin: 0;
 }
 .pg-object-icon {
     width: 48px;
@@ -6340,6 +6370,10 @@ body.pg-home {
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 8px;
     max-width: 720px;
+    padding: 10px 12px;
+    background: #fff;
+    border: 1px solid var(--pg-border);
+    border-radius: var(--pg-radius);
 }
 .pg-docs-table td a {
     font-weight: 600;
