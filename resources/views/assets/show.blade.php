@@ -29,15 +29,38 @@
     </section>
     <div class="row g-3">
         <div class="col-lg-7">
-            @include('partials.device-media', ['media' => \App\Support\DeviceMedia::forAsset($asset)])
+            @if ($asset->photo_path)
+                <section class="pg-device-media mb-3">
+                    <div class="pg-device-media-visual">
+                        <img src="{{ asset('storage/'.$asset->photo_path) }}" alt="{{ $asset->name }}" loading="lazy">
+                    </div>
+                    <div class="pg-device-media-copy">
+                        <p class="pg-device-media-kicker">Registered photo</p>
+                        <p class="pg-device-media-summary">Uploaded evidence for {{ $asset->asset_tag }}.</p>
+                    </div>
+                </section>
+            @else
+                @include('partials.device-media', ['media' => \App\Support\DeviceMedia::forAsset($asset)])
+            @endif
             <section class="pg-card pg-card-pad mb-3">
                 <h2 class="pg-section-title">Record</h2>
                 <dl class="pg-kv">
                     <dt>Status</dt><dd>{!! \App\Support\Labels::badge($asset->status) !!}</dd>
                     <dt>Condition</dt><dd>{!! \App\Support\Labels::badge($asset->condition) !!}</dd>
+                    <dt>Criticality</dt><dd>{!! \App\Support\Labels::badge($asset->criticality ?: 'medium') !!}</dd>
                     <dt>Category</dt><dd>{{ $asset->category->name ?? '-' }}</dd>
                     <dt>Manufacturer</dt><dd>{{ $asset->manufacturer ?: '-' }} {{ $asset->model }}</dd>
                     <dt>Serial</dt><dd class="pg-mono">{{ $asset->serial_number ?: '-' }}</dd>
+                    <dt>Barcode / alt ID</dt><dd class="pg-mono">{{ $asset->alternate_id ?: '-' }}</dd>
+                    <dt>Parent asset</dt>
+                    <dd>
+                        @if ($asset->parent)
+                            <a href="{{ route('assets.show', $asset->parent) }}">{{ $asset->parent->asset_tag }}</a>
+                            <span class="text-muted small">· {{ $asset->parent->name }}</span>
+                        @else
+                            -
+                        @endif
+                    </dd>
                     <dt>Department</dt><dd>{{ $asset->department->name ?? '-' }}</dd>
                     <dt>Location</dt>
                     <dd>
@@ -49,10 +72,55 @@
                         @endif
                     </dd>
                     <dt>Vendor</dt><dd>{{ $asset->vendor->name ?? '-' }}</dd>
+                    <dt>Purchase</dt>
+                    <dd>
+                        {{ \App\Support\Format::date($asset->purchase_date, 'd M Y') }}
+                        @if ($asset->purchase_cost !== null)
+                            · {{ $asset->purchase_currency ?: 'KES' }} {{ number_format((float) $asset->purchase_cost, 2) }}
+                        @endif
+                    </dd>
+                    <dt>PO / invoice</dt>
+                    <dd class="pg-mono">
+                        {{ $asset->purchase_order ?: '-' }}
+                        @if ($asset->invoice_number)
+                            · {{ $asset->invoice_number }}
+                        @endif
+                    </dd>
                     <dt>Warranty</dt><dd>{{ \App\Support\Format::date($asset->warranty_expiry, 'd M Y') }}</dd>
+                    <dt>Expected life</dt><dd>{{ $asset->expected_life_months ? $asset->expected_life_months.' months' : '-' }}</dd>
+                    <dt>Hostname</dt><dd class="pg-mono">{{ $asset->hostname ?: '-' }}</dd>
+                    <dt>IP / MAC</dt>
+                    <dd class="pg-mono">
+                        {{ $asset->ip_address ?: '-' }}
+                        @if ($asset->mac_address)
+                            · {{ $asset->mac_address }}
+                        @endif
+                    </dd>
                     <dt>Notes</dt><dd class="pg-rich-note">{!! $asset->notes ? \App\Support\RichText::render($asset->notes) : e('-') !!}</dd>
                 </dl>
             </section>
+            @if ($asset->attachments->isNotEmpty())
+                <section class="pg-card pg-card-pad mb-3">
+                    <h2 class="pg-section-title">Files</h2>
+                    <ul class="pg-asset-file-list">
+                        @foreach ($asset->attachments as $attachment)
+                            <li>
+                                <div>
+                                    <a href="{{ route('assets.attachment', [$asset, $attachment]) }}">{{ $attachment->original_name }}</a>
+                                    <span class="text-muted">{{ $attachment->kindLabel() }} · {{ $attachment->humanSize() }}</span>
+                                </div>
+                                @if (auth()->user()->hasPermission('assets.update'))
+                                    <form method="post" action="{{ route('assets.attachment.destroy', [$asset, $attachment]) }}" data-confirm="Delete {{ $attachment->original_name }}?">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button class="btn btn-sm btn-pg-line" type="submit">Delete</button>
+                                    </form>
+                                @endif
+                            </li>
+                        @endforeach
+                    </ul>
+                </section>
+            @endif
             <section class="pg-card mb-3">
                 <div class="pg-card-pad"><h2 class="pg-section-title mb-0">Assignment history</h2></div>
                 <table class="pg-table">

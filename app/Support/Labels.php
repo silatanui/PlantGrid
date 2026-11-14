@@ -14,7 +14,7 @@ class Labels
         return match ($value) {
             'active', 'available', 'running', 'in_place', 'good', 'pass', 'passed' => 'info',
             'completed', 'resolved', 'closed', 'successful' => 'muted',
-            'in_progress', 'assigned', 'scheduled', 'pending', 'pending_vendor', 'open', 'warning', 'degraded', 'fair', 'acknowledged', 'new' => 'warning',
+            'in_progress', 'assigned', 'scheduled', 'pending', 'pending_vendor', 'open', 'warning', 'degraded', 'fair', 'acknowledged', 'new', 'medium' => 'warning',
             'critical', 'failed', 'outage', 'unavailable', 'lost', 'damaged', 'high' => 'critical',
             'retired', 'cancelled', 'spare', 'inactive', 'low' => 'muted',
             default => 'info',

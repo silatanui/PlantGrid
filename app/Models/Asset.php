@@ -12,8 +12,10 @@ class Asset extends Model
 {
     protected $fillable = [
         'asset_tag', 'name', 'asset_category_id', 'vendor_id', 'manufacturer', 'model',
-        'serial_number', 'department_id', 'location_id', 'purchase_date', 'warranty_expiry',
-        'condition', 'status', 'specifications', 'notes', 'created_by',
+        'serial_number', 'alternate_id', 'department_id', 'location_id', 'parent_asset_id',
+        'purchase_date', 'purchase_cost', 'purchase_currency', 'purchase_order', 'invoice_number',
+        'warranty_expiry', 'expected_life_months', 'hostname', 'ip_address', 'mac_address',
+        'condition', 'status', 'criticality', 'specifications', 'notes', 'photo_path', 'created_by',
     ];
 
     protected function casts(): array
@@ -21,6 +23,8 @@ class Asset extends Model
         return [
             'purchase_date' => 'date',
             'warranty_expiry' => 'date',
+            'purchase_cost' => 'decimal:2',
+            'expected_life_months' => 'integer',
             'specifications' => 'array',
         ];
     }
@@ -43,6 +47,21 @@ class Asset extends Model
     public function location(): BelongsTo
     {
         return $this->belongsTo(Location::class);
+    }
+
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'parent_asset_id');
+    }
+
+    public function children(): HasMany
+    {
+        return $this->hasMany(self::class, 'parent_asset_id');
+    }
+
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(AssetAttachment::class);
     }
 
     public function assignments(): HasMany

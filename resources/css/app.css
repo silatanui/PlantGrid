@@ -1713,6 +1713,101 @@ body[data-brand-font="system"] {
     font-size: 11px;
     color: var(--pg-muted);
 }
+.pg-asset-form-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+    gap: 18px;
+    align-items: start;
+}
+@media (max-width: 1100px) {
+    .pg-asset-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+.pg-asset-form-main,
+.pg-asset-form-side {
+    display: grid;
+    gap: 14px;
+}
+.pg-form-section-head {
+    margin-bottom: 14px;
+}
+.pg-form-section-lead {
+    margin: 4px 0 0;
+    color: var(--pg-muted);
+    font-size: 13px;
+    line-height: 1.45;
+}
+.pg-form-section-sticky {
+    position: sticky;
+    top: 84px;
+}
+@media (max-width: 1100px) {
+    .pg-form-section-sticky {
+        position: static;
+    }
+}
+.pg-form-subhead {
+    margin: 0 0 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--pg-navy-deep);
+}
+.pg-form-checklist {
+    margin: 0;
+    padding-left: 1.1em;
+    color: var(--pg-muted);
+    font-size: 12px;
+    line-height: 1.55;
+}
+.pg-form-checklist li + li {
+    margin-top: 4px;
+}
+.pg-form-hint {
+    background: color-mix(in srgb, var(--pg-teal-soft) 55%, #fff);
+}
+.pg-asset-form-actions {
+    display: grid;
+    gap: 8px;
+    margin-top: 16px;
+}
+.pg-asset-photo-current {
+    border: 1px solid var(--pg-border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: #f3f5f7;
+}
+.pg-asset-photo-current img {
+    display: block;
+    width: 100%;
+    max-height: 180px;
+    object-fit: cover;
+}
+.pg-asset-docs-list,
+.pg-asset-file-list {
+    list-style: none;
+    margin: 10px 0 0;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+}
+.pg-asset-docs-list li,
+.pg-asset-file-list li {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: center;
+    padding: 8px 10px;
+    border: 1px solid var(--pg-border);
+    border-radius: 10px;
+    background: #fff;
+    font-size: 12px;
+}
+.pg-asset-file-list li > div {
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+}
 .pg-asset-row {
     display: flex;
     align-items: center;

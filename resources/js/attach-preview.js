@@ -70,8 +70,47 @@ function initSharedMediaDelete() {
     });
 }
 
+function initAssetDocsPicker() {
+    document.querySelectorAll('[data-asset-docs-input]').forEach((input) => {
+        if (input.dataset.docsReady === '1') {
+            return;
+        }
+        input.dataset.docsReady = '1';
+        const list = input.closest('.mb-3, .pg-form-section, form')?.querySelector('[data-asset-docs-list]');
+        if (!list) {
+            return;
+        }
+
+        const humanSize = (bytes) => {
+            if (bytes < 1024) {
+                return `${bytes} B`;
+            }
+            if (bytes < 1024 * 1024) {
+                return `${(bytes / 1024).toFixed(1)} KB`;
+            }
+            return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+        };
+
+        input.addEventListener('change', () => {
+            const files = [...(input.files || [])];
+            list.innerHTML = '';
+            if (files.length === 0) {
+                list.hidden = true;
+                return;
+            }
+            files.forEach((file) => {
+                const item = document.createElement('li');
+                item.innerHTML = `<strong>${file.name}</strong><span>${humanSize(file.size)}</span>`;
+                list.appendChild(item);
+            });
+            list.hidden = false;
+        });
+    });
+}
+
 export function initAttachPreview(refreshIcons = () => {}) {
     initSharedMediaDelete();
+    initAssetDocsPicker();
 
     document.querySelectorAll('[data-attach-composer]').forEach((composer) => {
         if (composer.dataset.attachReady === '1') {

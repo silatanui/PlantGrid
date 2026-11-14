@@ -102,11 +102,13 @@ Route::middleware('auth')->group(function () {
         Route::post('/assets/{asset}/retire', [AssetController::class, 'retire'])->middleware('permission:assets.retire')->name('assets.retire');
         Route::post('/assets/{asset}/assign', [AssetController::class, 'assign'])->middleware('permission:assets.update')->name('assets.assign');
         Route::post('/assets/{asset}/return', [AssetController::class, 'returnAssignment'])->middleware('permission:assets.update')->name('assets.return');
+        Route::delete('/assets/{asset}/attachments/{attachment}', [AssetController::class, 'destroyAttachment'])->middleware('permission:assets.update')->name('assets.attachment.destroy');
     });
 
     // Detail is authorised in the controller so case partners can open a linked
     // device without Assets register permission. Keep after /assets/create.
     Route::get('/assets/{asset}', [AssetController::class, 'show'])->name('assets.show');
+    Route::get('/assets/{asset}/attachments/{attachment}', [AssetController::class, 'downloadAttachment'])->name('assets.attachment');
 
     Route::middleware('permission:assets.view,network.view')->group(function () {
         Route::get('/locations', [LocationController::class, 'index'])->name('locations.index');
