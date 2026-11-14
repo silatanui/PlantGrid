@@ -9,7 +9,8 @@ export function placeMentionPanel(panel, anchorRect, { preferBelow = true, gap =
 
     panel.hidden = false;
     panel.style.position = 'fixed';
-    panel.style.zIndex = '80';
+    // Above AI assistant (1060), shell chrome, and modals so @/# works in chat + notes.
+    panel.style.zIndex = '2200';
     panel.style.width = `${Math.min(maxWidth, window.innerWidth - 24)}px`;
     panel.style.maxHeight = '';
 

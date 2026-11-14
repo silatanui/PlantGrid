@@ -139,9 +139,11 @@ function insertChip(editor, item) {
     const range = selection.getRangeAt(0);
 
     const { text } = textBeforeCaret(editor);
-    const match = text.match(/(^|[\s(])([@#])([a-zA-Z0-9._-]*)$/);
-    if (match) {
-        const deleteCount = match[2].length + match[3].length;
+    const atMatch = text.match(/(^|[\s(])@([a-zA-Z0-9._\s-]*)$/);
+    const hashMatch = text.match(/(^|[\s(])#([a-zA-Z0-9._-]*)$/);
+    const query = atMatch?.[2] ?? hashMatch?.[2];
+    if (query !== undefined) {
+        const deleteCount = 1 + query.length;
         for (let i = 0; i < deleteCount; i += 1) {
             document.execCommand('delete', false);
         }
@@ -229,6 +231,26 @@ export function mountNoteWysiwyg(host, { html = '', suggestUrl = '' } = {}) {
     let items = [];
     let activeIndex = -1;
     let mentionActive = false;
+    let requestId = 0;
+    let latestQuery = '';
+
+    const filterItems = (list, query) => {
+        const parts = String(query || '')
+            .trim()
+            .toLowerCase()
+            .split(/\s+/)
+            .filter(Boolean);
+        if (!parts.length) {
+            return list;
+        }
+        return list.filter((item) => {
+            const hay = [item.label, item.meta, item.insert, item.token, item.type]
+                .filter(Boolean)
+                .join(' ')
+                .toLowerCase();
+            return parts.every((part) => hay.includes(part));
+        });
+    };
 
     const closePanel = () => {
         panel.hidden = true;
@@ -236,6 +258,7 @@ export function mountNoteWysiwyg(host, { html = '', suggestUrl = '' } = {}) {
         items = [];
         activeIndex = -1;
         mentionActive = false;
+        latestQuery = '';
     };
 
     const syncActive = () => {
@@ -276,6 +299,8 @@ export function mountNoteWysiwyg(host, { html = '', suggestUrl = '' } = {}) {
         if (!suggestUrl) {
             return;
         }
+        const id = ++requestId;
+        latestQuery = query;
         try {
             const url = new URL(suggestUrl, window.location.origin);
             url.searchParams.set('q', query);
@@ -285,27 +310,39 @@ export function mountNoteWysiwyg(host, { html = '', suggestUrl = '' } = {}) {
                 credentials: 'same-origin',
             });
             const payload = await response.json();
+            if (id !== requestId) {
+                return;
+            }
             if (!payload?.ok) {
                 closePanel();
                 return;
             }
-            renderPanel(payload.items || []);
+            renderPanel(filterItems(payload.items || [], latestQuery));
         } catch {
-            closePanel();
+            if (id === requestId) {
+                closePanel();
+            }
         }
     };
 
     const detectMention = () => {
         const { text } = textBeforeCaret(surface);
-        const match = text.match(/(^|[\s(])([@#])([a-zA-Z0-9._-]*)$/);
-        if (!match) {
+        const atMatch = text.match(/(^|[\s(])@([a-zA-Z0-9._\s-]*)$/);
+        const hashMatch = text.match(/(^|[\s(])#([a-zA-Z0-9._-]*)$/);
+        if (!atMatch && !hashMatch) {
             closePanel();
             return;
         }
-        const trigger = match[2];
-        const query = match[3];
+        const trigger = atMatch ? '@' : '#';
+        const query = ((atMatch?.[2] ?? hashMatch?.[2]) || '').trim();
+        latestQuery = query;
+
+        if (!panel.hidden && items.length) {
+            renderPanel(filterItems(items, latestQuery));
+        }
+
         window.clearTimeout(timer);
-        timer = window.setTimeout(() => fetchItems(query, trigger), 120);
+        timer = window.setTimeout(() => fetchItems(query, trigger), 90);
     };
 
     surface.addEventListener('input', detectMention);

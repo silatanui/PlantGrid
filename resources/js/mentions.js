@@ -8,6 +8,42 @@ function escapeHtml(value) {
         .replaceAll('"', '&quot;');
 }
 
+/** Client-side filter so typing stays responsive even if a slower request finishes late. */
+export function filterMentionItems(items, query) {
+    const parts = String(query || '')
+        .trim()
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(Boolean);
+    if (!parts.length) {
+        return items;
+    }
+    return items.filter((item) => {
+        const hay = [
+            item.label,
+            item.meta,
+            item.insert,
+            item.token,
+            item.type,
+        ].filter(Boolean).join(' ').toLowerCase();
+        return parts.every((part) => hay.includes(part));
+    });
+}
+
+function parseMentionBeforeCaret(before) {
+    // @ allows spaces so "@Faith Cher" keeps filtering by full name.
+    // # stays token-like for case/asset/device/location tags.
+    const atMatch = before.match(/(^|[\s(])@([a-zA-Z0-9._\s-]*)$/);
+    if (atMatch) {
+        return { trigger: '@', query: atMatch[2] || '', matchLen: 1 + (atMatch[2] || '').length };
+    }
+    const hashMatch = before.match(/(^|[\s(])#([a-zA-Z0-9._-]*)$/);
+    if (hashMatch) {
+        return { trigger: '#', query: hashMatch[2] || '', matchLen: 1 + (hashMatch[2] || '').length };
+    }
+    return null;
+}
+
 export function initMentions(root = document) {
     const fields = root.querySelectorAll('[data-mentions]');
     if (!fields.length) {
@@ -36,6 +72,8 @@ export function initMentions(root = document) {
         let items = [];
         let mentionStart = -1;
         let trigger = '@';
+        let requestId = 0;
+        let latestQuery = '';
 
         const close = () => {
             panel.hidden = true;
@@ -43,6 +81,7 @@ export function initMentions(root = document) {
             items = [];
             activeIndex = -1;
             mentionStart = -1;
+            latestQuery = '';
         };
 
         const syncActive = () => {
@@ -52,14 +91,13 @@ export function initMentions(root = document) {
         };
 
         const insertItem = (item) => {
-            if (mentionStart < 0) {
+            if (mentionStart < 0 || !item) {
                 return;
             }
             const value = textarea.value;
             const caret = textarea.selectionStart;
             const before = value.slice(0, mentionStart);
             const after = value.slice(caret);
-            // Prefer structured tokens so replies/notes can link to the exact entity.
             const inserted = String(item.token || item.insert || '').trim();
             const token = `${inserted} `;
             textarea.value = `${before}${token}${after}`;
@@ -99,6 +137,8 @@ export function initMentions(root = document) {
         };
 
         const fetchItems = async (query, currentTrigger) => {
+            const id = ++requestId;
+            latestQuery = query;
             try {
                 const url = new URL(suggestUrl, window.location.origin);
                 url.searchParams.set('q', query);
@@ -111,38 +151,48 @@ export function initMentions(root = document) {
                     credentials: 'same-origin',
                 });
                 const payload = await response.json();
+                if (id !== requestId) {
+                    return;
+                }
                 if (!payload?.ok) {
                     close();
                     return;
                 }
-                render(payload.items || []);
+                // Re-apply client filter against the latest typed query.
+                render(filterMentionItems(payload.items || [], latestQuery));
             } catch {
-                close();
+                if (id === requestId) {
+                    close();
+                }
             }
         };
 
         const detectMention = () => {
             const caret = textarea.selectionStart;
             const before = textarea.value.slice(0, caret);
-            // @ allows spaces so "@Faith Cher" can resolve people by full name.
-            // # stays token-like for case/asset/device tags.
-            const atMatch = before.match(/(^|[\s(])@([a-zA-Z0-9._\s-]*)$/);
-            const hashMatch = before.match(/(^|[\s(])#([a-zA-Z0-9._-]*)$/);
-            const match = atMatch || hashMatch;
-            if (!match) {
+            const parsed = parseMentionBeforeCaret(before);
+            if (!parsed) {
                 close();
                 return;
             }
 
-            trigger = atMatch ? '@' : '#';
-            const query = match[2] || '';
-            mentionStart = caret - 1 - query.length;
+            trigger = parsed.trigger;
+            const query = parsed.query;
+            mentionStart = caret - parsed.matchLen;
+            latestQuery = query.trim();
+
+            // Instant local filter of whatever is already on screen while the request runs.
+            if (!panel.hidden && items.length) {
+                render(filterMentionItems(items, latestQuery));
+            }
+
             window.clearTimeout(timer);
-            timer = window.setTimeout(() => fetchItems(query.trim(), trigger), 120);
+            timer = window.setTimeout(() => fetchItems(latestQuery, trigger), 90);
         };
 
         textarea.addEventListener('input', detectMention);
         textarea.addEventListener('click', detectMention);
+        textarea.addEventListener('keyup', detectMention);
         textarea.addEventListener('scroll', () => {
             if (!panel.hidden) {
                 placeMentionPanel(panel, caretRectFromTextarea(textarea, textarea.selectionStart ?? 0));
