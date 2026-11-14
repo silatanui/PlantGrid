@@ -81,6 +81,7 @@ class Navigation
             ],
             'Administration' => [
                 ['label' => 'Administration', 'route' => 'admin.index', 'pattern' => 'admin.index', 'icon' => 'settings', 'permission' => 'users.view'],
+                ['label' => 'Branding', 'route' => 'admin.branding', 'pattern' => 'admin.branding*', 'icon' => 'palette', 'permission' => 'roles.manage'],
                 ['label' => 'Online users', 'route' => 'admin.online', 'pattern' => 'admin.online', 'icon' => 'radio', 'permission' => 'users.view'],
                 ['label' => 'Audit log', 'route' => 'audit.index', 'pattern' => 'audit.*', 'icon' => 'scroll-text', 'permission' => 'audit.view'],
             ],

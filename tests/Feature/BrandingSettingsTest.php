@@ -21,6 +21,11 @@ class BrandingSettingsTest extends TestCase
         $admin = User::query()->where('email', 'amina.okello@northridge.example')->firstOrFail();
 
         $this->actingAs($admin)
+            ->get(route('admin.branding'))
+            ->assertOk()
+            ->assertSee('Branding & appearance');
+
+        $this->actingAs($admin)
             ->post(route('admin.branding.update'), [
                 'brand_name' => 'AcmeOps',
                 'plant_name' => 'Acme Plant',
@@ -28,7 +33,7 @@ class BrandingSettingsTest extends TestCase
                 'brand_font' => 'outfit',
                 'brand_logo' => UploadedFile::fake()->image('logo.png', 1200, 260),
             ])
-            ->assertRedirect();
+            ->assertRedirect(route('admin.branding'));
 
         $branding = app(BrandingService::class)->forViews();
         $this->assertSame('AcmeOps', $branding['brandName']);

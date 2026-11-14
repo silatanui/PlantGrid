@@ -221,6 +221,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/administration/departments', [AdminController::class, 'storeDepartment'])->name('admin.departments.store');
         Route::post('/administration/locations', [AdminController::class, 'storeLocation'])->name('admin.locations.store');
         Route::post('/administration/settings', [AdminController::class, 'updateSettings'])->name('admin.settings.update');
+        Route::get('/administration/branding', [AdminController::class, 'branding'])->name('admin.branding');
         Route::post('/administration/branding', [AdminController::class, 'updateBranding'])->name('admin.branding.update');
         Route::post('/administration/identity', [AdminController::class, 'updateIdentity'])->name('admin.identity.update');
         Route::post('/administration/live-pulse', [AdminController::class, 'updateLivePulse'])

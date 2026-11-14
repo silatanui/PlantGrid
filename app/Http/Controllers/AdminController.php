@@ -200,6 +200,17 @@ class AdminController extends Controller
         return back()->with('status', 'Location '.$location->name.' was added.');
     }
 
+    public function branding(BrandingService $branding)
+    {
+        abort_unless(auth()->user()->hasPermission('roles.manage'), 403);
+
+        return view('admin.branding', [
+            'title' => 'Branding',
+            'branding' => $branding->adminState(),
+            'plantName' => SystemSetting::getValue('plant_name', 'Northridge Processing'),
+        ]);
+    }
+
     public function updateSettings(Request $request, AuditLogger $audit)
     {
         abort_unless($request->user()->hasPermission('roles.manage'), 403);
@@ -223,7 +234,7 @@ class AdminController extends Controller
                 'plant_name' => $state['plantName'],
             ]);
 
-            return back()->with('status', 'Branding restored to PlantGrid defaults.');
+            return redirect()->route('admin.branding')->with('status', 'Branding restored to PlantGrid defaults.');
         }
 
         $data = $request->validate([
@@ -248,7 +259,7 @@ class AdminController extends Controller
             'has_logo' => $state['hasCustomLogo'],
         ]);
 
-        return back()->with('status', 'Branding & appearance saved.');
+        return redirect()->route('admin.branding')->with('status', 'Branding & appearance saved.');
     }
 
     public function updateIdentity(Request $request, AuditLogger $audit)

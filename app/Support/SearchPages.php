@@ -141,6 +141,13 @@ class SearchPages
                 'url' => route('docs.index'),
                 'permission' => 'dashboard.view',
             ],
+            [
+                'title' => 'Branding',
+                'summary' => 'Demo product name, plant label, logo and UI font.',
+                'keywords' => ['branding', 'logo', 'font', 'plant name', 'customise', 'customize', 'appearance settings'],
+                'url' => route('admin.branding'),
+                'permission' => 'roles.manage',
+            ],
         ];
     }
 
