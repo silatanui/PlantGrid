@@ -118,6 +118,25 @@ function maybeBrowserNotify(title, body) {
     }
 }
 
+function playCue(kind) {
+    const url = kind === 'notification'
+        ? document.body?.dataset?.soundNotification
+        : document.body?.dataset?.soundMessage;
+    if (!url) {
+        return;
+    }
+    try {
+        const audio = new Audio(url);
+        audio.volume = 0.95;
+        const result = audio.play();
+        if (result && typeof result.catch === 'function') {
+            result.catch(() => {});
+        }
+    } catch {
+        // Ignore autoplay / decode failures.
+    }
+}
+
 function renderNotificationList(root, items) {
     const list = root?.querySelector('[data-live-notifications-list]');
     if (!list) {
@@ -236,12 +255,14 @@ export function initLiveInbox() {
                 if (!knownNotificationIds.has(item.id) && knownNotificationIds.size > 0) {
                     showToast(item.title, item.body, item.url);
                     maybeBrowserNotify(item.title, item.body);
+                    playCue('notification');
                 }
             });
             (msgs.items || []).forEach((item) => {
                 if (!knownMessageIds.has(String(item.id)) && knownMessageIds.size > 0) {
                     showToast('New message', `${item.sender}: ${item.subject}`, item.url);
                     maybeBrowserNotify('New message', `${item.sender}: ${item.subject}`);
+                    playCue('message');
                 }
             });
 

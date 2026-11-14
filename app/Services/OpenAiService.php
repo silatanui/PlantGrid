@@ -71,34 +71,50 @@ class OpenAiService
 
     public function refineNote(string $text): string
     {
-        return $this->chat([
-            [
-                'role' => 'system',
-                'content' => 'You refine ICT operations notes for PlantGrid, a manufacturing technology portfolio demo. '
-                    .'Improve clarity, grammar and structure. Keep factual meaning. Do not invent plant events, people, assets or tickets. '
-                    .'Return only the refined note text with no preamble.',
-            ],
-            [
-                'role' => 'user',
-                'content' => $text,
-            ],
-        ], 0.2);
+        return $this->rewriteNote($text, 'refine');
     }
 
     public function paraphraseNote(string $text): string
     {
+        return $this->rewriteNote($text, 'paraphrase');
+    }
+
+    public function rewriteNote(string $text, string $mode = 'refine'): string
+    {
+        $prompts = [
+            'refine' => [
+                'instruction' => 'Improve clarity, grammar and structure. Keep factual meaning.',
+                'temperature' => 0.2,
+            ],
+            'paraphrase' => [
+                'instruction' => 'Rewrite in clear professional language while preserving meaning. Do not add new facts.',
+                'temperature' => 0.5,
+            ],
+            'shorten' => [
+                'instruction' => 'Make the text shorter and tighter while keeping the same meaning and key details. Cut filler only.',
+                'temperature' => 0.25,
+            ],
+            'clarify' => [
+                'instruction' => 'Make the text clearer and more specific for an ICT operations audience. Prefer plain wording. Do not invent facts.',
+                'temperature' => 0.3,
+            ],
+        ];
+
+        $selected = $prompts[$mode] ?? $prompts['refine'];
+
         return $this->chat([
             [
                 'role' => 'system',
-                'content' => 'You paraphrase ICT operations notes for PlantGrid. '
-                    .'Rewrite in clear professional language while preserving meaning. Do not add new facts. '
-                    .'Return only the paraphrased note text with no preamble.',
+                'content' => 'You rewrite ICT operations notes and assistant messages for PlantGrid, a manufacturing technology portfolio demo. '
+                    .$selected['instruction'].' '
+                    .'Do not invent plant events, people, assets or tickets. '
+                    .'Return only the rewritten text with no preamble.',
             ],
             [
                 'role' => 'user',
                 'content' => $text,
             ],
-        ], 0.5);
+        ], $selected['temperature']);
     }
 
     /**

@@ -17,6 +17,8 @@
     data-mentions-url="{{ route('mentions.suggest') }}"
     data-presence-heartbeat="{{ route('presence.heartbeat') }}"
     data-live-inbox-url="{{ route('inbox.live') }}"
+    data-sound-message="{{ asset('sounds/message.mp3') }}"
+    data-sound-notification="{{ asset('sounds/notification.mp3') }}"
     @if (auth()->user()->hasPermission('users.view'))
         data-presence-live="{{ route('presence.live') }}"
     @endif

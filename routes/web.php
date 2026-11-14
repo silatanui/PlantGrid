@@ -79,6 +79,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/actions/cancel', [AiController::class, 'cancel'])->name('actions.cancel');
         Route::post('/refine', [AiController::class, 'refine'])->name('refine');
         Route::post('/paraphrase', [AiController::class, 'paraphrase'])->name('paraphrase');
+        Route::post('/rewrite', [AiController::class, 'rewrite'])->name('rewrite');
         Route::post('/triage/{ticket}', [AiController::class, 'triage'])
             ->middleware('permission:tickets.assign')
             ->name('triage');

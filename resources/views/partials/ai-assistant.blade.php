@@ -12,7 +12,8 @@
     data-ai-refine-url="{{ route('ai.refine') }}"
     data-ai-paraphrase-url="{{ route('ai.paraphrase') }}"
     data-ai-open-sound="{{ asset('sounds/assistant-open.mp3') }}"
-    data-ai-reply-sound="{{ asset('sounds/assistant-reply.mp3') }}"
+    data-ai-reply-sound="{{ asset('sounds/message.mp3') }}"
+    data-ai-rewrite-url="{{ route('ai.rewrite') }}"
 >
     <button class="pg-ai-launcher" type="button" data-ai-open aria-expanded="false" aria-controls="pg-ai-panel" title="PlantGrid Assistant">
         <span class="pg-ai-mark" aria-hidden="true">
@@ -95,13 +96,23 @@
                 <button type="button" data-ai-prompt="Any critical monitoring alerts right now?">Critical alerts?</button>
                 <button type="button" data-ai-prompt="What assets need attention?">Assets at risk</button>
             </div>
-            <form class="pg-ai-compose" data-ai-chat-form>
-                <label class="visually-hidden" for="pg-ai-message">Message</label>
-                <textarea id="pg-ai-message" data-ai-input rows="1" placeholder="Type your message here…" required></textarea>
-                <button class="pg-ai-send" type="submit" data-ai-send aria-label="Send">
-                    <i data-lucide="send"></i>
-                </button>
-            </form>
+            <div class="pg-ai-compose-wrap">
+                <div class="pg-ai-compose-tools" data-ai-compose-tools>
+                    <button type="button" data-ai-compose-action="refine" title="Improve clarity and grammar">Refine</button>
+                    <button type="button" data-ai-compose-action="paraphrase" title="Rewrite in different wording">Paraphrase</button>
+                    <button type="button" data-ai-compose-action="shorten" title="Make it shorter">Shorten</button>
+                    <button type="button" data-ai-compose-action="clarify" title="Make it clearer and more specific">Clarify</button>
+                    <button type="button" data-ai-compose-undo hidden title="Undo last AI edit">Undo</button>
+                </div>
+                <form class="pg-ai-compose" data-ai-chat-form>
+                    <label class="visually-hidden" for="pg-ai-message">Message</label>
+                    <textarea id="pg-ai-message" data-ai-input rows="1" placeholder="Type your message here…" required></textarea>
+                    <button class="pg-ai-send" type="submit" data-ai-send aria-label="Send">
+                        <i data-lucide="send"></i>
+                    </button>
+                </form>
+                <p class="pg-ai-compose-status" data-ai-compose-status hidden></p>
+            </div>
             <div class="pg-ai-clear-zone" data-ai-clear-zone hidden>
                 <div class="pg-ai-clear-confirm" data-ai-clear-confirm hidden>
                     <p>Clear this chat? This removes the conversation from this browser.</p>
@@ -120,6 +131,8 @@
             <div class="pg-ai-note-actions">
                 <button class="btn btn-pg" type="button" data-ai-refine>Refine</button>
                 <button class="btn btn-pg-line" type="button" data-ai-paraphrase>Paraphrase</button>
+                <button class="btn btn-pg-line" type="button" data-ai-note-rewrite="shorten">Shorten</button>
+                <button class="btn btn-pg-line" type="button" data-ai-note-rewrite="clarify">Clarify</button>
                 <button class="btn btn-pg-line" type="button" data-ai-copy-note>Copy result</button>
             </div>
             <p class="pg-ai-status" data-ai-note-status hidden></p>

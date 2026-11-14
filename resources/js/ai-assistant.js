@@ -188,8 +188,24 @@ function appendBubble(transcript, role, text, { pending = false, proposal = null
     }
 
     transcript.appendChild(row);
-    transcript.scrollTop = transcript.scrollHeight;
+    scrollTranscriptToLatest(transcript);
     return row;
+}
+
+function scrollTranscriptToLatest(transcript) {
+    if (!transcript) {
+        return;
+    }
+    const snap = () => {
+        transcript.scrollTop = transcript.scrollHeight;
+    };
+    snap();
+    window.requestAnimationFrame(() => {
+        snap();
+        window.requestAnimationFrame(snap);
+    });
+    window.setTimeout(snap, 50);
+    window.setTimeout(snap, 180);
 }
 
 function setBusy(root, busy) {
@@ -430,7 +446,7 @@ export function initAiAssistant(refreshIcons) {
                 at: item.at || null,
             });
         });
-        transcript.scrollTop = transcript.scrollHeight;
+        scrollTranscriptToLatest(transcript);
         persist();
     };
 
@@ -450,6 +466,7 @@ export function initAiAssistant(refreshIcons) {
                 sounds.playOpen(soundEnabled);
             }
             refreshIcons?.();
+            scrollTranscriptToLatest(transcript);
             const activeView = root.querySelector('[data-ai-view]:not([hidden])');
             activeView?.querySelector('textarea')?.focus();
         }
@@ -709,8 +726,91 @@ export function initAiAssistant(refreshIcons) {
             root.querySelectorAll('[data-ai-view]').forEach((view) => {
                 view.hidden = view.dataset.aiView !== name;
             });
+            if (name === 'chat') {
+                scrollTranscriptToLatest(transcript);
+            }
             refreshIcons?.();
         });
+    });
+
+    const composeStatus = root.querySelector('[data-ai-compose-status]');
+    const composeUndoBtn = root.querySelector('[data-ai-compose-undo]');
+    let composeUndoText = null;
+
+    const showComposeStatus = (message, isError = false) => {
+        if (!composeStatus) {
+            return;
+        }
+        composeStatus.hidden = !message;
+        composeStatus.textContent = message || '';
+        composeStatus.classList.toggle('is-error', Boolean(isError));
+    };
+
+    const syncComposeUndo = () => {
+        if (composeUndoBtn) {
+            composeUndoBtn.hidden = composeUndoText == null;
+        }
+    };
+
+    const runComposeRewrite = async (mode) => {
+        if (!ensureEnabled() || !chatInput) {
+            return;
+        }
+        const text = chatInput.value.trim();
+        if (text.length < 2) {
+            showComposeStatus('Type a short draft first.', true);
+            return;
+        }
+
+        const rewriteUrl = root.dataset.aiRewriteUrl;
+        if (!rewriteUrl) {
+            showComposeStatus('Rewrite is not available.', true);
+            return;
+        }
+
+        const labels = {
+            refine: 'Refining…',
+            paraphrase: 'Paraphrasing…',
+            shorten: 'Shortening…',
+            clarify: 'Clarifying…',
+        };
+        const doneLabels = {
+            refine: 'Refined. Review before sending.',
+            paraphrase: 'Paraphrased. Review before sending.',
+            shorten: 'Shortened. Review before sending.',
+            clarify: 'Clarified. Review before sending.',
+        };
+
+        showComposeStatus(labels[mode] || 'Rewriting…');
+        setBusy(root, true);
+        try {
+            const payload = await postJson(rewriteUrl, { text, mode });
+            composeUndoText = chatInput.value;
+            chatInput.value = payload.text || text;
+            chatInput.dispatchEvent(new Event('input', { bubbles: true }));
+            syncComposeUndo();
+            showComposeStatus(doneLabels[mode] || 'Updated. Review before sending.');
+            chatInput.focus();
+        } catch (error) {
+            showComposeStatus(error.message || 'AI request failed.', true);
+        } finally {
+            setBusy(root, false);
+            refreshIcons?.();
+        }
+    };
+
+    root.querySelectorAll('[data-ai-compose-action]').forEach((button) => {
+        button.addEventListener('click', () => runComposeRewrite(button.dataset.aiComposeAction || 'refine'));
+    });
+    composeUndoBtn?.addEventListener('click', () => {
+        if (composeUndoText == null || !chatInput) {
+            return;
+        }
+        chatInput.value = composeUndoText;
+        composeUndoText = null;
+        syncComposeUndo();
+        showComposeStatus('Restored previous draft.');
+        chatInput.focus();
     });
 
     chatForm?.addEventListener('submit', (event) => {
@@ -739,13 +839,29 @@ export function initAiAssistant(refreshIcons) {
             return;
         }
 
-        const url = action === 'paraphrase' ? root.dataset.aiParaphraseUrl : root.dataset.aiRefineUrl;
-        showStatus(action === 'paraphrase' ? 'Paraphrasing…' : 'Refining…');
+        const rewriteUrl = root.dataset.aiRewriteUrl;
+        const url = rewriteUrl
+            || (action === 'paraphrase' ? root.dataset.aiParaphraseUrl : root.dataset.aiRefineUrl);
+        const busyLabels = {
+            refine: 'Refining…',
+            paraphrase: 'Paraphrasing…',
+            shorten: 'Shortening…',
+            clarify: 'Clarifying…',
+        };
+        const doneLabels = {
+            refine: 'Refined. Review before saving.',
+            paraphrase: 'Paraphrased. Review before saving.',
+            shorten: 'Shortened. Review before saving.',
+            clarify: 'Clarified. Review before saving.',
+        };
+        showStatus(busyLabels[action] || 'Rewriting…');
         setBusy(root, true);
         try {
-            const payload = await postJson(url, { text });
+            const payload = rewriteUrl
+                ? await postJson(rewriteUrl, { text, mode: action })
+                : await postJson(url, { text });
             noteInput.value = payload.text;
-            showStatus(action === 'paraphrase' ? 'Paraphrased. Review before saving.' : 'Refined. Review before saving.');
+            showStatus(doneLabels[action] || 'Updated. Review before saving.');
         } catch (error) {
             showStatus(error.message || 'AI request failed.', true);
         } finally {
@@ -755,6 +871,9 @@ export function initAiAssistant(refreshIcons) {
 
     root.querySelector('[data-ai-refine]')?.addEventListener('click', () => runNoteAction('refine'));
     root.querySelector('[data-ai-paraphrase]')?.addEventListener('click', () => runNoteAction('paraphrase'));
+    root.querySelectorAll('[data-ai-note-rewrite]').forEach((button) => {
+        button.addEventListener('click', () => runNoteAction(button.dataset.aiNoteRewrite || 'refine'));
+    });
     root.querySelector('[data-ai-copy-note]')?.addEventListener('click', async () => {
         if (!noteInput?.value) {
             showStatus('Nothing to copy yet.', true);

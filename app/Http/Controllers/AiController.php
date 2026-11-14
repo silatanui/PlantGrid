@@ -90,6 +90,21 @@ class AiController extends Controller
         });
     }
 
+    public function rewrite(Request $request, OpenAiService $ai): JsonResponse
+    {
+        $data = $request->validate([
+            'text' => ['required', 'string', 'min:2', 'max:4000'],
+            'mode' => ['required', 'in:refine,paraphrase,shorten,clarify'],
+        ]);
+
+        return $this->respond(function () use ($ai, $data) {
+            return [
+                'text' => $ai->rewriteNote($data['text'], $data['mode']),
+                'mode' => $data['mode'],
+            ];
+        });
+    }
+
     public function triage(Request $request, SupportTicket $ticket, CaseTriageService $triage): JsonResponse
     {
         return $this->respond(function () use ($request, $ticket, $triage) {

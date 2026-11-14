@@ -6677,6 +6677,43 @@ body.pg-home {
     background: var(--pg-teal-soft);
     transform: translateY(-1px);
 }
+.pg-ai-compose-wrap {
+    display: grid;
+    gap: 6px;
+}
+.pg-ai-compose-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.pg-ai-compose-tools button {
+    border: 1px solid color-mix(in srgb, var(--pg-border) 85%, var(--pg-navy));
+    border-radius: 3px;
+    background: #fff;
+    color: var(--pg-navy-deep);
+    font: inherit;
+    font-size: 10.5px;
+    font-weight: 650;
+    line-height: 1.2;
+    padding: 4px 8px;
+    cursor: pointer;
+}
+.pg-ai-compose-tools button:hover {
+    border-color: var(--pg-navy);
+    background: var(--pg-teal-soft);
+}
+.pg-ai-compose-tools button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+.pg-ai-compose-status {
+    margin: 0;
+    font-size: 11px;
+    color: var(--pg-navy-deep);
+}
+.pg-ai-compose-status.is-error {
+    color: #8a0012;
+}
 .pg-ai-compose {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
