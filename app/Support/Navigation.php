@@ -34,6 +34,16 @@ class Navigation
                 'badge' => 'new_cases',
                 'active_when' => 'new_cases',
             ];
+            $caseItems[] = [
+                'label' => 'Case queue',
+                'route' => 'helpdesk.index',
+                'params' => ['scope' => 'queue'],
+                'pattern' => 'helpdesk.index',
+                'icon' => 'list',
+                'permission' => 'tickets.view.own',
+                'primary' => false,
+                'active_when' => 'case_queue',
+            ];
         }
 
         $groups = [
@@ -134,6 +144,12 @@ class Navigation
                 && request('status') === 'new'
                 && request()->boolean('unassigned')
                 && ! in_array(request('scope'), ['mine', 'assigned'], true);
+        }
+
+        if ($when === 'case_queue') {
+            return request()->routeIs('helpdesk.index')
+                && request('scope') === 'queue'
+                && ! (request('status') === 'new' && request()->boolean('unassigned'));
         }
 
         return request()->routeIs($item['pattern']);

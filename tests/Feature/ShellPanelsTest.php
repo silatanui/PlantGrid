@@ -37,7 +37,22 @@ class ShellPanelsTest extends TestCase
             ->assertOk()
             ->assertSee('Keep the case queue moving')
             ->assertSee('Case queue')
+            ->assertSee('New cases')
             ->assertSee('Network map')
-            ->assertSee('Simulated alerts');
+            ->assertSee('Simulated alerts')
+            ->assertSee(route('helpdesk.index', ['scope' => 'queue'], false));
+    }
+
+    public function test_employee_shell_hides_case_queue_nav(): void
+    {
+        $this->seed();
+
+        $grace = User::query()->where('email', 'grace.wanjiku@northridge.example')->firstOrFail();
+
+        $this->actingAs($grace)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('My cases')
+            ->assertDontSee(route('helpdesk.index', ['scope' => 'queue'], false));
     }
 }
