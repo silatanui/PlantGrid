@@ -35,3 +35,6 @@ Homestead.yaml
 /public/storage
 /storage/pail
 # public/build is committed so shared hosts without Node can deploy
+
+# Marketing render scratch
+/public/marketing/frames/

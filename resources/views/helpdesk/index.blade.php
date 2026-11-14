@@ -71,16 +71,16 @@
 
     <div class="pg-card pg-listview">
         <div class="table-responsive">
-            <table class="pg-table pg-table-list">
+            <table class="pg-table pg-table-list pg-table-list--cases">
                 <thead>
                     <tr>
                         <x-sort-th column="ticket_number" label="Case" :sort="$sort" route-name="helpdesk.index" />
                         <x-sort-th column="subject" label="Subject" :sort="$sort" route-name="helpdesk.index" />
-                        <th>Requester</th>
-                        <x-sort-th column="priority" label="Priority" :sort="$sort" route-name="helpdesk.index" />
+                        <th class="pg-col-optional">Requester</th>
+                        <x-sort-th class="pg-col-optional" column="priority" label="Priority" :sort="$sort" route-name="helpdesk.index" />
                         <x-sort-th column="status" label="Status" :sort="$sort" route-name="helpdesk.index" />
-                        <th>SLA</th>
-                        <th>Owner</th>
+                        <th class="pg-col-optional">SLA</th>
+                        <th class="pg-col-optional">Owner</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -97,7 +97,7 @@
                         <td>
                             <a class="pg-list-subject" href="{{ route('helpdesk.show', $ticket) }}">{{ $ticket->subject }}</a>
                         </td>
-                        <td>
+                        <td class="pg-col-optional">
                             @if ($ticket->requester)
                                 <a class="pg-person-chip" href="{{ route('people.show', $ticket->requester) }}">
                                     <span class="pg-avatar-sm" aria-hidden="true">{{ strtoupper(substr($ticket->requester->name, 0, 1)) }}</span>
@@ -107,10 +107,10 @@
                                 <span class="text-muted">-</span>
                             @endif
                         </td>
-                        <td>{!! \App\Support\Labels::badge($ticket->priority) !!}</td>
+                        <td class="pg-col-optional">{!! \App\Support\Labels::badge($ticket->priority) !!}</td>
                         <td>{!! \App\Support\Labels::badge($ticket->status) !!}</td>
-                        <td>{!! app(\App\Services\SlaService::class)->badge($ticket) !!}</td>
-                        <td>
+                        <td class="pg-col-optional">{!! app(\App\Services\SlaService::class)->badge($ticket) !!}</td>
+                        <td class="pg-col-optional">
                             @if ($ticket->assignee)
                                 <a class="pg-person-chip" href="{{ route('people.show', $ticket->assignee) }}">
                                     <span class="pg-avatar-sm" aria-hidden="true">{{ strtoupper(substr($ticket->assignee->name, 0, 1)) }}</span>

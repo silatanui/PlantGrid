@@ -24,6 +24,15 @@
     <header class="pg-chrome">
         <div class="pg-appbar">
             <div class="pg-appbar-brand">
+                <button
+                    class="pg-icon-btn pg-appbar-nav-toggle"
+                    type="button"
+                    data-shell-toggle="left"
+                    aria-label="Open navigation"
+                    title="Open navigation"
+                >
+                    <i data-lucide="menu"></i>
+                </button>
                 <a class="pg-brand" href="{{ route('dashboard') }}" aria-label="PlantGrid home">
                     @include('partials.brand-logo', ['class' => 'pg-logo pg-logo-app', 'title' => 'PlantGrid, Manufacturing Technology Management'])
                 </a>
@@ -67,6 +76,15 @@
                 </form>
 
                 <div class="pg-appbar-actions">
+                    <button
+                        class="pg-icon-btn pg-appbar-util-toggle"
+                        type="button"
+                        data-shell-toggle="right"
+                        aria-label="Open utility panel"
+                        title="Open utility panel"
+                    >
+                        <i data-lucide="panel-right"></i>
+                    </button>
                     @if (auth()->user()->hasPermission('users.view'))
                         <div class="dropdown" data-presence-header>
                             <button class="pg-icon-btn" type="button" data-bs-toggle="dropdown" data-presence-count-host aria-label="Online users" title="Online users">
