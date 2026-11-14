@@ -11,6 +11,8 @@
     data-ai-cancel-url="{{ route('ai.actions.cancel') }}"
     data-ai-refine-url="{{ route('ai.refine') }}"
     data-ai-paraphrase-url="{{ route('ai.paraphrase') }}"
+    data-ai-open-sound="{{ asset('sounds/assistant-open.mp3') }}"
+    data-ai-reply-sound="{{ asset('sounds/assistant-reply.mp3') }}"
 >
     <button class="pg-ai-launcher" type="button" data-ai-open aria-expanded="false" aria-controls="pg-ai-panel" title="PlantGrid Assistant">
         <span class="pg-ai-mark" aria-hidden="true">

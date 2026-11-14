@@ -108,14 +108,13 @@ function timeMetaHtml(at, { role = 'bot', showName = false } = {}) {
 
 function typingHtml() {
     return `
-        <div class="pg-ai-typing" aria-hidden="true">
+        <div class="pg-ai-typing" aria-hidden="true" aria-label="Assistant is typing">
             <span class="pg-ai-typing-pulse"></span>
             <span class="pg-ai-typing-bars">
                 <i></i><i></i><i></i><i></i>
             </span>
             <span class="pg-ai-typing-dots"><i></i><i></i><i></i></span>
         </div>
-        <span class="pg-ai-typing-label">Thinking through live demo data…</span>
     `;
 }
 
@@ -262,65 +261,61 @@ function saveChatState(userId, payload) {
     }
 }
 
-function createSoundboard() {
-    let ctx = null;
-    let unlocked = false;
-
-    const ensure = () => {
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (!AudioCtx) {
-            return null;
-        }
-        if (!ctx) {
-            ctx = new AudioCtx();
-        }
-        if (ctx.state === 'suspended') {
-            ctx.resume().catch(() => {});
-        }
-        unlocked = true;
-        return ctx;
+function createSoundboard({ openUrl = '', replyUrl = '', volume = 0.92 } = {}) {
+    const players = {
+        open: openUrl ? new Audio(openUrl) : null,
+        reply: replyUrl ? new Audio(replyUrl) : null,
     };
 
-    const tone = (frequency, start, duration, { type = 'sine', gain = 0.05, slideTo = null } = {}) => {
-        const audio = ensure();
+    Object.values(players).forEach((audio) => {
         if (!audio) {
             return;
         }
-        const osc = audio.createOscillator();
-        const amp = audio.createGain();
-        osc.type = type;
-        osc.frequency.setValueAtTime(frequency, audio.currentTime + start);
-        if (slideTo != null) {
-            osc.frequency.linearRampToValueAtTime(slideTo, audio.currentTime + start + duration);
+        audio.preload = 'auto';
+        audio.volume = Math.min(1, Math.max(0, volume));
+    });
+
+    const play = (audio) => {
+        if (!audio) {
+            return;
         }
-        amp.gain.setValueAtTime(0.0001, audio.currentTime + start);
-        amp.gain.exponentialRampToValueAtTime(gain, audio.currentTime + start + 0.02);
-        amp.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + start + duration);
-        osc.connect(amp);
-        amp.connect(audio.destination);
-        osc.start(audio.currentTime + start);
-        osc.stop(audio.currentTime + start + duration + 0.02);
+        try {
+            audio.pause();
+            audio.currentTime = 0;
+            const result = audio.play();
+            if (result && typeof result.catch === 'function') {
+                result.catch(() => {});
+            }
+        } catch {
+            // Ignore autoplay / decode failures.
+        }
     };
 
     return {
-        unlock: ensure,
+        unlock() {
+            // Warm the audio elements during the user gesture that opens chat.
+            Object.values(players).forEach((audio) => {
+                if (!audio) {
+                    return;
+                }
+                try {
+                    audio.load();
+                } catch {
+                    // Ignore.
+                }
+            });
+        },
         playOpen(enabled) {
             if (!enabled) {
                 return;
             }
-            tone(523.25, 0, 0.12, { type: 'triangle', gain: 0.045 });
-            tone(659.25, 0.08, 0.14, { type: 'triangle', gain: 0.04 });
-            tone(783.99, 0.16, 0.18, { type: 'sine', gain: 0.035, slideTo: 880 });
+            play(players.open);
         },
         playReply(enabled) {
             if (!enabled) {
                 return;
             }
-            tone(880, 0, 0.08, { type: 'sine', gain: 0.04 });
-            tone(659.25, 0.07, 0.16, { type: 'triangle', gain: 0.035, slideTo: 523.25 });
-        },
-        get unlocked() {
-            return unlocked;
+            play(players.reply);
         },
     };
 }
@@ -358,7 +353,11 @@ export function initAiAssistant(refreshIcons) {
     const stored = loadChatState(userId);
     const history = stored?.history ? [...stored.history] : [];
     const messages = stored?.messages ? [...stored.messages] : [];
-    const sounds = createSoundboard();
+    const sounds = createSoundboard({
+        openUrl: root.dataset.aiOpenSound || '',
+        replyUrl: root.dataset.aiReplySound || '',
+        volume: 0.95,
+    });
     let soundEnabled = true;
     try {
         const savedSound = localStorage.getItem(soundPrefKey(userId));
