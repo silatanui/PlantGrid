@@ -391,13 +391,17 @@ class AiContextService
 
     private function personLine(User $person): string
     {
+        $handle = mb_strtolower((string) strtok((string) $person->email, '@')) ?: 'n/a';
+
         return sprintf(
-            '- %s · %s · %s · %s · %s · %s · %s · %s',
+            '- %s · @[%s](people:%d) · @%s · %s · %s · %s · %s · %s · %s',
             $person->name,
+            $person->name,
+            $person->id,
+            $handle,
             $person->job_title ?: 'n/a',
             $person->email,
             $person->contactLine(),
-            $person->fullAddress(),
             $person->roleLabel(),
             $person->department?->name ?? 'n/a',
             Labels::status((string) $person->status)
@@ -432,8 +436,10 @@ class AiContextService
 
         return $tickets->map(function (SupportTicket $ticket) {
             return sprintf(
-                '- %s · %s · %s · %s · assignee %s · dept %s · due %s',
+                '- %s · @[%s](case:%d) · %s · %s · %s · assignee %s · dept %s · due %s',
                 $ticket->ticket_number,
+                $ticket->ticket_number,
+                $ticket->id,
                 $ticket->subject,
                 Labels::status((string) $ticket->status),
                 Labels::status((string) $ticket->priority),

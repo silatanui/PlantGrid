@@ -6488,11 +6488,28 @@ body.pg-home {
     border-bottom-right-radius: 2px;
 }
 .pg-ai-bubble-user .pg-ai-bubble-body {
-    white-space: pre-wrap;
+    white-space: normal;
 }
 .pg-ai-bubble-user a {
     color: #fff;
     text-decoration: underline;
+}
+.pg-ai-bubble .pg-mention {
+    display: inline;
+    vertical-align: baseline;
+    text-decoration: none;
+}
+.pg-ai-bubble-bot .pg-mention {
+    cursor: pointer;
+}
+.pg-ai-bubble-user .pg-mention {
+    background: rgba(255, 255, 255, 0.22);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.35);
+}
+.pg-ai-bubble-user .pg-mention:hover {
+    background: rgba(255, 255, 255, 0.32);
+    color: #fff;
 }
 .pg-ai-meta {
     display: flex;

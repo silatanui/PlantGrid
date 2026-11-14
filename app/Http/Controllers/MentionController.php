@@ -96,7 +96,7 @@ class MentionController extends Controller
                     'type' => 'people',
                     'label' => $person->name,
                     'meta' => $meta,
-                    'insert' => '@'.$handle,
+                    'insert' => '@['.$person->name.'](people:'.$person->id.')',
                     'token' => '@['.$person->name.'](people:'.$person->id.')',
                     'url' => route('people.show', $person),
                 ];
@@ -129,8 +129,8 @@ class MentionController extends Controller
                     'type' => 'asset',
                     'label' => $asset->asset_tag,
                     'meta' => (string) ($asset->name ?: ''),
-                    'insert' => $asset->asset_tag,
-                    'token' => $asset->asset_tag,
+                    'insert' => '@['.$asset->asset_tag.'](asset:'.$asset->id.')',
+                    'token' => '@['.$asset->asset_tag.'](asset:'.$asset->id.')',
                     'url' => route('assets.show', $asset),
                 ];
             }
@@ -155,8 +155,8 @@ class MentionController extends Controller
                     'type' => 'case',
                     'label' => $ticket->ticket_number,
                     'meta' => (string) ($ticket->subject ?: ''),
-                    'insert' => $ticket->ticket_number,
-                    'token' => $ticket->ticket_number,
+                    'insert' => '@['.$ticket->ticket_number.'](case:'.$ticket->id.')',
+                    'token' => '@['.$ticket->ticket_number.'](case:'.$ticket->id.')',
                     'url' => route('helpdesk.show', $ticket),
                 ];
             }
@@ -180,8 +180,8 @@ class MentionController extends Controller
                     'type' => 'device',
                     'label' => $device->hostname,
                     'meta' => '',
-                    'insert' => $device->hostname,
-                    'token' => $device->hostname,
+                    'insert' => '@['.$device->hostname.'](device:'.$device->id.')',
+                    'token' => '@['.$device->hostname.'](device:'.$device->id.')',
                     'url' => route('network.show', $device),
                 ];
             }
@@ -205,8 +205,8 @@ class MentionController extends Controller
                     'type' => 'server',
                     'label' => $server->hostname,
                     'meta' => '',
-                    'insert' => $server->hostname,
-                    'token' => $server->hostname,
+                    'insert' => '@['.$server->hostname.'](server:'.$server->id.')',
+                    'token' => '@['.$server->hostname.'](server:'.$server->id.')',
                     'url' => route('servers.show', $server),
                 ];
             }

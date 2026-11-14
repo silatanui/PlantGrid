@@ -1,5 +1,6 @@
 @php
     $aiEnabled = filled(config('services.openai.key'));
+    $aiEntityIndex = \App\Support\AiEntityIndex::forUser(auth()->user());
 @endphp
 <div
     class="pg-ai"
@@ -14,6 +15,8 @@
     data-ai-open-sound="{{ asset('sounds/assistant-open.mp3') }}"
     data-ai-reply-sound="{{ asset('sounds/message.mp3') }}"
     data-ai-rewrite-url="{{ route('ai.rewrite') }}"
+    data-ai-entities='@json($aiEntityIndex['entities'])'
+    data-ai-urls='@json($aiEntityIndex['urls'])'
 >
     <button class="pg-ai-launcher" type="button" data-ai-open aria-expanded="false" aria-controls="pg-ai-panel" title="PlantGrid Assistant">
         <span class="pg-ai-mark" aria-hidden="true">

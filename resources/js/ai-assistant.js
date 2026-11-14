@@ -1,3 +1,6 @@
+import { linkifyEntities } from './entity-links';
+import { initMentions } from './mentions';
+
 function csrfToken() {
     return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 }
@@ -38,10 +41,10 @@ function escapeHtml(value) {
         .replaceAll("'", '&#39;');
 }
 
-function formatReply(text) {
+function formatReply(text, linkRoot = null) {
     const escaped = escapeHtml(text).trim();
     const blocks = escaped.split(/\n{2,}/);
-    return blocks.map((block) => {
+    const html = blocks.map((block) => {
         const lines = block.split('\n');
         const isList = lines.every((line) => /^\s*([-*•]|\d+\.)\s+/.test(line));
         if (isList) {
@@ -53,6 +56,11 @@ function formatReply(text) {
         }
         return `<p>${lines.join('<br>').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')}</p>`;
     }).join('');
+    return linkifyEntities(html, linkRoot);
+}
+
+function formatUserMessage(text, linkRoot = null) {
+    return linkifyEntities(escapeHtml(text).replaceAll('\n', '<br>'), linkRoot);
 }
 
 function nowIso() {
@@ -151,12 +159,13 @@ function proposalCardHtml(proposal, status = 'pending') {
     `;
 }
 
-function appendBubble(transcript, role, text, { pending = false, proposal = null, proposalStatus = 'pending', at = null } = {}) {
+function appendBubble(transcript, role, text, { pending = false, proposal = null, proposalStatus = 'pending', at = null, linkRoot = null } = {}) {
     const isUser = role === 'user';
     const row = document.createElement('div');
     row.className = `pg-ai-row ${isUser ? 'pg-ai-row-user' : 'pg-ai-row-bot'}`;
     const stamped = at || nowIso();
     row.dataset.at = stamped;
+    const root = linkRoot || document.querySelector('[data-ai-root]');
 
     if (pending) {
         row.classList.add('is-pending');
@@ -170,7 +179,7 @@ function appendBubble(transcript, role, text, { pending = false, proposal = null
         row.innerHTML = `
             <div class="pg-ai-msg">
                 <div class="pg-ai-bubble pg-ai-bubble-user">
-                    <div class="pg-ai-bubble-body">${escapeHtml(text)}</div>
+                    <div class="pg-ai-bubble-body">${formatUserMessage(text, root)}</div>
                 </div>
                 ${timeMetaHtml(stamped, { role: 'user' })}
             </div>
@@ -180,7 +189,7 @@ function appendBubble(transcript, role, text, { pending = false, proposal = null
             ${avatarHtml()}
             <div class="pg-ai-msg">
                 <div class="pg-ai-bubble pg-ai-bubble-bot">
-                    <div class="pg-ai-bubble-body">${formatReply(text)}${proposalCardHtml(proposal, proposalStatus)}</div>
+                    <div class="pg-ai-bubble-body">${formatReply(text, root)}${proposalCardHtml(proposal, proposalStatus)}</div>
                 </div>
                 ${timeMetaHtml(stamped, { role: 'bot', showName: true })}
             </div>
@@ -444,6 +453,7 @@ export function initAiAssistant(refreshIcons) {
                 proposal: item.proposal || null,
                 proposalStatus: item.proposalStatus || 'pending',
                 at: item.at || null,
+                linkRoot: root,
             });
         });
         scrollTranscriptToLatest(transcript);
@@ -543,7 +553,7 @@ export function initAiAssistant(refreshIcons) {
                 ${avatarHtml()}
                 <div class="pg-ai-msg">
                     <div class="pg-ai-bubble pg-ai-bubble-bot">
-                        <div class="pg-ai-bubble-body">${formatReply(payload.reply)}${proposalCardHtml(payload.proposal, 'pending')}</div>
+                        <div class="pg-ai-bubble-body">${formatReply(payload.reply, root)}${proposalCardHtml(payload.proposal, 'pending')}</div>
                     </div>
                     ${timeMetaHtml(assistantAt, { role: 'bot', showName: true })}
                 </div>
@@ -820,10 +830,17 @@ export function initAiAssistant(refreshIcons) {
 
     chatInput?.addEventListener('keydown', (event) => {
         if (event.key === 'Enter' && !event.shiftKey) {
+            // Mentions panel handles Enter when open (preventDefault).
+            if (event.defaultPrevented) {
+                return;
+            }
             event.preventDefault();
             sendChat(chatInput.value);
         }
     });
+
+    // Mentions autocomplete for @people / #cases / assets / devices.
+    initMentions(root);
 
     root.querySelectorAll('[data-ai-prompt]').forEach((button) => {
         button.addEventListener('click', () => sendChat(button.dataset.aiPrompt || button.textContent));
