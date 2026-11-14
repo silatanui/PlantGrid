@@ -113,10 +113,10 @@ class RichText
                     return e('@'.$label);
                 }
 
-                $prefix = $type === 'people' ? '@' : '';
                 $token = '@['.$label.']('.$type.':'.$id.')';
+                $shown = $type === 'people' ? '@'.$label : $label;
 
-                return self::mentionAnchor($type, $url, $prefix.$label, $token);
+                return self::mentionAnchor($type, $url, $shown, $token);
             },
             $escaped
         ) ?? $escaped;
@@ -238,11 +238,21 @@ class RichText
 
     private static function mentionAnchor(string $type, string $url, string $label, string $token): string
     {
+        $label = trim($label);
+        if ($label === '') {
+            return '';
+        }
+
         return '<a class="pg-mention pg-mention-'.$type.'" href="'.e($url).'" data-pg-token="'.e($token).'" contenteditable="false">'.e($label).'</a>';
     }
 
     private static function mentionChip(string $type, string $label, string $token): string
     {
+        $label = trim($label);
+        if ($label === '') {
+            return '';
+        }
+
         return '<span class="pg-mention pg-mention-'.$type.'" data-pg-token="'.e($token).'" contenteditable="false">'.e($label).'</span>';
     }
 

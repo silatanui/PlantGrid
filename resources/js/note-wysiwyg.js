@@ -176,7 +176,6 @@ function insertChip(editor, item) {
         return;
     }
     liveRange.deleteContents();
-    liveRange.insertNode(document.createTextNode(' '));
     liveRange.insertNode(chip);
     liveRange.setStartAfter(chip);
     liveRange.collapse(true);
@@ -220,6 +219,9 @@ export function markupToEditorHtml(text, urlTemplates = {}) {
                 }
                 const url = urlFromTemplates(urlTemplates, type, id);
                 const shown = type === 'people' ? `@${label}` : label;
+                if (!shown.trim()) {
+                    return '';
+                }
                 if (!url) {
                     return `<span class="pg-mention pg-mention-${escapeHtml(type)}" data-pg-token="${escapeHtml(token)}" contenteditable="false">${escapeHtml(shown)}</span>`;
                 }

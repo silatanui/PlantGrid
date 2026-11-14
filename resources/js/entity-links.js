@@ -13,14 +13,22 @@ function escapeAttr(value) {
 }
 
 function mentionAnchor(type, url, label, token) {
-    if (!url) {
-        return escapeAttr(label);
+    const text = String(label ?? '').trim();
+    if (text === '') {
+        return '';
     }
-    return `<a class="pg-mention pg-mention-${escapeAttr(type)}" href="${escapeAttr(url)}" data-pg-token="${escapeAttr(token)}" contenteditable="false">${label}</a>`;
+    if (!url) {
+        return escapeAttr(text);
+    }
+    return `<a class="pg-mention pg-mention-${escapeAttr(type)}" href="${escapeAttr(url)}" data-pg-token="${escapeAttr(token)}" contenteditable="false">${escapeAttr(text)}</a>`;
 }
 
 function mentionChip(type, label, token) {
-    return `<span class="pg-mention pg-mention-${escapeAttr(type)}" data-pg-token="${escapeAttr(token)}" contenteditable="false">${label}</span>`;
+    const text = String(label ?? '').trim();
+    if (text === '') {
+        return '';
+    }
+    return `<span class="pg-mention pg-mention-${escapeAttr(type)}" data-pg-token="${escapeAttr(token)}" contenteditable="false">${escapeAttr(text)}</span>`;
 }
 
 function urlFor(templates, type, id) {
@@ -91,6 +99,9 @@ function linkifyPeopleByName(text, entities, urls) {
         });
     });
 
+    // Drop orphan list bullets / dots left immediately before a people chip.
+    out = out.replace(/(^|[\s>])(?:[•·◦▪]|[-*])\s+(<a\b[^>]*class="[^"]*pg-mention-people[^"]*"[^>]*>)/giu, '$1$2');
+
     return out.replace(/\u0000(\d+)\u0000/g, (_, index) => slots[Number(index)] ?? '');
 }
 
@@ -125,9 +136,9 @@ export function linkifyEntities(escapedHtml, source = null) {
                 return mentionChip('department', `@${label}`, `@[${label}](department:${id})`);
             }
             const url = urlFor(urls, type, id);
-            const prefix = type === 'people' ? '@' : '';
             const token = `@[${label}](${type}:${id})`;
-            return mentionAnchor(type, url, `${prefix}${label}`, token);
+            const shown = type === 'people' ? `@${label}` : label;
+            return mentionAnchor(type, url, shown, token);
         }
     );
 
@@ -155,6 +166,9 @@ export function linkifyEntities(escapedHtml, source = null) {
 
     // Bare full names ("Faith Cheruiyot") when the model skips @handles
     text = linkifyPeopleByName(text, entities, urls);
+
+    // Drop orphan list bullets / dots left immediately before a people chip.
+    text = text.replace(/(^|[\s>])(?:[•·◦▪]|[-*])\s+(?=<a\b[^>]*class="[^"]*pg-mention-people)/giu, '$1');
 
     // Case numbers PG-YYYY-NNNN
     text = text.replace(/(?<![\w\/])#?(PG-\d{4}-\d+)\b/gu, (full, numberRaw) => {
