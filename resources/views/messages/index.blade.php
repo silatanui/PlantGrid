@@ -16,10 +16,6 @@
         </div>
     </section>
 
-    @if (session('status'))
-        <div class="alert alert-success py-2">{{ session('status') }}</div>
-    @endif
-
     <div class="pg-card pg-listview">
         <div class="table-responsive">
             <table class="pg-table pg-table-list">
@@ -53,9 +49,20 @@
                         </td>
                         <td class="text-nowrap">{{ $message->created_at?->format('d M Y H:i') }}</td>
                         <td class="text-end">
-                            @if ($unread)
-                                <span class="pg-badge pg-badge-info">Unread</span>
-                            @endif
+                            <div class="d-inline-flex flex-wrap align-items-center justify-content-end gap-2">
+                                @if ($unread)
+                                    <span class="pg-badge pg-badge-info">Unread</span>
+                                @endif
+                                <form
+                                    method="post"
+                                    action="{{ route('messages.destroy', $message) }}"
+                                    data-confirm="Delete this message permanently? This cannot be undone."
+                                >
+                                    @csrf
+                                    @method('DELETE')
+                                    <button class="btn btn-sm btn-pg-line" type="submit">Delete</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 @empty

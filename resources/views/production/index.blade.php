@@ -44,11 +44,9 @@
     </div>
 
     <section class="mb-3">
-        <div class="d-flex justify-content-between align-items-end gap-2 flex-wrap mb-2">
-            <div>
-                <h2 class="pg-section-title mb-0">Systems</h2>
-                <p class="text-muted small mb-0">Open a system for owner, vendor, equipment, and linked cases.</p>
-            </div>
+        <div class="pg-section-intro">
+            <h2 class="pg-section-title">Systems</h2>
+            <p class="pg-page-lead">Open a system for owner, vendor, equipment, and linked cases.</p>
         </div>
         <div class="pg-prod-systems">
             @forelse ($systems as $system)

@@ -36,7 +36,9 @@
     </section>
 
     @foreach ($notices as $notice)
-        <div class="pg-alert pg-alert-{{ $notice['tone'] }} mb-3">{{ $notice['text'] }}</div>
+        @component('partials.alert', ['tone' => $notice['tone'], 'key' => 'dashboard-notice-'.md5($notice['text']), 'class' => 'mb-3'])
+            {{ $notice['text'] }}
+        @endcomponent
     @endforeach
 
     @if ($metricCards !== [])

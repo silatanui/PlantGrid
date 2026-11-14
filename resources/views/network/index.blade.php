@@ -184,9 +184,13 @@
     @endif
 
     @if ($tab === 'topology')
-        <div class="pg-alert pg-alert-info">These maps are built from documented devices and links. They are not live discovery views.</div>
+        @component('partials.alert', ['tone' => 'info', 'key' => 'network-topology-simulated'])
+            These maps are built from documented devices and links. They are not live discovery views.
+        @endcomponent
         @if (($graph['legend']['scenario'] ?? 'normal') === 'outage')
-            <div class="pg-alert pg-alert-critical">Monitoring outage scenario is active. {{ $graph['legend']['outage_host'] }} and its links are highlighted on the map.</div>
+            @component('partials.alert', ['tone' => 'critical', 'key' => 'network-topology-outage'])
+                Monitoring outage scenario is active. {{ $graph['legend']['outage_host'] }} and its links are highlighted on the map.
+            @endcomponent
         @endif
 
         <div class="pg-map-toolbar">

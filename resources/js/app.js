@@ -21,6 +21,7 @@ import { initNavBack } from './nav-back';
 import { initPartnersSummary } from './partners-summary';
 import { initCaseWorkspace } from './case-workspace';
 import { initAuditLog } from './audit-log';
+import { initAlerts, initConfirmActions } from './alerts';
 
 Chart.register(...registerables);
 Chart.defaults.font.family = 'system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
@@ -30,6 +31,7 @@ Chart.defaults.borderColor = '#C9C9C9';
 document.addEventListener('DOMContentLoaded', () => {
     const refreshIcons = () => createIcons({ icons });
     initTheme();
+    initConfirmActions();
     refreshIcons();
     initAiAssistant(refreshIcons);
     initGlobalSearch();
@@ -53,6 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
         initNavBack();
         initPartnersSummary();
         initAuditLog(refreshIcons);
+        initAlerts();
         refreshRightRailChrome();
         shellLayout.applyRailWidths();
         bootCharts();

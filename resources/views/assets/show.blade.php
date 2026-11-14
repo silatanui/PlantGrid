@@ -16,7 +16,11 @@
                 <a class="btn btn-pg-line" href="{{ route('assets.edit', $asset) }}">Edit</a>
             @endif
             @if (auth()->user()->hasPermission('assets.retire') && $asset->status !== 'retired')
-                <form method="post" action="{{ route('assets.retire', $asset) }}">
+                <form
+                    method="post"
+                    action="{{ route('assets.retire', $asset) }}"
+                    data-confirm="Retire {{ $asset->asset_tag }} permanently from active inventory? This cannot be undone."
+                >
                     @csrf
                     <button class="btn btn-pg-line" type="submit">Retire</button>
                 </form>

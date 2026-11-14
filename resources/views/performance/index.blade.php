@@ -173,10 +173,10 @@
     </div>
 
     @if ($team['overloaded']->isNotEmpty())
-        <div class="pg-alert pg-alert-warning mb-3">
+        @component('partials.alert', ['tone' => 'warning', 'key' => 'performance-overloaded', 'class' => 'mb-3'])
             Overloaded: {{ $team['overloaded']->pluck('name')->join(', ') }}.
             Rebalance intake before chasing CPM alone.
-        </div>
+        @endcomponent
     @endif
 
     @if ($charts !== [])

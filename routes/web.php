@@ -62,6 +62,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');
     Route::post('/messages', [MessageController::class, 'store'])->name('messages.store');
     Route::get('/messages/{message}', [MessageController::class, 'show'])->name('messages.show');
+    Route::delete('/messages/{message}', [MessageController::class, 'destroy'])->name('messages.destroy');
     Route::post('/workspace/tabs/close', [WorkspaceTabController::class, 'destroy'])->name('workspace.tabs.close');
     Route::post('/workspace/tabs/reorder', [WorkspaceTabController::class, 'reorder'])->name('workspace.tabs.reorder');
 

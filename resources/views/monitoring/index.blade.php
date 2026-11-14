@@ -11,7 +11,9 @@
             <p class="pg-page-lead">All readings on this page are simulated. The active scenario is <strong>{{ $scenario }}</strong>.</p>
         </div>
     </section>
-    <div class="pg-alert pg-alert-{{ $banner['tone'] }}">{{ $banner['text'] }}</div>
+    @component('partials.alert', ['tone' => $banner['tone'], 'key' => 'monitoring-banner-'.$scenario])
+        {{ $banner['text'] }}
+    @endcomponent
 
     @if (auth()->user()->hasPermission('monitoring.manage'))
         <form class="d-flex flex-wrap gap-2 mb-3" method="post" action="{{ route('monitoring.scenario') }}">

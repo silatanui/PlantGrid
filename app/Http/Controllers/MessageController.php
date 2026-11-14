@@ -91,4 +91,17 @@ class MessageController extends Controller
             ->route('messages.show', $message)
             ->with('status', 'Message sent.');
     }
+
+    public function destroy(Request $request, DirectMessage $message): RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless(in_array($user->id, [$message->sender_id, $message->recipient_id], true), 403);
+
+        $folder = $message->sender_id === $user->id ? 'sent' : 'inbox';
+        $message->delete();
+
+        return redirect()
+            ->route('messages.index', ['folder' => $folder])
+            ->with('status', 'Message deleted permanently.');
+    }
 }

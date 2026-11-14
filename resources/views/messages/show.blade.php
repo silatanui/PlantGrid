@@ -14,12 +14,17 @@
         <div class="pg-page-intro-actions">
             <a class="btn btn-pg-line" href="{{ route('messages.index') }}">Back to inbox</a>
             <a class="btn btn-pg" href="{{ route('people.show', $counterpart) }}#contact">Open profile</a>
+            <form
+                method="post"
+                action="{{ route('messages.destroy', $message) }}"
+                data-confirm="Delete this message permanently? This cannot be undone."
+            >
+                @csrf
+                @method('DELETE')
+                <button class="btn btn-pg-line" type="submit">Delete message</button>
+            </form>
         </div>
     </section>
-
-    @if (session('status'))
-        <div class="alert alert-success py-2">{{ session('status') }}</div>
-    @endif
 
     <div class="row g-3">
         <div class="col-lg-8">

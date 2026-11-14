@@ -8,7 +8,9 @@
             <p class="pg-page-lead">Simulated plans, runs, and recovery tests for the demonstration plant.</p>
         </div>
     </section>
-    <div class="pg-alert pg-alert-info">Every run on this page is simulated. A successful result means a sample record was stored. PlantGrid did not back up a real server.</div>
+    @component('partials.alert', ['tone' => 'info', 'key' => 'backups-simulated'])
+        Every run on this page is simulated. A successful result means a sample record was stored. PlantGrid did not back up a real server.
+    @endcomponent
     <section class="pg-card mb-3">
         <div class="pg-card-pad"><h2 class="pg-section-title mb-0">Plans</h2></div>
         <table class="pg-table">
