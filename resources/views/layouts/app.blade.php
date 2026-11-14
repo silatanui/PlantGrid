@@ -13,6 +13,7 @@
 </head>
 <body
     class="pg-shell"
+    data-brand-font="{{ $brandFont ?? 'ibm-plex' }}"
     data-mentions-url="{{ route('mentions.suggest') }}"
     data-presence-heartbeat="{{ route('presence.heartbeat') }}"
     data-live-inbox-url="{{ route('inbox.live') }}"
@@ -33,12 +34,12 @@
                 >
                     <i data-lucide="menu"></i>
                 </button>
-                <a class="pg-brand" href="{{ route('dashboard') }}" aria-label="PlantGrid home">
-                    @include('partials.brand-logo', ['class' => 'pg-logo pg-logo-app', 'title' => 'PlantGrid, Manufacturing Technology Management'])
+                <a class="pg-brand" href="{{ route('dashboard') }}" aria-label="{{ ($brandName ?? 'PlantGrid') }} home">
+                    @include('partials.brand-logo', ['class' => 'pg-logo pg-logo-app'])
                 </a>
-                <div class="pg-plant-chip" title="Demonstration plant">
+                <div class="pg-plant-chip" title="{{ $plantChipMeta ?? 'Demo plant' }}">
                     <span class="pg-plant-chip-name">{{ $plantName }}</span>
-                    <span class="pg-plant-chip-meta">Demo plant</span>
+                    <span class="pg-plant-chip-meta">{{ $plantChipMeta ?? 'Demo plant' }}</span>
                 </div>
             </div>
 

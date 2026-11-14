@@ -61,9 +61,14 @@
             @php
                 $isCurrent = $ticket->status === $stage;
                 $isComplete = is_int($currentIndex) && $index < $currentIndex;
-                $canAdvance = auth()->user()->hasPermission('tickets.update')
-                    && in_array($stage, $transitions, true)
-                    && ! in_array($stage, ['assigned', 'resolved', 'closed'], true);
+                $canAdvanceToClosed = $ticket->status === 'resolved'
+                    && $stage === 'closed'
+                    && in_array('closed', $transitions, true);
+                $canAdvance = (
+                        auth()->user()->hasPermission('tickets.update')
+                        && in_array($stage, $transitions, true)
+                        && ! in_array($stage, ['assigned', 'resolved', 'closed'], true)
+                    ) || $canAdvanceToClosed;
                 $stepClass = trim(($isComplete ? 'is-complete' : '').' '.($isCurrent ? 'is-current' : '').' '.($canAdvance ? 'is-available' : ''));
             @endphp
             <li class="{{ $stepClass }}">
@@ -210,7 +215,9 @@
                             Paraphrase
                         </button>
                     </div>
-                    <textarea class="form-control pg-note-textarea" id="comment" name="comment" rows="4" required data-ai-assist data-mentions data-format-toolbar placeholder="Write a note. Use @people, @everyone, @it_department, or # for cases/assets/locations…">{{ old('comment') }}</textarea>
+                    <div class="pg-note-wysiwyg-shell mb-2" data-wysiwyg-for="comment"></div>
+                    <template data-wysiwyg-seed="comment">{!! \App\Support\RichText::render(old('comment') ?: '') !!}</template>
+                    <textarea class="form-control pg-note-textarea" id="comment" name="comment" rows="4" required data-ai-assist data-wysiwyg placeholder="Write a note. Use @people, @everyone, @it_department, or # for cases/assets/locations…" hidden>{{ old('comment') }}</textarea>
                     <div class="pg-attach-composer" data-attach-composer>
                         <label class="pg-attach-drop" for="attachment">
                             <input class="pg-attach-input" id="attachment" name="attachment" type="file" accept=".pdf,.png,.jpg,.jpeg,.txt,.doc,.docx,image/*" data-attach-input>
@@ -501,10 +508,19 @@
                             </div>
                             <form method="post" action="{{ route('helpdesk.transition', $ticket) }}" data-status-form>
                                 @csrf
+                                @if ($ticket->status === 'resolved' && in_array('closed', $transitions, true))
+                                    <p class="text-muted small mb-2">Resolved means the work is done. Choose <strong>Closed</strong> to finish the case (requester confirmation / archive).</p>
+                                @endif
                                 <label class="form-label" for="status">Next status</label>
+                                @php
+                                    $defaultNextStatus = old('status');
+                                    if (! $defaultNextStatus && $ticket->status === 'resolved' && in_array('closed', $transitions, true)) {
+                                        $defaultNextStatus = 'closed';
+                                    }
+                                @endphp
                                 <select class="form-select mb-2" id="status" name="status" data-status-select>
                                     @foreach ($transitions as $status)
-                                        <option value="{{ $status }}" @selected(old('status') === $status)>
+                                        <option value="{{ $status }}" @selected($defaultNextStatus === $status)>
                                             {{ \App\Support\Labels::status($status) }}
                                         </option>
                                     @endforeach
@@ -536,8 +552,10 @@
                                     </div>
                                 @endif
                                 <label class="form-label" for="resolution_notes">Resolution / next-step notes</label>
-                                <p class="text-muted small mb-1">Required when changing status. Explain what was done, why you are reverting, or why the case is closed.</p>
-                                <textarea class="form-control mb-2" id="resolution_notes" name="resolution_notes" rows="3" data-ai-assist data-mentions data-format-toolbar placeholder="What was done, and why this next step is needed…" data-step-evidence>{{ old('resolution_notes', $ticket->resolution_notes) }}</textarea>
+                                <p class="text-muted small mb-1">Required when changing status (existing notes are enough when closing a resolved case). Explain what was done, why you are reverting, or why the case is closed.</p>
+                                <div class="pg-note-wysiwyg-shell mb-2" data-wysiwyg-for="resolution_notes"></div>
+                                <template data-wysiwyg-seed="resolution_notes">{!! \App\Support\RichText::render(old('resolution_notes', $ticket->resolution_notes) ?: '') !!}</template>
+                                <textarea class="form-control mb-2" id="resolution_notes" name="resolution_notes" rows="3" data-ai-assist data-wysiwyg placeholder="What was done, and why this next step is needed…" data-step-evidence hidden>{{ old('resolution_notes', $ticket->resolution_notes) }}</textarea>
                                 @if ($ticket->asset_id)
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" name="record_maintenance" id="record_maintenance" value="1">
@@ -566,7 +584,9 @@
                                 if (!select) return;
                                 const sync = () => {
                                     const next = select.value;
-                                    const needsEvidence = next !== current;
+                                    const closingResolved = current === 'resolved' && next === 'closed';
+                                    const hasExistingNotes = evidence.some((field) => (field.value || '').trim().length > 0);
+                                    const needsEvidence = next !== current && !(closingResolved && hasExistingNotes);
                                     evidence.forEach((field) => { field.required = needsEvidence; });
                                     if (fields) {
                                         fields.hidden = next !== 'closed';

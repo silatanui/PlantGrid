@@ -72,9 +72,9 @@
         <aside class="pg-auth-visual" aria-hidden="false">
             <div class="pg-auth-visual-top">
                 <a class="pg-auth-brand" href="{{ route('home') }}" aria-label="PlantGrid home">
-                    @include('partials.brand-logo', ['class' => 'pg-logo pg-logo-auth', 'title' => 'PlantGrid'])
+                    @include('partials.brand-logo', ['class' => 'pg-logo pg-logo-auth'])
                 </a>
-                <p class="pg-auth-plant">Northridge Processing · demo plant</p>
+                <p class="pg-auth-plant">{{ $plantName ?? 'Northridge Processing' }} · {{ $plantChipMeta ?? 'demo plant' }}</p>
             </div>
 
             <div class="pg-auth-visual-copy">

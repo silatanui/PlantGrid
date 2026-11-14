@@ -272,7 +272,7 @@
     "src": "node_modules/@fontsource/outfit/files/outfit-latin-ext-800-normal.woff2"
   },
   "resources/css/app.css": {
-    "file": "assets/app-C5Kd4wLM.css",
+    "file": "assets/app-C1RiGfgt.css",
     "src": "resources/css/app.css",
     "isEntry": true,
     "name": "app",
@@ -281,7 +281,7 @@
     ]
   },
   "resources/js/app.js": {
-    "file": "assets/app-hmVi9YXR.js",
+    "file": "assets/app-qlMdvw3B.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true

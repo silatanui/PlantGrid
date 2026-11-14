@@ -63,7 +63,7 @@ return [
             'assign' => 12,
             'progress' => 18,
             'resolve' => 10,
-            'close' => 6,
+            'close' => 14,
             'message' => 6,
             'monitoring' => 3,
         ],

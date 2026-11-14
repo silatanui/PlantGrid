@@ -11,7 +11,7 @@
     @include('partials.theme-boot')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="pg-home">
+<body class="pg-home" data-brand-font="{{ $brandFont ?? 'ibm-plex' }}">
     <a class="pg-skip" href="#content">Skip to content</a>
 
     <header class="pg-home-bar" data-home-bar>

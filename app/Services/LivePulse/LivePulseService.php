@@ -310,6 +310,11 @@ class LivePulseService
     {
         $weights = config('plantgrid.live_pulse.weights', []);
         $open = SupportTicket::query()->whereNotIn('status', ['resolved', 'closed'])->count();
+        $resolvedWaiting = SupportTicket::query()->where('status', 'resolved')->count();
+        $agedResolved = SupportTicket::query()
+            ->where('status', 'resolved')
+            ->where('resolved_at', '<=', now()->subHours(2))
+            ->exists();
         $ceiling = (int) config('plantgrid.live_pulse.open_case_ceiling', 25);
 
         if ($open >= $ceiling) {
@@ -322,6 +327,10 @@ class LivePulseService
             $weights['new_case'] = max(4, (int) (($weights['new_case'] ?? 10) * 0.5));
             $weights['resolve'] = ($weights['resolve'] ?? 10) + 8;
             $weights['progress'] = ($weights['progress'] ?? 10) + 6;
+        }
+
+        if ($agedResolved || $resolvedWaiting >= 5) {
+            $weights['close'] = ($weights['close'] ?? 8) + ($agedResolved ? 24 : 12);
         }
 
         $filtered = [];
@@ -623,17 +632,28 @@ class LivePulseService
     private function eventClose(): ?string
     {
         $ticket = SupportTicket::query()
-            ->with(['asset.location'])
+            ->with(['asset.location', 'assignee'])
             ->where('status', 'resolved')
-            ->inRandomOrder()
+            ->orderBy('resolved_at')
+            ->orderBy('id')
             ->first();
         if (! $ticket) {
             return null;
         }
 
-        $tech = $ticket->assigned_to
-            ? (User::query()->find($ticket->assigned_to) ?: $this->technicians()->first())
-            : $this->technicians()->random();
+        $closers = $this->technicians()->filter(
+            fn (User $user) => $user->hasPermission('tickets.close')
+                || $ticket->isPartner($user)
+        )->values();
+
+        $tech = null;
+        if ($ticket->assigned_to) {
+            $assignee = $ticket->assignee ?: User::query()->find($ticket->assigned_to);
+            if ($assignee && ($assignee->hasPermission('tickets.close') || $ticket->isPartner($assignee))) {
+                $tech = $assignee;
+            }
+        }
+        $tech ??= $closers->isNotEmpty() ? $closers->random() : null;
 
         if (! $tech) {
             return null;
@@ -653,7 +673,7 @@ class LivePulseService
         $this->tickets->transition($ticket, $tech, 'closed', [
             'note' => $closeNote,
             'internal_note' => $closeNote,
-            'resolution_notes' => $closeNote,
+            'resolution_notes' => filled($ticket->resolution_notes) ? $ticket->resolution_notes : $closeNote,
         ]);
 
         return 'closed '.$ticket->ticket_number;

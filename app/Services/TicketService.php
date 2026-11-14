@@ -299,14 +299,23 @@ class TicketService
                         ? $historyNote
                         : 'Closed as duplicate of '.$original->ticket_number.'.';
                 } else {
-                    if (blank($options['resolution_notes'] ?? null)) {
+                    $closeNotes = $options['resolution_notes'] ?? null;
+                    if (blank($closeNotes) && $previous === 'resolved' && filled($ticket->resolution_notes)) {
+                        $closeNotes = $ticket->resolution_notes;
+                    }
+                    if (blank($closeNotes)) {
                         throw ValidationException::withMessages([
                             'resolution_notes' => 'Add a note explaining why this case is being closed.',
                         ]);
                     }
                     $ticket->close_reason = null;
                     $ticket->duplicate_of_ticket_id = null;
-                    $ticket->resolution_notes = $options['resolution_notes'];
+                    $ticket->resolution_notes = $closeNotes;
+                    if (blank($historyNote)) {
+                        $historyNote = $previous === 'resolved'
+                            ? 'Closed after resolution confirmation.'
+                            : $closeNotes;
+                    }
                 }
 
                 $ticket->closed_at = now();

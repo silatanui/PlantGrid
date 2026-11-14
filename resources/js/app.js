@@ -11,6 +11,7 @@ import { initShellNav } from './shell-nav';
 import { initPresence } from './presence';
 import { initLiveInbox } from './live-inbox';
 import { initFormatToolbars } from './format-toolbar';
+import { initWysiwygFields } from './note-wysiwyg';
 import { initTheme } from './theme';
 import { initWorkspaceTabs } from './workspace-tabs';
 import { initAttachPreview } from './attach-preview';
@@ -44,6 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const bootPage = () => {
         refreshIcons();
         initMentions();
+        initWysiwygFields();
         initLiveNotes(refreshIcons);
         initCaseActivity();
         initFormatToolbars();

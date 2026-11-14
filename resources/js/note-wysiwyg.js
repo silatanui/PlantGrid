@@ -345,6 +345,93 @@ export function mountNoteWysiwyg(host, { html = '', suggestUrl = '' } = {}) {
     return {
         surface,
         getMarkup: () => htmlToMarkup(surface),
+        setHtml: (nextHtml) => {
+            surface.innerHTML = nextHtml || '';
+            surface.querySelectorAll('a.pg-mention, span.pg-mention').forEach((link) => {
+                link.contentEditable = 'false';
+                link.addEventListener('click', (event) => event.preventDefault());
+            });
+            surface.dispatchEvent(new Event('input', { bubbles: true }));
+        },
+        setPlain: (text) => {
+            surface.textContent = text || '';
+            surface.dispatchEvent(new Event('input', { bubbles: true }));
+        },
         focus: () => surface.focus(),
     };
+}
+
+/**
+ * Upgrade plain textareas marked data-wysiwyg into contenteditable surfaces
+ * with live formatting and mention chips (same as note edit).
+ */
+export function initWysiwygFields(root = document) {
+    const scope = root.querySelectorAll ? root : document;
+    scope.querySelectorAll('textarea[data-wysiwyg]').forEach((textarea) => {
+        if (textarea.dataset.wysiwygBound === '1') {
+            return;
+        }
+        const id = textarea.id;
+        if (!id) {
+            return;
+        }
+        const shell = scope.querySelector(`[data-wysiwyg-for="${CSS.escape(id)}"]`)
+            || document.querySelector(`[data-wysiwyg-for="${CSS.escape(id)}"]`);
+        if (!shell) {
+            return;
+        }
+
+        const seed = document.querySelector(`template[data-wysiwyg-seed="${CSS.escape(id)}"]`);
+        const html = seed ? seed.innerHTML.trim() : '';
+        const suggestUrl = document.body.dataset.mentionsUrl || '';
+        const api = mountNoteWysiwyg(shell, { html, suggestUrl });
+        textarea.dataset.wysiwygBound = '1';
+        textarea._pgWysiwyg = api;
+
+        let ignoreValueMirror = false;
+        const proto = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
+
+        const writeTextarea = (markup) => {
+            ignoreValueMirror = true;
+            if (proto?.set) {
+                proto.set.call(textarea, markup);
+            } else {
+                textarea.value = markup;
+            }
+            ignoreValueMirror = false;
+        };
+
+        const syncFromSurface = () => {
+            writeTextarea(api.getMarkup() || '');
+            textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        };
+
+        api.surface?.addEventListener('input', syncFromSurface);
+        syncFromSurface();
+
+        textarea.closest('form')?.addEventListener('submit', syncFromSurface);
+
+        // AI / triage helpers that assign textarea.value update the surface too.
+        if (proto?.get && proto?.set) {
+            Object.defineProperty(textarea, 'value', {
+                configurable: true,
+                get() {
+                    return proto.get.call(this);
+                },
+                set(next) {
+                    proto.set.call(this, next);
+                    if (!ignoreValueMirror) {
+                        api.setPlain?.(String(next ?? ''));
+                    }
+                },
+            });
+        }
+    });
+}
+
+export function getWysiwygApi(textareaOrId) {
+    const el = typeof textareaOrId === 'string'
+        ? document.getElementById(textareaOrId)
+        : textareaOrId;
+    return el?._pgWysiwyg || null;
 }

@@ -6,6 +6,7 @@ use App\Models\DirectMessage;
 use App\Models\MonitoringAlert;
 use App\Monitoring\Contracts\MonitoringProvider;
 use App\Monitoring\Providers\SimulatedMonitoringProvider;
+use App\Services\BrandingService;
 use App\Services\NavigationHistory;
 use App\Services\PresenceService;
 use App\Services\ShellPanelService;
@@ -70,7 +71,10 @@ class AppServiceProvider extends ServiceProvider
                 ? route('helpdesk.index', ['scope' => 'mine', 'status' => 'open'])
                 : route('helpdesk.index', ['status' => 'open']);
 
-            $view->with([
+            $branding = app(BrandingService::class)->forViews();
+
+            $view->with(array_merge($branding, [
+                'branding' => $branding,
                 'navigation' => Navigation::groups($user),
                 'primaryNavigation' => Navigation::primary($user),
                 'navBadges' => $navBadges,
@@ -83,14 +87,18 @@ class AppServiceProvider extends ServiceProvider
                 'monitoringStatus' => $navBadges['monitoring_status'],
                 'headerOnlineUsers' => $onlineUsers->take(6),
                 'headerOnlineCount' => $onlineUsers->count(),
-                'plantName' => \App\Models\SystemSetting::getValue('plant_name', 'Northridge Processing'),
                 'leftPanel' => $shell->left($user),
                 'rightPanel' => $shell->right($user),
                 'workspaceTabs' => $workspace->all(),
                 'workspaceTabService' => $workspace,
                 'navPrevious' => $navHistory->previous(request()),
                 'openCasesHref' => $openCasesHref,
-            ]);
+            ]));
+        });
+
+        View::composer(['home', 'auth.login', 'layouts.guest'], function ($view) {
+            $branding = app(BrandingService::class)->forViews();
+            $view->with(array_merge($branding, ['branding' => $branding]));
         });
     }
 }

@@ -10,6 +10,7 @@ use App\Models\SupportTicket;
 use App\Models\SystemSetting;
 use App\Models\User;
 use App\Services\AuditLogger;
+use App\Services\BrandingService;
 use App\Services\IdentityService;
 use App\Services\LivePulse\LivePulseService;
 use App\Services\PresenceService;
@@ -42,6 +43,7 @@ class AdminController extends Controller
             'departments' => Department::query()->orderBy('name')->get(),
             'locations' => Location::query()->with('department')->orderBy('name')->get(),
             'plantName' => SystemSetting::getValue('plant_name', 'Northridge Processing'),
+            'branding' => app(BrandingService::class)->adminState(),
             'identity' => app(IdentityService::class)->adminState(),
             'livePulse' => app(LivePulseService::class)->status(),
             'sort' => $sort,
@@ -208,6 +210,45 @@ class AdminController extends Controller
         $audit->log('settings.updated', 'system_setting', null, [], ['plant_name' => $data['plant_name']]);
 
         return back()->with('status', 'Plant display name saved.');
+    }
+
+    public function updateBranding(Request $request, BrandingService $branding, AuditLogger $audit)
+    {
+        abort_unless($request->user()->hasPermission('roles.manage'), 403);
+
+        if ($request->boolean('reset_branding')) {
+            $state = $branding->update([], null, $request->user()->id, true);
+            $audit->log('settings.branding_reset', 'system_setting', null, [], [
+                'brand_name' => $state['brandName'],
+                'plant_name' => $state['plantName'],
+            ]);
+
+            return back()->with('status', 'Branding restored to PlantGrid defaults.');
+        }
+
+        $data = $request->validate([
+            'brand_name' => ['required', 'string', 'max:80'],
+            'plant_name' => ['required', 'string', 'max:160'],
+            'plant_chip_meta' => ['required', 'string', 'max:80'],
+            'brand_font' => ['required', Rule::in(array_keys(BrandingService::FONTS))],
+            'brand_logo' => ['nullable', 'file', 'max:2048', 'mimes:png,jpg,jpeg,svg,webp'],
+            'remove_logo' => ['nullable', 'boolean'],
+        ]);
+
+        $state = $branding->update(
+            $data,
+            $request->file('brand_logo'),
+            $request->user()->id
+        );
+
+        $audit->log('settings.branding', 'system_setting', null, [], [
+            'brand_name' => $state['brandName'],
+            'plant_name' => $state['plantName'],
+            'brand_font' => $state['brandFont'],
+            'has_logo' => $state['hasCustomLogo'],
+        ]);
+
+        return back()->with('status', 'Branding & appearance saved.');
     }
 
     public function updateIdentity(Request $request, AuditLogger $audit)
