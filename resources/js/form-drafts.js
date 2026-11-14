@@ -234,7 +234,7 @@ export function initFormDrafts() {
     document.querySelectorAll('form').forEach(bindForm);
     restoreAllTracked();
 
-    // Flush before workspace tab navigation (full page load).
+    // Flush drafts before workspace tab soft-navigation.
     document.querySelectorAll('[data-workspace-tabs] a[href]').forEach((link) => {
         link.addEventListener('pointerdown', persistAllTracked);
         link.addEventListener('click', persistAllTracked);

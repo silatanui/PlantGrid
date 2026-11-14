@@ -83,8 +83,64 @@ function replaceNode(current, incoming) {
     return clone;
 }
 
-async function softNavigate(url, { push = true } = {}) {
+function syncWorkspaceChrome(doc) {
+    const navrow = document.querySelector('.pg-navrow');
+    const nextTabs = doc.querySelector('[data-workspace-tabs]');
+    const currentTabs = document.querySelector('[data-workspace-tabs]');
+
+    if (nextTabs && currentTabs) {
+        replaceNode(currentTabs, nextTabs);
+    } else if (nextTabs && !currentTabs && navrow) {
+        navrow.appendChild(nextTabs.cloneNode(true));
+    } else if (!nextTabs && currentTabs) {
+        currentTabs.remove();
+    }
+
+    navrow?.classList.toggle('has-workspace-tabs', Boolean(document.querySelector('[data-workspace-tabs]')));
+
+    const nextPrimary = doc.querySelector('.pg-navrow > nav.pg-tabs');
+    const currentPrimary = document.querySelector('.pg-navrow > nav.pg-tabs');
+    if (nextPrimary && currentPrimary) {
+        replaceNode(currentPrimary, nextPrimary);
+    }
+
+    const nextBack = doc.querySelector('.pg-navrow > a.pg-nav-back:not(.pg-nav-back--fallback)');
+    const currentBack = document.querySelector('.pg-navrow > a.pg-nav-back:not(.pg-nav-back--fallback)');
+    const fallbackBack = document.querySelector('.pg-navrow > a.pg-nav-back--fallback');
+
+    if (nextBack && currentBack) {
+        replaceNode(currentBack, nextBack);
+        navrow?.classList.add('has-nav-back');
+        if (fallbackBack) {
+            fallbackBack.hidden = true;
+        }
+    } else if (nextBack && !currentBack && navrow) {
+        const primary = navrow.querySelector('nav.pg-tabs');
+        const node = nextBack.cloneNode(true);
+        if (primary) {
+            primary.before(node);
+        } else {
+            navrow.prepend(node);
+        }
+        navrow.classList.add('has-nav-back');
+        if (fallbackBack) {
+            fallbackBack.hidden = true;
+        }
+    } else if (!nextBack && currentBack) {
+        currentBack.remove();
+        navrow?.classList.remove('has-nav-back');
+        if (fallbackBack) {
+            fallbackBack.hidden = false;
+        }
+    }
+}
+
+export async function softNavigate(url, { push = true } = {}) {
     const absolute = new URL(url, window.location.origin).toString();
+    if (absolute === window.location.href) {
+        return;
+    }
+
     persistLeftScroll();
     document.body.classList.add('is-shell-navigating');
 
@@ -121,13 +177,14 @@ async function softNavigate(url, { push = true } = {}) {
 
         if (nextRight && currentRight) {
             replaceNode(currentRight, nextRight);
+        } else if (nextRight && !currentRight) {
+            const workspace = document.querySelector('.pg-workspace');
+            workspace?.appendChild(nextRight.cloneNode(true));
+        } else if (!nextRight && currentRight) {
+            currentRight.remove();
         }
 
-        const nextTabs = doc.querySelector('[data-workspace-tabs]');
-        const currentTabs = document.querySelector('[data-workspace-tabs]');
-        if (nextTabs && currentTabs) {
-            replaceNode(currentTabs, nextTabs);
-        }
+        syncWorkspaceChrome(doc);
 
         const nextTitle = doc.querySelector('title')?.textContent;
         if (nextTitle) {

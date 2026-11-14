@@ -1,3 +1,5 @@
+import { softNavigate } from './shell-nav';
+
 let workspaceChromeBound = false;
 let syncOverflowActive = null;
 let activeCloseTabs = null;
@@ -233,11 +235,10 @@ export function initWorkspaceTabs(refreshIcons = () => {}) {
             if (!response.ok || !payload?.ok) {
                 throw new Error(payload?.message || 'Could not close tab.');
             }
-            if (payload.redirect) {
-                window.location.assign(payload.redirect);
-                return;
-            }
             removeClosedTabs(payload.closed || []);
+            if (payload.redirect) {
+                await softNavigate(payload.redirect);
+            }
         } catch {
             if (mode === 'one' && key) {
                 const form = root.querySelector(`[data-tab-key="${CSS.escape(key)}"] .pg-workspace-tab-close`);
@@ -319,12 +320,53 @@ export function initWorkspaceTabs(refreshIcons = () => {}) {
         refreshIcons();
     });
 
-    // Stop the tab link from stealing the close click.
+    // AJAX close + soft-switch tabs (no full page reload).
     root.addEventListener('click', (event) => {
         const closeButton = event.target.closest('.pg-workspace-tab-close button');
         if (closeButton) {
+            event.preventDefault();
             event.stopPropagation();
+            const tab = closeButton.closest('[data-tab-key]');
+            void runClose({
+                mode: 'one',
+                key: tab?.dataset.tabKey,
+                wasActive: Boolean(tab?.classList.contains('active')),
+            });
+            return;
         }
+
+        const tabLink = event.target.closest('[data-tab-key] > a[href], .pg-workspace-more-item [data-tab-key] > a[href]');
+        if (!tabLink || !root.contains(tabLink)) {
+            return;
+        }
+        if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+            return;
+        }
+
+        const tab = tabLink.closest('[data-tab-key]');
+        if (tab?.classList.contains('active')) {
+            event.preventDefault();
+            closeMore();
+            return;
+        }
+
+        event.preventDefault();
+        closeMore();
+        void softNavigate(tabLink.href);
+    });
+
+    root.addEventListener('submit', (event) => {
+        const form = event.target;
+        if (!(form instanceof HTMLFormElement) || !form.classList.contains('pg-workspace-tab-close') || !root.contains(form)) {
+            return;
+        }
+        event.preventDefault();
+        const tab = form.closest('[data-tab-key]');
+        void runClose({
+            mode: 'one',
+            key: tab?.dataset.tabKey,
+            wasActive: Boolean(tab?.classList.contains('active') || form.querySelector('[name="was_active"]')),
+        });
     });
 
     root.addEventListener('contextmenu', (event) => {
