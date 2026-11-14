@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\CatchUpLivePulse;
 use App\Http\Middleware\EnsurePermission;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\RefreshDemoTimeline;
@@ -20,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('web', [
             EnsureUserIsActive::class,
             RefreshDemoTimeline::class,
+            CatchUpLivePulse::class,
             TrackLastSeen::class,
             TrackWorkspaceTabs::class,
             TrackNavigationHistory::class,

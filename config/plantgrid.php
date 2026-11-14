@@ -13,7 +13,7 @@ return [
 
     'public_path' => env('PLANTGRID_PUBLIC_PATH'),
 
-    'display_timezone' => 'Africa/Nairobi',
+    'display_timezone' => env('PLANTGRID_DISPLAY_TZ', 'Africa/Nairobi'),
 
     'outage_hostname' => 'PLT-SW-PACK',
 
@@ -25,35 +25,43 @@ return [
     |--------------------------------------------------------------------------
     |
     | When enabled (env or admin toggle), plantgrid:live-pulse inserts curated
-    | demo cases, notes, and messages on a schedule through ends_at.
+    | demo cases, notes, status work, and messages on a schedule through ends_at.
+    | Tuned for busy, autonomous plant-ICT activity through the end of the year.
     |
     */
 
     'live_pulse' => [
         'enabled' => (bool) env('PLANTGRID_LIVE_PULSE', false),
-        'use_openai' => (bool) env('PLANTGRID_LIVE_PULSE_OPENAI', true),
+        // Templates are rich enough for volume; OpenAI paraphrase is optional.
+        'use_openai' => (bool) env('PLANTGRID_LIVE_PULSE_OPENAI', false),
         'ends_at' => env('PLANTGRID_LIVE_PULSE_ENDS_AT', '2026-12-31 23:59:59'),
         'timezone' => env('PLANTGRID_LIVE_PULSE_TZ', 'Africa/Nairobi'),
-        'open_case_ceiling' => (int) env('PLANTGRID_LIVE_PULSE_OPEN_CEILING', 25),
+        // Busy plant desk without unbounded growth.
+        'open_case_ceiling' => (int) env('PLANTGRID_LIVE_PULSE_OPEN_CEILING', 85),
         'marker' => '[Live pulse]',
+        'catch_up_after_minutes' => (int) env('PLANTGRID_LIVE_PULSE_CATCHUP_MINUTES', 8),
         'daily_caps' => [
-            'new_case' => 8,
-            'note' => 20,
-            'message' => 15,
-            'monitoring' => 3,
-            'resolve' => 6,
-            'assign' => 8,
-            'starve' => 4,
+            'new_case' => (int) env('PLANTGRID_LIVE_PULSE_CAP_NEW', 48),
+            'note' => (int) env('PLANTGRID_LIVE_PULSE_CAP_NOTE', 160),
+            'message' => (int) env('PLANTGRID_LIVE_PULSE_CAP_MESSAGE', 72),
+            'monitoring' => (int) env('PLANTGRID_LIVE_PULSE_CAP_MONITORING', 24),
+            'resolve' => (int) env('PLANTGRID_LIVE_PULSE_CAP_RESOLVE', 42),
+            'close' => (int) env('PLANTGRID_LIVE_PULSE_CAP_CLOSE', 36),
+            'assign' => (int) env('PLANTGRID_LIVE_PULSE_CAP_ASSIGN', 48),
+            'progress' => (int) env('PLANTGRID_LIVE_PULSE_CAP_PROGRESS', 72),
+            'starve' => (int) env('PLANTGRID_LIVE_PULSE_CAP_STARVE', 16),
         ],
         'weights' => [
-            'new_case' => 22,
-            'starve' => 12,
-            'internal_note' => 18,
-            'visible_note' => 12,
-            'assign' => 12,
-            'resolve' => 10,
-            'message' => 12,
-            'monitoring' => 2,
+            'new_case' => 18,
+            'starve' => 6,
+            'internal_note' => 16,
+            'visible_note' => 10,
+            'assign' => 14,
+            'progress' => 16,
+            'resolve' => 12,
+            'close' => 8,
+            'message' => 10,
+            'monitoring' => 4,
         ],
     ],
 

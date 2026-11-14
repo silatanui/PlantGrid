@@ -137,9 +137,10 @@
             @csrf
             <h2 class="pg-section-title">Live Pulse</h2>
             <p class="text-muted small mb-2">
-                Portfolio demo activity: randomized cases, notes, messages, and SLA pressure through
-                <span class="pg-mono">{{ $livePulse['ends_at'] ?? '2026-12-31' }}</span>.
-                Requires a cPanel cron for <span class="pg-mono">php artisan schedule:run</span>.
+                Autonomous plant-ICT activity through
+                <span class="pg-mono">{{ $livePulse['ends_at'] ?? '2026-12-31' }}</span>:
+                new cases, ownership, status progress, internal/requester notes, resolves, closes, messages, and monitoring alerts.
+                Best with a cPanel cron for <span class="pg-mono">php artisan schedule:run</span>; signed-in pages also catch up if the scheduler is late.
             </p>
             <div class="form-check mb-2">
                 <input class="form-check-input" type="checkbox" value="1" id="live_pulse_enabled" name="live_pulse_enabled" @checked($livePulse['enabled'] ?? false)>

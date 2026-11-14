@@ -10,19 +10,24 @@ Laravel’s scheduler must run every minute so Live Pulse, SLA checks, and metri
 
 In cPanel → **Cron Jobs**, add that command with timing **Once Per Minute**.
 
+Paste only the command body into the cPanel “Command” field — do **not** paste the five asterisks into SSH Terminal.
+
 ## What the scheduler runs
 
 - `plantgrid:collect-metrics` — every 5 minutes  
 - `plantgrid:check-sla` — every 5 minutes (marks breached cases)  
-- `plantgrid:live-pulse` — every 5 minutes (portfolio demo activity through 31 Dec 2026)  
+- `plantgrid:live-pulse` — every minute (busy autonomous demo desk through 31 Dec 2026)  
+- `plantgrid:refresh-demo-timeline` — daily (keeps overdue gaps frozen)  
 - `plantgrid:prune-metrics` — daily  
 
 ## Live Pulse
 
 1. Set `PLANTGRID_LIVE_PULSE=true` in `~/plantgrid_app/.env`, **or** enable it under **Administration → Live Pulse**.
-2. Optional: `PLANTGRID_LIVE_PULSE_OPENAI=true` paraphrases note/message text when `OPENAI_API_KEY` is set (falls back to templates).
-3. Manual tick: `php artisan plantgrid:live-pulse --once`
+2. Optional OpenAI paraphrase: `PLANTGRID_LIVE_PULSE_OPENAI=true` plus `OPENAI_API_KEY` (defaults off for volume).
+3. Manual burst: `php artisan plantgrid:live-pulse --once`
 4. Status: `php artisan plantgrid:live-pulse --status`
 5. Purge synthetic rows: `php artisan plantgrid:live-pulse-reset --force`
 
-After `git pull`, still sync the public docroot when CSS/JS change (`bash deploy/sync-public.sh`).
+Signed-in page loads also catch up Live Pulse if the last run is older than ~8 minutes (helps when cron is delayed).
+
+After `git pull`, sync the public docroot when CSS/JS change (`bash deploy/sync-public.sh`).

@@ -195,31 +195,53 @@ class LivePulseService
         ];
     }
 
+    /**
+     * Catch-up tick for hosts where cron is missing or delayed.
+     *
+     * @return array{ran: bool, reason?: string, events: list<string>}|null
+     */
+    public function catchUpIfStale(?Carbon $now = null): ?array
+    {
+        $now = $now ?? now();
+        if (! $this->isActiveWindow($now)) {
+            return null;
+        }
+
+        $minutes = max(3, (int) config('plantgrid.live_pulse.catch_up_after_minutes', 8));
+        $last = SystemSetting::getValue(self::SETTING_LAST_RUN);
+        if (is_string($last) && $last !== '') {
+            try {
+                if (Carbon::parse($last)->gt($now->copy()->subMinutes($minutes))) {
+                    return null;
+                }
+            } catch (Throwable) {
+                // Continue with catch-up when the stamp is unreadable.
+            }
+        }
+
+        return $this->run(forceOne: false, now: $now);
+    }
+
     private function eventsThisTick(Carbon $now): int
     {
         $local = $now->copy()->timezone($this->endsAt()->timezone);
         $hour = (int) $local->format('G');
         $weekday = $local->isWeekday();
 
-        $pZero = 0.35;
-        $pOne = 0.45;
-        $pTwo = 0.20;
-
-        if (! $weekday || $hour < 8 || $hour >= 18) {
-            $pZero = 0.70;
-            $pOne = 0.25;
-            $pTwo = 0.05;
+        // Busy plant ICT desk during weekday daytime; quieter nights/weekends.
+        if ($weekday && $hour >= 7 && $hour < 19) {
+            return mt_rand(2, 5);
         }
 
-        $roll = mt_rand() / mt_getrandmax();
-        if ($roll < $pZero) {
-            return 0;
-        }
-        if ($roll < $pZero + $pOne) {
-            return 1;
+        if ($weekday && $hour >= 19 && $hour < 22) {
+            return mt_rand(1, 3);
         }
 
-        return 2;
+        if (! $weekday && $hour >= 9 && $hour < 16) {
+            return mt_rand(1, 2);
+        }
+
+        return mt_rand(0, 1) === 1 ? 1 : 0;
     }
 
     private function pickEventType(): ?string
@@ -230,8 +252,14 @@ class LivePulseService
 
         if ($open >= $ceiling) {
             unset($weights['new_case'], $weights['starve']);
-            $weights['resolve'] = ($weights['resolve'] ?? 10) + 20;
-            $weights['internal_note'] = ($weights['internal_note'] ?? 10) + 8;
+            $weights['resolve'] = ($weights['resolve'] ?? 10) + 18;
+            $weights['close'] = ($weights['close'] ?? 8) + 10;
+            $weights['progress'] = ($weights['progress'] ?? 10) + 8;
+            $weights['internal_note'] = ($weights['internal_note'] ?? 10) + 6;
+        } elseif ($open >= (int) ($ceiling * 0.8)) {
+            $weights['new_case'] = max(4, (int) (($weights['new_case'] ?? 10) * 0.5));
+            $weights['resolve'] = ($weights['resolve'] ?? 10) + 8;
+            $weights['progress'] = ($weights['progress'] ?? 10) + 6;
         }
 
         $filtered = [];
@@ -270,7 +298,9 @@ class LivePulseService
             'internal_note' => $this->eventNote('internal'),
             'visible_note' => $this->eventNote('requester_visible'),
             'assign' => $this->eventAssign(),
+            'progress' => $this->eventProgress(),
             'resolve' => $this->eventResolve(),
+            'close' => $this->eventClose(),
             'message' => $this->eventMessage(),
             'monitoring' => $this->eventMonitoring(),
             default => null,
@@ -279,8 +309,7 @@ class LivePulseService
 
     private function eventNewCase(): ?string
     {
-        $requester = $this->demoUsers(['grace.wanjiku@northridge.example', 'peter.kamau@northridge.example', 'helen.achieng@northridge.example'])
-            ->random();
+        $requester = $this->requesters()->random();
         $template = EventCatalog::cases()[array_rand(EventCatalog::cases())];
         $category = TicketCategory::query()->where('name', $template['category'])->first()
             ?: TicketCategory::query()->orderBy('name')->first();
@@ -355,12 +384,7 @@ class LivePulseService
             return null;
         }
 
-        $techs = $this->demoUsers([
-            'faith.cheruiyot@northridge.example',
-            'daniel.mwangi@northridge.example',
-            'brian.otieno@northridge.example',
-            'amina.okello@northridge.example',
-        ]);
+        $techs = $this->technicians();
         $author = $visibility === 'requester_visible' && mt_rand(0, 1) === 1
             ? (User::query()->find($ticket->requester_id) ?: $techs->random())
             : $techs->random();
@@ -384,15 +408,75 @@ class LivePulseService
             return null;
         }
 
-        $tech = $this->demoUsers([
-            'faith.cheruiyot@northridge.example',
-            'brian.otieno@northridge.example',
-            'daniel.mwangi@northridge.example',
-        ])->random();
+        $tech = $this->technicians()->random();
+        $actor = $this->assigners()->first() ?: $tech;
 
-        $this->tickets->takeOwnership($ticket, $tech, $this->tag($tech->name.' took ownership via Live Pulse.'));
+        $this->tickets->assignTo(
+            $ticket,
+            $tech,
+            $actor,
+            $this->tag($tech->name.' assigned via Live Pulse.')
+        );
 
         return 'assign '.$ticket->ticket_number.' → '.$tech->name;
+    }
+
+    private function eventProgress(): ?string
+    {
+        $ticket = SupportTicket::query()
+            ->whereIn('status', ['new', 'assigned', 'in_progress', 'pending'])
+            ->inRandomOrder()
+            ->first();
+        if (! $ticket) {
+            return null;
+        }
+
+        $tech = $ticket->assigned_to
+            ? (User::query()->find($ticket->assigned_to) ?: $this->technicians()->first())
+            : $this->technicians()->random();
+
+        if (! $tech) {
+            return null;
+        }
+
+        if (! $ticket->assigned_to) {
+            try {
+                $actor = $this->assigners()->first() ?: $tech;
+                $this->tickets->assignTo($ticket, $tech, $actor, $this->tag('Claimed for active work.'));
+                $ticket->refresh();
+            } catch (Throwable) {
+                // Fall through to transition attempt.
+            }
+        }
+
+        $preferred = match ($ticket->status) {
+            'new', 'assigned' => ['in_progress', 'pending'],
+            'in_progress' => ['pending', 'in_progress'],
+            'pending' => ['in_progress', 'pending'],
+            default => ['in_progress'],
+        };
+
+        $allowed = $this->tickets->allowedTransitions($ticket->fresh(), $tech);
+        $target = null;
+        foreach ($preferred as $status) {
+            if (in_array($status, $allowed, true) && $status !== $ticket->status) {
+                $target = $status;
+                break;
+            }
+        }
+
+        if ($target === null) {
+            return $this->eventNote('internal');
+        }
+
+        $note = $this->tag(EventCatalog::progressNotes()[array_rand(EventCatalog::progressNotes())]);
+        $this->tickets->transition($ticket->fresh(), $tech, $target, [
+            'note' => $note,
+            'internal_note' => $note,
+            'resolution_notes' => $note,
+        ]);
+
+        return 'progress '.$ticket->ticket_number.' → '.$target;
     }
 
     private function eventResolve(): ?string
@@ -406,8 +490,8 @@ class LivePulseService
         }
 
         $tech = $ticket->assigned_to
-            ? (User::query()->find($ticket->assigned_to) ?: $this->demoUsers(['faith.cheruiyot@northridge.example'])->first())
-            : $this->demoUsers(['faith.cheruiyot@northridge.example', 'daniel.mwangi@northridge.example'])->random();
+            ? (User::query()->find($ticket->assigned_to) ?: $this->technicians()->first())
+            : $this->technicians()->random();
 
         if (! $tech) {
             return null;
@@ -415,7 +499,8 @@ class LivePulseService
 
         if (! $ticket->assigned_to) {
             try {
-                $this->tickets->takeOwnership($ticket, $tech, $this->tag('Claimed to resolve.'));
+                $actor = $this->assigners()->first() ?: $tech;
+                $this->tickets->assignTo($ticket, $tech, $actor, $this->tag('Claimed to resolve.'));
                 $ticket->refresh();
             } catch (Throwable) {
                 // continue with transition attempt
@@ -442,16 +527,42 @@ class LivePulseService
         return $target.' '.$ticket->ticket_number;
     }
 
+    private function eventClose(): ?string
+    {
+        $ticket = SupportTicket::query()
+            ->where('status', 'resolved')
+            ->inRandomOrder()
+            ->first();
+        if (! $ticket) {
+            return null;
+        }
+
+        $tech = $ticket->assigned_to
+            ? (User::query()->find($ticket->assigned_to) ?: $this->technicians()->first())
+            : $this->technicians()->random();
+
+        if (! $tech) {
+            return null;
+        }
+
+        $allowed = $this->tickets->allowedTransitions($ticket, $tech);
+        if (! in_array('closed', $allowed, true)) {
+            return null;
+        }
+
+        $closeNote = $this->tag('Requester confirmed; closing in the demonstration environment.');
+        $this->tickets->transition($ticket, $tech, 'closed', [
+            'note' => $closeNote,
+            'internal_note' => $this->tag('Closed after resolve verification.'),
+            'resolution_notes' => $closeNote,
+        ]);
+
+        return 'closed '.$ticket->ticket_number;
+    }
+
     private function eventMessage(): ?string
     {
-        $people = $this->demoUsers([
-            'grace.wanjiku@northridge.example',
-            'peter.kamau@northridge.example',
-            'faith.cheruiyot@northridge.example',
-            'daniel.mwangi@northridge.example',
-            'brian.otieno@northridge.example',
-            'amina.okello@northridge.example',
-        ]);
+        $people = $this->requesters()->merge($this->technicians())->unique('id')->values();
         if ($people->count() < 2) {
             return null;
         }
@@ -539,10 +650,57 @@ class LivePulseService
             ->get();
 
         if ($users->isEmpty()) {
-            return User::query()->where('status', 'active')->orderBy('id')->limit(5)->get();
+            return User::query()->where('status', 'active')->orderBy('id')->limit(8)->get();
         }
 
         return $users;
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, User>
+     */
+    private function technicians()
+    {
+        return $this->demoUsers([
+            'faith.cheruiyot@northridge.example',
+            'daniel.mwangi@northridge.example',
+            'brian.otieno@northridge.example',
+            'mercy.chebet@northridge.example',
+            'kevin.njoroge@northridge.example',
+            'lilian.auma@northridge.example',
+            'amina.okello@northridge.example',
+        ]);
+    }
+
+    /**
+     * Users who can assign ownership in the demo RBAC.
+     *
+     * @return \Illuminate\Support\Collection<int, User>
+     */
+    private function assigners()
+    {
+        return $this->demoUsers([
+            'daniel.mwangi@northridge.example',
+            'amina.okello@northridge.example',
+        ]);
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, User>
+     */
+    private function requesters()
+    {
+        return $this->demoUsers([
+            'grace.wanjiku@northridge.example',
+            'peter.kamau@northridge.example',
+            'jane.muthoni@northridge.example',
+            'david.ochieng@northridge.example',
+            'ruth.njeri@northridge.example',
+            'naomi.wairimu@northridge.example',
+            'francis.kamau@northridge.example',
+            'caleb.odhiambo@northridge.example',
+            'helen.achieng@northridge.example',
+        ]);
     }
 
     private function underCap(string $type): bool
@@ -572,7 +730,9 @@ class LivePulseService
             'message' => 'message',
             'monitoring' => 'monitoring',
             'resolve' => 'resolve',
+            'close' => 'close',
             'assign' => 'assign',
+            'progress' => 'progress',
             'starve' => 'starve',
             default => $type,
         };

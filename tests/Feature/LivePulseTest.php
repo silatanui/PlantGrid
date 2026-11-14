@@ -48,7 +48,15 @@ class LivePulseTest extends TestCase
             || DirectMessage::query()->where('subject', 'like', '%'.$marker.'%')->exists()
             || SupportTicket::query()->where('description', 'like', '%'.$marker.'%')->exists();
 
-        $this->assertTrue($createdSomething || SupportTicket::query()->where('sla_due_at', '<', now())->exists());
+        $historyTagged = \Illuminate\Support\Facades\DB::table('ticket_status_histories')
+            ->where('notes', 'like', '%'.$marker.'%')
+            ->exists();
+
+        $this->assertTrue(
+            $createdSomething
+            || $historyTagged
+            || SupportTicket::query()->where('sla_due_at', '<', now())->exists()
+        );
 
         Carbon::setTestNow();
     }
