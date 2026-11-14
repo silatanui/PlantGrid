@@ -56,6 +56,7 @@ class AiEntityIndex
 
         $people = [];
         $peopleLabels = [];
+        $peopleByName = [];
         foreach (User::query()->where('status', 'active')->get(['id', 'name', 'email']) as $person) {
             $handle = mb_strtolower((string) strtok((string) $person->email, '@'));
             if ($handle === '') {
@@ -63,6 +64,16 @@ class AiEntityIndex
             }
             $people[$handle] = $person->id;
             $peopleLabels[$handle] = $person->name;
+
+            // Full display names so chat replies can link "Faith Cheruiyot" without an @handle.
+            $nameKey = mb_strtolower(trim((string) $person->name));
+            if ($nameKey !== '' && str_contains($nameKey, ' ')) {
+                $peopleByName[$nameKey] = [
+                    'id' => $person->id,
+                    'label' => $person->name,
+                    'handle' => $handle,
+                ];
+            }
         }
 
         $departments = [];
@@ -103,6 +114,7 @@ class AiEntityIndex
                 'servers' => $servers,
                 'people' => $people,
                 'people_labels' => $peopleLabels,
+                'people_by_name' => $peopleByName,
                 'departments' => $departments,
                 'locations' => $locations,
             ],

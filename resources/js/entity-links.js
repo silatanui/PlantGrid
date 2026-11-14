@@ -53,6 +53,46 @@ function parseUrlTemplates(raw) {
     }
 }
 
+function escapeRegExp(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Replace plain full names with people chips, without touching existing HTML tags.
+ */
+function linkifyPeopleByName(text, entities, urls) {
+    const byName = entities.people_by_name || {};
+    const entries = Object.entries(byName)
+        .filter(([key, info]) => key && info?.id && String(key).includes(' '))
+        .sort((a, b) => b[0].length - a[0].length);
+
+    if (!entries.length) {
+        return text;
+    }
+
+    const slots = [];
+    const protectedText = String(text).replace(/<[^>]+>/g, (tag) => {
+        slots.push(tag);
+        return `\u0000${slots.length - 1}\u0000`;
+    });
+
+    let out = protectedText;
+    entries.forEach(([, info]) => {
+        const label = info.label || '';
+        if (!label) {
+            return;
+        }
+        const pattern = new RegExp(`(?<![\\w@])${escapeRegExp(label)}(?![\\w])`, 'giu');
+        out = out.replace(pattern, () => {
+            const url = urlFor(urls, 'people', info.id);
+            const token = `@[${label}](people:${info.id})`;
+            return mentionAnchor('people', url, `@${label}`, token);
+        });
+    });
+
+    return out.replace(/\u0000(\d+)\u0000/g, (_, index) => slots[Number(index)] ?? '');
+}
+
 /**
  * @param {string} escapedHtml already HTML-escaped plain text (may include <br> later)
  * @param {{entities?: object, urls?: object}|HTMLElement|null} source
@@ -111,6 +151,9 @@ export function linkifyEntities(escapedHtml, source = null) {
         }
         return full;
     });
+
+    // Bare full names ("Faith Cheruiyot") when the model skips @handles
+    text = linkifyPeopleByName(text, entities, urls);
 
     // Case numbers PG-YYYY-NNNN
     text = text.replace(/(?<![\w\/])#?(PG-\d{4}-\d+)\b/gu, (full, numberRaw) => {

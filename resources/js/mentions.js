@@ -124,18 +124,21 @@ export function initMentions(root = document) {
         const detectMention = () => {
             const caret = textarea.selectionStart;
             const before = textarea.value.slice(0, caret);
-            const match = before.match(/(^|[\s(])([@#])([a-zA-Z0-9._-]*)$/);
+            // @ allows spaces so "@Faith Cher" can resolve people by full name.
+            // # stays token-like for case/asset/device tags.
+            const atMatch = before.match(/(^|[\s(])@([a-zA-Z0-9._\s-]*)$/);
+            const hashMatch = before.match(/(^|[\s(])#([a-zA-Z0-9._-]*)$/);
+            const match = atMatch || hashMatch;
             if (!match) {
                 close();
                 return;
             }
 
-            trigger = match[2];
-            mentionStart = caret - match[2].length - match[3].length;
-            const query = match[3];
-
+            trigger = atMatch ? '@' : '#';
+            const query = match[2] || '';
+            mentionStart = caret - 1 - query.length;
             window.clearTimeout(timer);
-            timer = window.setTimeout(() => fetchItems(query, trigger), 120);
+            timer = window.setTimeout(() => fetchItems(query.trim(), trigger), 120);
         };
 
         textarea.addEventListener('input', detectMention);

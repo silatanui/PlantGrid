@@ -83,7 +83,7 @@
                     </span>
                     <div class="pg-ai-msg">
                         <div class="pg-ai-bubble pg-ai-bubble-bot">
-                            <div class="pg-ai-bubble-body">Ask about cases, assets, or Documentation guides — or tell me to open a case. Actions wait for your confirm.</div>
+                            <div class="pg-ai-bubble-body">Ask about cases, assets, or Documentation guides — or tell me to open a case. Tag with <strong>@</strong> people and <strong>#</strong> cases/assets/devices. Actions wait for your confirm.</div>
                         </div>
                         <div class="pg-ai-meta">
                             <span>PlantGrid Assistant</span>
@@ -109,7 +109,14 @@
                 </div>
                 <form class="pg-ai-compose" data-ai-chat-form>
                     <label class="visually-hidden" for="pg-ai-message">Message</label>
-                    <textarea id="pg-ai-message" data-ai-input rows="1" placeholder="Type your message here…" required></textarea>
+                    <textarea
+                        id="pg-ai-message"
+                        data-ai-input
+                        data-mentions
+                        rows="1"
+                        placeholder="Message… Use @people or # for cases, assets, devices"
+                        required
+                    ></textarea>
                     <button class="pg-ai-send" type="submit" data-ai-send aria-label="Send">
                         <i data-lucide="send"></i>
                     </button>
@@ -130,7 +137,14 @@
         <div class="pg-ai-body" data-ai-view="notes" hidden>
             <p class="pg-ai-hint">Paste a case note or description, then refine or paraphrase it. The result can be copied into any note field.</p>
             <label class="form-label" for="pg-ai-note">Note text</label>
-            <textarea class="form-control" id="pg-ai-note" data-ai-note rows="6" placeholder="Paste or write the note to improve…"></textarea>
+            <textarea
+                class="form-control"
+                id="pg-ai-note"
+                data-ai-note
+                data-mentions
+                rows="6"
+                placeholder="Paste or write a note… Use @people or # for cases/assets"
+            ></textarea>
             <div class="pg-ai-note-actions">
                 <button class="btn btn-pg" type="button" data-ai-refine>Refine</button>
                 <button class="btn btn-pg-line" type="button" data-ai-paraphrase>Paraphrase</button>
