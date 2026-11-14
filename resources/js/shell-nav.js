@@ -9,6 +9,14 @@ function sameOrigin(url) {
     }
 }
 
+function isHardNavPath(pathname) {
+    const path = String(pathname || '').replace(/\/+$/, '') || '/';
+    return path === '/logout'
+        || path.endsWith('/logout')
+        || path === '/login'
+        || path.endsWith('/login');
+}
+
 function shouldSoftNavigate(anchor) {
     if (!(anchor instanceof HTMLAnchorElement)) {
         return false;
@@ -24,6 +32,9 @@ function shouldSoftNavigate(anchor) {
         return false;
     }
     const url = new URL(href, window.location.origin);
+    if (isHardNavPath(url.pathname)) {
+        return false;
+    }
     if (url.pathname === window.location.pathname && url.search === window.location.search && url.hash) {
         return false;
     }
@@ -162,6 +173,12 @@ export async function softNavigate(url, { push = true } = {}) {
         const html = await response.text();
         const doc = new DOMParser().parseFromString(html, 'text/html');
 
+        // Leave the shell (home / login / guest) with a full load so the AI root is not orphaned.
+        if (!doc.body?.classList.contains('pg-shell')) {
+            window.location.assign(absolute);
+            return;
+        }
+
         const nextMain = doc.querySelector('main.pg-main, #content');
         const nextRight = doc.querySelector('#shell-right');
         const currentMain = document.querySelector('main.pg-main, #content');
@@ -221,18 +238,21 @@ export async function softNavigate(url, { push = true } = {}) {
 }
 
 export function initShellNav() {
-    const left = document.getElementById('shell-left');
-    if (!left || left.dataset.shellNavReady === '1') {
+    if (document.documentElement.dataset.shellNavReady === '1') {
         return;
     }
-    left.dataset.shellNavReady = '1';
+    if (!document.body.classList.contains('pg-shell')) {
+        return;
+    }
+    document.documentElement.dataset.shellNavReady = '1';
 
+    const left = document.getElementById('shell-left');
     restoreLeftScroll();
-    left.addEventListener('scroll', persistLeftScroll, { passive: true });
+    left?.addEventListener('scroll', persistLeftScroll, { passive: true });
 
-    left.addEventListener('click', (event) => {
+    document.addEventListener('click', (event) => {
         const anchor = event.target.closest('a[href]');
-        if (!anchor || !left.contains(anchor) || !shouldSoftNavigate(anchor)) {
+        if (!anchor || !shouldSoftNavigate(anchor)) {
             return;
         }
         if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
