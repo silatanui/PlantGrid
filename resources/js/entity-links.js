@@ -82,7 +82,8 @@ function linkifyPeopleByName(text, entities, urls) {
         if (!label) {
             return;
         }
-        const pattern = new RegExp(`(?<![\\w@])${escapeRegExp(label)}(?![\\w])`, 'giu');
+        // Match "Faith Cheruiyot" or "@Faith Cheruiyot" (chat/notes often omit structured tokens).
+        const pattern = new RegExp(`(?<![\\w])@?${escapeRegExp(label)}(?![\\w])`, 'giu');
         out = out.replace(pattern, () => {
             const url = urlFor(urls, 'people', info.id);
             const token = `@[${label}](people:${info.id})`;

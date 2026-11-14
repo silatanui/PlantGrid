@@ -118,10 +118,6 @@ function timeMetaHtml(at, { role = 'bot', showName = false } = {}) {
 function typingHtml() {
     return `
         <div class="pg-ai-typing" aria-hidden="true" aria-label="Assistant is typing">
-            <span class="pg-ai-typing-pulse"></span>
-            <span class="pg-ai-typing-bars">
-                <i></i><i></i><i></i><i></i>
-            </span>
             <span class="pg-ai-typing-dots"><i></i><i></i><i></i></span>
         </div>
     `;
@@ -591,6 +587,7 @@ export function initAiAssistant(refreshIcons) {
             });
             const assistantAt = nowIso();
             pending.classList.remove('is-pending');
+            pending.classList.add('is-reply-in');
             pending.dataset.at = assistantAt;
             pending.innerHTML = `
                 ${avatarHtml()}

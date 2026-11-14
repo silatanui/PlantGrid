@@ -6445,10 +6445,12 @@ body.pg-home {
     align-items: flex-start;
     gap: 10px;
     max-width: 100%;
-    animation: pg-ai-msg-in 220ms ease;
 }
-@keyframes pg-ai-msg-in {
-    from { opacity: 0; transform: translateY(6px); }
+.pg-ai-row.is-reply-in .pg-ai-msg {
+    animation: pg-ai-reply-in 320ms ease;
+}
+@keyframes pg-ai-reply-in {
+    from { opacity: 0; transform: translateY(-12px); }
     to { opacity: 1; transform: none; }
 }
 .pg-ai-row-user {
@@ -6550,51 +6552,19 @@ body.pg-home {
     font-style: normal;
 }
 .pg-ai-typing {
-    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 46px;
-    height: 22px;
+    min-width: 36px;
+    height: 18px;
 }
-.pg-ai-typing-pulse {
-    position: absolute;
-    inset: 0;
-    border-radius: 3px;
-    background: color-mix(in srgb, var(--pg-navy) 14%, transparent);
-    animation: pg-ai-pulse 1.4s ease-in-out infinite;
-}
-.pg-ai-typing-bars {
-    position: relative;
-    z-index: 1;
-    display: inline-flex;
-    align-items: flex-end;
-    gap: 3px;
-    height: 16px;
-    margin-right: 4px;
-}
-.pg-ai-typing-bars i {
-    display: block;
-    width: 3px;
-    border-radius: 1px;
-    background: var(--pg-navy);
-    opacity: 0.75;
-    transform-origin: bottom center;
-    animation: pg-ai-bar 0.9s ease-in-out infinite;
-}
-.pg-ai-typing-bars i:nth-child(1) { height: 6px; animation-delay: 0s; }
-.pg-ai-typing-bars i:nth-child(2) { height: 11px; animation-delay: 0.12s; }
-.pg-ai-typing-bars i:nth-child(3) { height: 8px; animation-delay: 0.24s; }
-.pg-ai-typing-bars i:nth-child(4) { height: 14px; animation-delay: 0.36s; }
 .pg-ai-typing-dots {
-    position: relative;
-    z-index: 1;
     display: inline-flex;
-    gap: 3px;
+    gap: 4px;
 }
 .pg-ai-typing-dots i {
-    width: 5px;
-    height: 5px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     background: var(--pg-navy-deep);
     opacity: 0.35;
@@ -6605,14 +6575,6 @@ body.pg-home {
 @keyframes pg-ai-dot {
     0%, 80%, 100% { opacity: 0.25; transform: translateY(0) scale(0.9); }
     40% { opacity: 1; transform: translateY(-3px) scale(1.05); }
-}
-@keyframes pg-ai-bar {
-    0%, 100% { transform: scaleY(0.55); opacity: 0.45; }
-    50% { transform: scaleY(1.15); opacity: 1; }
-}
-@keyframes pg-ai-pulse {
-    0%, 100% { transform: scale(0.88); opacity: 0.45; }
-    50% { transform: scale(1.08); opacity: 0.9; }
 }
 .pg-ai-bubble.is-error,
 .pg-ai-row.is-error .pg-ai-bubble {

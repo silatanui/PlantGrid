@@ -155,6 +155,9 @@ class RichText
             $escaped
         ) ?? $escaped;
 
+        // Full display names ("Naomi Wairimu" / "@Faith Cheruiyot") when authors skip @handles.
+        $escaped = self::linkifyPeopleByName($escaped);
+
         $escaped = preg_replace_callback(
             '/(?<![\w\/])#?(PG-\d{4}-\d+)\b/u',
             function (array $match) {
@@ -378,6 +381,58 @@ class RichText
                     return [$handle => $user];
                 });
         });
+    }
+
+    /**
+     * Active users keyed by lowercased full name (multi-word only), longest first.
+     *
+     * @return list<array{name: string, user: User}>
+     */
+    private static function peopleByFullName(): array
+    {
+        return Cache::remember('richtext.people.full_names', 30, function () {
+            return User::query()
+                ->where('status', 'active')
+                ->get(['id', 'name', 'email'])
+                ->filter(fn (User $user) => str_contains(trim((string) $user->name), ' '))
+                ->map(fn (User $user) => [
+                    'name' => trim((string) $user->name),
+                    'user' => $user,
+                ])
+                ->sortByDesc(fn (array $row) => mb_strlen($row['name']))
+                ->values()
+                ->all();
+        });
+    }
+
+    private static function linkifyPeopleByName(string $html): string
+    {
+        $people = self::peopleByFullName();
+        if ($people === []) {
+            return $html;
+        }
+
+        $slots = [];
+        $protected = preg_replace_callback('/<[^>]+>/u', function (array $match) use (&$slots) {
+            $slots[] = $match[0];
+
+            return "\0".(count($slots) - 1)."\0";
+        }, $html) ?? $html;
+
+        foreach ($people as $row) {
+            $name = $row['name'];
+            $user = $row['user'];
+            $pattern = '/(?<![\w])@?'.preg_quote($name, '/').'(?![\w])/iu';
+            $protected = preg_replace_callback($pattern, function () use ($name, $user) {
+                $token = '@['.$name.'](people:'.$user->id.')';
+
+                return self::mentionAnchor('people', route('people.show', $user), '@'.$name, $token);
+            }, $protected) ?? $protected;
+        }
+
+        return preg_replace_callback("/\0(\d+)\0/u", function (array $match) use ($slots) {
+            return $slots[(int) $match[1]] ?? '';
+        }, $protected) ?? $protected;
     }
 
     /**
