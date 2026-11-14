@@ -286,17 +286,12 @@ export function applyBackground(bgId, customHex = readCustomBgHex()) {
     root.style.setProperty('--pg-bg', hex);
     root.classList.toggle('pg-theme-dark-bg', !light);
 
-    if (!light) {
-        root.style.setProperty('--pg-text', '#e8eef3');
-        root.style.setProperty('--pg-muted', '#9aa7b4');
-        root.style.setProperty('--pg-card', mix(hex, '#ffffff', 0.08));
-        root.style.setProperty('--pg-border', mix(hex, '#ffffff', 0.16));
-    } else {
-        root.style.removeProperty('--pg-text');
-        root.style.removeProperty('--pg-muted');
-        root.style.removeProperty('--pg-card');
-        root.style.removeProperty('--pg-border');
-    }
+    // Background only tints the page chrome. Content cards/tables keep a solid
+    // light surface so body text never disappears against Ink / custom dark colours.
+    root.style.setProperty('--pg-card', '#ffffff');
+    root.style.setProperty('--pg-border', '#c2cad2');
+    root.style.removeProperty('--pg-text');
+    root.style.removeProperty('--pg-muted');
 
     try {
         localStorage.setItem(BG_STORAGE_KEY, background);

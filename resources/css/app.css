@@ -2375,11 +2375,54 @@ body.is-shell-navigating [data-workspace-tabs] {
 }
 
 .pg-card {
-    background: var(--pg-card);
+    background: #fff;
+    background: var(--pg-card, #fff);
     border: 1px solid var(--pg-border);
     border-radius: var(--pg-radius);
+    color: #152028;
 }
 .pg-card-pad { padding: 12px 14px; }
+
+/* Dark page backgrounds only tint the shell ? content panels stay opaque. */
+.pg-theme-dark-bg .pg-card,
+.pg-theme-dark-bg .pg-filters,
+.pg-theme-dark-bg .pg-docs-article,
+.pg-theme-dark-bg .pg-docs-search,
+.pg-theme-dark-bg .pg-listview,
+.pg-theme-dark-bg .pg-audit-entry,
+.pg-theme-dark-bg .pg-panel-card,
+.pg-theme-dark-bg .pg-note-composer,
+.pg-theme-dark-bg .pg-case-primary > .pg-card {
+    background: #fff !important;
+    color: #152028;
+    border-color: #c2cad2;
+}
+.pg-theme-dark-bg .pg-card .text-muted,
+.pg-theme-dark-bg .pg-card .pg-page-lead,
+.pg-theme-dark-bg .pg-filters .form-label {
+    color: #5a6773 !important;
+}
+.pg-theme-dark-bg .pg-table th {
+    background: #f7f9fb;
+    color: #5a6773;
+}
+.pg-theme-dark-bg .pg-table tbody tr:hover {
+    background: #f5faf9;
+}
+.pg-theme-dark-bg .pg-main > .pg-object-home .pg-page-title,
+.pg-theme-dark-bg .pg-main > .pg-page-title {
+    color: #f3f6f9;
+}
+.pg-theme-dark-bg .pg-main > .pg-object-home .pg-page-lead,
+.pg-theme-dark-bg .pg-main > .pg-object-home .pg-object,
+.pg-theme-dark-bg .pg-main > .pg-page-lead {
+    color: #b7c2cd;
+}
+.pg-theme-dark-bg .pg-docs-search {
+    padding: 8px 10px;
+    border: 1px solid #c2cad2;
+    background: #fff;
+}
 
 .pg-metric .label {
     color: var(--pg-muted);
@@ -5053,7 +5096,18 @@ a.pg-dash-kpi:hover {
     text-transform: uppercase;
     color: var(--pg-muted);
 }
-.pg-theme-picker-label + .pg-theme-swatches + .pg-theme-picker-label {
+.pg-theme-picker-hint {
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.35;
+    color: var(--pg-muted);
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 500;
+    max-width: 220px;
+}
+.pg-theme-picker-label + .pg-theme-swatches + .pg-theme-picker-label,
+.pg-theme-swatches + .pg-theme-picker-label {
     margin-top: 6px;
 }
 .pg-theme-swatches {
@@ -5081,15 +5135,16 @@ a.pg-dash-kpi:hover {
     box-shadow: 0 0 0 2px var(--pg-navy);
 }
 .pg-theme-dark-bg .pg-theme-swatch {
-    border-color: color-mix(in srgb, var(--pg-card) 70%, #fff);
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--pg-border) 80%, #fff);
+    border-color: color-mix(in srgb, #ffffff 70%, #1c2430);
+    box-shadow: 0 0 0 1px color-mix(in srgb, #c2cad2 80%, #fff);
 }
 .pg-theme-dark-bg .pg-globalbar,
 .pg-theme-dark-bg .pg-navrow,
 .pg-theme-dark-bg .pg-rail-left,
 .pg-theme-dark-bg .pg-rail-right,
 .pg-theme-dark-bg .pg-app-footer {
-    border-color: var(--pg-border);
+    border-color: #c2cad2;
+    background: #fff;
 }
 .pg-theme-custom {
     position: relative;
@@ -6579,7 +6634,7 @@ body.pg-home {
     margin-top: 14px;
 }
 
-/* —— Audit log —— */
+/* ?? Audit log ?? */
 .pg-audit-toolbar {
     display: flex;
     flex-wrap: wrap;

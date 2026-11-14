@@ -59,6 +59,7 @@
     </div>
 
     <div class="pg-theme-picker-label">Background</div>
+    <p class="pg-theme-picker-hint">Page wash only — tables and cards stay light so text stays readable.</p>
     <div class="pg-theme-swatches" role="group" aria-label="Background colour">
         @foreach ($backgrounds as $background)
             <button

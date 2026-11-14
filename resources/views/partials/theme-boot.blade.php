@@ -81,12 +81,11 @@
                 var light = isLight(hex);
                 root.setProperty('--pg-bg', hex);
                 document.documentElement.classList.toggle('pg-theme-dark-bg', !light);
-                if (!light) {
-                    root.setProperty('--pg-text', '#e8eef3');
-                    root.setProperty('--pg-muted', '#9aa7b4');
-                    root.setProperty('--pg-card', mix(hex, '#ffffff', 0.08));
-                    root.setProperty('--pg-border', mix(hex, '#ffffff', 0.16));
-                }
+                // Keep content cards/tables on a solid light surface so text stays readable.
+                root.setProperty('--pg-card', '#ffffff');
+                root.setProperty('--pg-border', '#c2cad2');
+                root.removeProperty('--pg-text');
+                root.removeProperty('--pg-muted');
             }
 
             var presets = {
