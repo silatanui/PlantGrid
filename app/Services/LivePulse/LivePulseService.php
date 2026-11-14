@@ -702,24 +702,74 @@ class LivePulseService
      */
     private function contextualizeNote(string $template, SupportTicket $ticket, array $context = []): string
     {
-        $ticket->loadMissing(['asset.location', 'assignee']);
+        $ticket->loadMissing(['asset.location', 'assignee', 'requester', 'department']);
         $device = $ticket->asset
-            ? trim($ticket->asset->asset_tag.' ('.$ticket->asset->name.')')
-            : 'the reported endpoint (no asset linked yet)';
-        $location = $ticket->asset?->location?->name ?: 'the reported area';
+            ? trim($ticket->asset->asset_tag.' — '.$ticket->asset->name)
+            : 'no asset linked yet';
+        $deviceShort = $ticket->asset?->asset_tag ?: 'unlinked endpoint';
+        $location = $ticket->asset?->location?->name
+            ?: ($ticket->department?->name ?: 'the reported area');
+        $owner = $context['owner'] ?? ($ticket->assignee?->name ?? 'the on-duty technician');
+        $requester = $ticket->requester?->name ?? 'the requester';
+        $pack = $this->packTitle($ticket);
+        $related = $this->relatedCaseSummary($ticket);
+        $host = $ticket->asset?->name
+            ?: (Server::query()->inRandomOrder()->value('hostname') ?: 'PLT-AD01');
 
         $replacements = [
             '{case}' => $ticket->ticket_number,
             '{subject}' => $ticket->subject,
+            '{pack}' => $pack,
             '{device}' => $device,
+            '{device_tag}' => $deviceShort,
             '{location}' => $location,
-            '{owner}' => $context['owner'] ?? ($ticket->assignee?->name ?? 'the on-duty technician'),
+            '{owner}' => $owner,
+            '{requester}' => $requester,
+            '{related}' => $related,
+            '{host}' => $host,
             '{from}' => str_replace('_', ' ', (string) ($context['from'] ?? $ticket->status)),
             '{to}' => str_replace('_', ' ', (string) ($context['to'] ?? '')),
             '{priority}' => $ticket->priority,
         ];
 
         return strtr($template, $replacements);
+    }
+
+    private function packTitle(SupportTicket $ticket): string
+    {
+        $ownerBit = $ticket->assignee?->name
+            ?: ($ticket->requester?->name ?: 'ICT desk');
+        $ownerBit = explode(' ', trim($ownerBit))[0] ?: 'ICT';
+        $subject = strtolower(trim($ticket->subject));
+        $subject = \Illuminate\Support\Str::limit($subject, 42, '');
+
+        return $ownerBit.' pack · '.$subject;
+    }
+
+    private function relatedCaseSummary(SupportTicket $ticket): string
+    {
+        $others = SupportTicket::query()
+            ->whereKeyNot($ticket->id)
+            ->whereNotIn('status', ['closed'])
+            ->when($ticket->department_id, fn ($query) => $query->where('department_id', $ticket->department_id))
+            ->latest('updated_at')
+            ->limit(2)
+            ->pluck('ticket_number');
+
+        if ($others->isEmpty()) {
+            $others = SupportTicket::query()
+                ->whereKeyNot($ticket->id)
+                ->whereNotIn('status', ['closed'])
+                ->latest('updated_at')
+                ->limit(2)
+                ->pluck('ticket_number');
+        }
+
+        if ($others->isEmpty()) {
+            return 'none yet (standalone in this wave)';
+        }
+
+        return $others->implode(', ').' (related plant ICT work — keep outcomes separate)';
     }
 
     private function eventMessage(): ?string
@@ -775,7 +825,8 @@ class LivePulseService
             return $text;
         }
 
-        return $marker.' '.$text;
+        // Keep structured checklists readable; marker stays as a footer for reset scrubbing.
+        return rtrim($text)."\n\n— ".$marker;
     }
 
     private function maybePolish(string $text, string $kind): string

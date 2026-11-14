@@ -289,6 +289,19 @@ class LivePulseTest extends TestCase
             TicketComment::query()->where('visibility', 'internal')->where('comment', 'like', '%'.$marker.'%')->count()
         );
 
+        $sample = TicketComment::query()
+            ->where('visibility', 'internal')
+            ->where('comment', 'like', '%'.$marker.'%')
+            ->latest('id')
+            ->value('comment');
+
+        $this->assertNotNull($sample);
+        $this->assertStringContainsString('Internal', (string) $sample);
+        $this->assertTrue(
+            str_contains((string) $sample, '•') || str_contains((string) $sample, "\n"),
+            'Internal notes should be multi-line checklists, not a single short line.'
+        );
+
         Carbon::setTestNow();
     }
 }

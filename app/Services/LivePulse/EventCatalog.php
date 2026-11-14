@@ -199,14 +199,94 @@ class EventCatalog
     public static function internalNotes(): array
     {
         return [
-            "Case {case} — field update on {device} at {location}.\n\nChecked interface counters and physical seating on the floor patch. Link lights are stable after reseat, but error counters had already climbed during the morning wave. Left the old lead bagged for evidence and tagged the port on the switch faceplate.\n\nNext: watch one full production cycle before we decide on a permanent lead swap. Priority remains {priority}.",
-            "Case {case} ({subject}).\n\nSpoke with the area supervisor at {location}. They can absorb a short delay on one truck window but not a second miss. Confirmed {device} is still the affected endpoint and that neighbouring kit on the same cabinet is healthy.\n\nAction: keep this case owned by {owner}; escalate to ICT Manager only if parts are unconfirmed before the 14:00 handoff.",
-            "Diagnostic pass for {case} on {device}.\n\nPower rail at the junction measured steady. Application-layer behaviour still matches a freeze under high polling rather than a dead PSU. Captured the on-screen state and a short note of what the operator saw before the drop.\n\nPlan: stage a hot-spare from ICT cage bay 3 and cut over during the next approved lull. Do not full-line rollback without Engineering review.",
-            "PackLabel / print path check for {case}.\n\nService on the app host accepts jobs and the queue drains, but {device} never ACKs. Cleared two zombie Rendering jobs and correlated with memory pressure on the application server story.\n\nInternal: keep requester updates calm — spare printer path is prepared; original job IDs stay valid until cutover is confirmed.",
-            "Identity / access note for {case}.\n\nAccount state reviewed in the demo directory. One stale MFA method was still registered; temporary SMS offered for 48 hours while the primary method is cleaned. No evidence of a broader directory outage — warehouse sessions remain healthy.\n\n{owner} retains ownership until the requester confirms a clean login from {location}.",
-            "Network path note for {case} / {device} at {location}.\n\nCRC growth stopped after reseating the LC patch in the server room side. Old lead retained. Will leave a 24-hour monitoring window on the uplink before we call the physical layer closed.\n\nIf flaps return during the afternoon intake rush, force the handheld / edge kit to 2.4 GHz for a controlled walk-test only — do not move the whole fleet yet.",
-            "Desktop / share remediation for {case}.\n\nAdded the plant search suffix on the QA desktop and remapped the templates share. Certificate macros open without the trusted-location block after the Office update preference restore.\n\nAsk the requester to reopen the workbook once and reply on this case. Keep {device} linked so Assets history stays accurate.",
-            "Shift handoff — {case} ({subject}).\n\nWork so far is documented against {device}. Evening desk should take ownership if free; do not resolve until the next production wave proves the fix. Pending items and parts are called out in prior notes.\n\nMarker kept for Live Pulse audit scrub.",
+            <<<'TXT'
+[{pack}]
+Internal field checklist — {case}
+
+• Symptom: "{subject}" still reported against {device} at {location}
+• Checks done: interface counters + physical reseat on the floor patch; neighbour ports healthy
+• Evidence: old lead bagged; faceplate port tagged; counters noted before/after reseat
+• Interconnections documented: {related}
+• Priority: {priority} — watch one full production cycle before permanent lead swap
+• Owner: {owner} — escalate to ICT Manager only if flaps return this shift
+TXT,
+            <<<'TXT'
+[{pack}]
+Internal impact checklist — {case}
+
+• Area contact at {location}: can absorb one truck delay, not two
+• Confirmed endpoint: {device} (neighbouring cabinet kit OK)
+• Workaround: none lasting — keep truck window risk visible to Packaging lead
+• Interconnections documented: {related}
+• Next: {owner} posts requester-visible ETA before next dispatch cut-off
+• Do not resolve until after the next production wave proves the link
+TXT,
+            <<<'TXT'
+[{pack}]
+Internal diagnostic checklist — {case}
+
+• Root cause lean: application-layer freeze under high polling (not dead PSU)
+• Power rail at junction: steady; on-screen state captured before last drop
+• Device in scope: {device_tag} / {device} @ {location}
+• Evidence: operator timeline + photo of freeze state filed on this case
+• Interconnections documented: {related}
+• Plan: stage hot-spare from ICT cage bay 3; cut over in approved lull
+• Hold: no full-line rollback without Engineering review
+TXT,
+            <<<'TXT'
+[{pack}]
+Internal print-path checklist — {case}
+
+• Root cause lean: jobs leave PackLabel queue but {device} never ACKs
+• Host side: cleared zombie Rendering jobs; memory pressure correlated on app server story
+• Evidence: queue drain timestamps + missing ACK from {device_tag}
+• Interconnections documented: {related}
+• Spare path: prepared; original job IDs stay valid until cutover
+• Owner: {owner} — keep requester updates calm; no resolve until ACK proven under load
+TXT,
+            <<<'TXT'
+[{pack}]
+Internal identity checklist — {case}
+
+• Root cause lean: stale MFA / account state — not a plant-wide directory outage
+• Host / directory touchpoint: {host}
+• Evidence: warehouse sessions healthy; one stale MFA method still registered
+• Temporary control: SMS offered 48h while primary method cleaned
+• Interconnections documented: {related}
+• Await {requester} clean login from {location} → then {owner} may progress/resolve
+TXT,
+            <<<'TXT'
+[{pack}]
+Internal network checklist — {case}
+
+• Root cause lean: physical / optics seating on path to {device}
+• Fix so far: LC patch reseated server-room side; CRC growth stopped
+• Evidence: old lead retained; uplink monitoring window started
+• Interconnections documented: {related}
+• If flaps return at intake rush: 2.4 GHz walk-test on edge kit only (not whole fleet)
+• Owner: {owner} — 24h watch before calling physical layer closed
+TXT,
+            <<<'TXT'
+[{pack}]
+Internal desktop/share checklist — {case}
+
+• Root cause lean: search suffix / trusted-location drift after Office update
+• Fix so far: plant suffix added; templates share remapped on linked desktop
+• Device: {device} @ {location}
+• Evidence: certificate macros open without block prompt on retest
+• Interconnections documented: {related}
+• Await {requester} reopen-and-confirm → keep asset link for Assets history
+TXT,
+            <<<'TXT'
+[{pack}]
+Internal shift-handoff checklist — {case}
+
+• Status narrative: work documented against {device}; pending items called out above
+• Do not resolve overnight — next production wave must prove the fix
+• Interconnections documented: {related}
+• Evening desk: take ownership if free; ping {owner} only for parts/vendor blockers
+• Requester contact: {requester} — keep visible notes factual, internals detailed
+TXT,
         ];
     }
 
@@ -235,8 +315,29 @@ class EventCatalog
     public static function assignNotes(): array
     {
         return [
-            "Assigning {case} ({subject}) to {owner}.\n\nWhy now: the case is unowned in the ICT queue and matches this technician's plant area / skill. Linked device is {device} at {location}.\n\nExpected first actions: confirm the symptom on the floor, capture interface or device state, and post the next internal update before changing status again.",
-            "Ownership for {case} → {owner}.\n\nRationale: priority is {priority} and the requester needs a named owner before the next production window. {device} stays linked so Asset and case history stay aligned.\n\n{owner} should either start active work (in progress) or park with a clear pending reason — do not leave the case silent.",
+            <<<'TXT'
+[{pack}]
+Internal assign checklist — {case}
+
+• Stage move: unowned / new → assigned
+• Owner now: {owner}
+• Why: priority {priority}; requester ({requester}) needs a named owner before the next production window
+• Linked device: {device} @ {location}
+• First actions: confirm symptom on the floor, capture device/interface state, post next internal update before another status change
+• Interconnections documented: {related}
+• Rule: either start in progress or park pending with a dated reason — do not leave silent
+TXT,
+            <<<'TXT'
+[{pack}]
+Internal ownership checklist — {case}
+
+• Assigning "{subject}" to {owner}
+• Scope: {device_tag} / {device} remains linked for Assets + case history
+• Location: {location}
+• Interconnections documented: {related}
+• Expected within this shift: diagnostic dump or pending dependency note
+• Escalation: ICT Manager only if parts/vendor block past 14:00 handoff
+TXT,
         ];
     }
 
@@ -252,33 +353,160 @@ class EventCatalog
         $map = [
             'new>assigned' => self::assignNotes(),
             'assigned>in_progress' => [
-                "Moving {case} from assigned → in progress.\n\nWhy: {owner} has confirmed ownership and completed the first diagnostic pass on {device} at {location}. Symptom for \"{subject}\" is reproducible enough to work actively now.\n\nEvidence / next checks: counters or device state captured; spare path identified if hardware fails mid-shift. Requester-visible update will follow if downtime extends past the current wave.",
-                "Status advance {case}: assigned → in progress.\n\nWe are no longer waiting in the queue — hands-on work has started against {device}. Priority remains {priority}. If parts or a recycle window are required, we will move to pending with a dated next check rather than leaving the status ambiguous.",
+                <<<'TXT'
+[{pack}]
+Internal stage checklist — assigned → in progress
+
+• Case: {case} — "{subject}"
+• Why advancing: first diagnostic pass complete; symptom reproducible enough for active work
+• Device: {device} @ {location}
+• Evidence: counters / device state captured; spare path identified if hardware fails mid-shift
+• Interconnections documented: {related}
+• Owner: {owner} — requester-visible update if downtime extends past current wave
+• Next: finish remediation under load, or move pending with a dated blocker (parts / window / confirmation)
+TXT,
+                <<<'TXT'
+[{pack}]
+Internal stage checklist — starting active work
+
+• Case: {case}
+• Stage: assigned → in progress
+• Hands-on now against {device_tag} ({device})
+• Priority: {priority}
+• Interconnections documented: {related}
+• Guardrail: if parts or recycle window required, park pending — do not leave status ambiguous
+• Owner accountable: {owner}
+TXT,
             ],
             'assigned>pending' => [
-                "Parking {case} assigned → pending.\n\nWhy: work cannot finish without an external dependency (parts, requester confirmation, or an approved change window) related to {device} at {location}.\n\nClear next step: {owner} will re-check after the dependency clears and either resume in progress or resolve once verified. Do not treat pending as abandoned.",
+                <<<'TXT'
+[{pack}]
+Internal stage checklist — assigned → pending
+
+• Case: {case} — "{subject}"
+• Why parking: external dependency (parts, requester confirmation, or approved change window)
+• Device held: {device} @ {location}
+• Interconnections documented: {related}
+• Clear next step: {owner} re-checks when dependency clears → resume in progress or resolve after verify
+• Do not treat pending as abandoned
+TXT,
             ],
             'new>in_progress' => [
-                "Claiming and starting {case} (new → in progress).\n\n{owner} takes ownership and begins active diagnosis on {device} for \"{subject}\". First checks focus on power, link, and application ACK behaviour at {location}.",
+                <<<'TXT'
+[{pack}]
+Internal stage checklist — new → in progress
+
+• Case: {case} claimed by {owner}
+• Why: skipping idle queue time; floor impact warrants immediate diagnosis
+• First checks: power, link, application ACK on {device} @ {location}
+• Interconnections documented: {related}
+• Evidence to capture this visit: photos / counters / exact error text from {requester}
+TXT,
             ],
             'in_progress>pending' => [
-                "Moving {case} in progress → pending.\n\nWhy we are pausing active work: waiting on vendor parts, a controlled recycle window, or requester confirmation before touching {device} again. Floor impact and workaround (if any) are understood.\n\nNext check is owned by {owner}; case stays open until the dependency is cleared and service is re-validated.",
-                "Status {case}: in progress → pending.\n\nActive troubleshooting on {device} is paused with a documented reason. Monitoring continues where relevant. We will not resolve until the pending item is closed out and the production wave looks clean.",
+                <<<'TXT'
+[{pack}]
+Internal stage checklist — in progress → pending
+
+• Case: {case} — "{subject}"
+• Why pause: waiting on vendor parts, controlled recycle window, or requester confirmation before touching {device} again
+• Floor impact / workaround: understood and noted for Packaging / area lead
+• Evidence so far: filed on prior notes; device {device_tag} still linked
+• Interconnections documented: {related}
+• Next check owner: {owner} — resolve only after dependency clears and production wave looks clean
+TXT,
+                <<<'TXT'
+[{pack}]
+Internal hold checklist — pending dependency
+
+• Case: {case}
+• Stage: in progress → pending
+• Blocker tied to {device} @ {location}
+• Monitoring: continues where relevant
+• Interconnections documented: {related}
+• Resume rule: pending item closed → back to in progress → verify → then resolve
+TXT,
             ],
             'pending>in_progress' => [
-                "Resuming {case} pending → in progress.\n\nThe blocking dependency is cleared (parts / window / confirmation). {owner} is back on {device} at {location} to finish \"{subject}\" and verify under load before any resolve.",
-                "Re-opening active work on {case}.\n\nPending hold lifted. Continuing remediation on {device}; will post resolve notes only after a clean verification pass.",
+                <<<'TXT'
+[{pack}]
+Internal stage checklist — pending → in progress
+
+• Case: {case}
+• Why resuming: blocking dependency cleared (parts / window / confirmation)
+• Back on: {device} @ {location} for "{subject}"
+• Interconnections documented: {related}
+• Owner: {owner} — verify under load before any resolve
+TXT,
+                <<<'TXT'
+[{pack}]
+Internal resume checklist — {case}
+
+• Stage: pending → in progress
+• Hold lifted; continuing remediation on {device_tag}
+• Interconnections documented: {related}
+• Resolve gate: clean verification pass only — no silent close
+TXT,
             ],
             'in_progress>resolved' => [
-                "Resolving {case} (in progress → resolved).\n\nWhy it is safe to resolve now: remediation on {device} is complete, verification under the current production conditions looks clean, and there is no outstanding dependency for \"{subject}\".\n\nClose-out: leave monitoring notes if a short watch window is still useful; requester-facing resolution text summarises the fix. Asset link retained for history.",
-                "Case {case} ready to resolve.\n\nWork finished on {device} at {location}. Root cause addressed in the demonstration environment; no further ICT action required unless the symptom returns. {owner} confirms the queue item can leave active work.",
+                <<<'TXT'
+[{pack}]
+Internal wrap checklist — resolve
+
+• Case: {case} — "{subject}"
+• Root cause: addressed on {device} @ {location} in the demonstration environment
+• Fix: remediation complete; verified under current production conditions
+• Evidence: validation pass + prior diagnostic notes on this case
+• Interconnections documented: {related}
+• Await short monitoring only if useful → then close; asset link retained for history
+• Owner sign-off: {owner} — nothing else outstanding
+TXT,
+                <<<'TXT'
+[{pack}]
+Internal wrap checklist — ready to leave active work
+
+• Case: {case}
+• Stage: in progress → resolved
+• Device: {device_tag} / {device}
+• Fix verified; no outstanding dependency for "{subject}"
+• Interconnections documented: {related}
+• Requester path: resolution text summarises fix; reopen only if symptom returns
+TXT,
             ],
             'pending>resolved' => [
-                "Resolving {case} (pending → resolved).\n\nThe pending dependency cleared and the final check on {device} succeeded. Nothing else remains for \"{subject}\" — resolving rather than sending the case back through idle assigned/new states.",
+                <<<'TXT'
+[{pack}]
+Internal wrap checklist — pending cleared → resolve
+
+• Case: {case}
+• Root cause / blocker: cleared; final check on {device} succeeded
+• Fix: complete for "{subject}" — not bouncing back through idle assigned/new
+• Evidence: dependency clearance + verification note
+• Interconnections documented: {related}
+• Owner: {owner} — queue item can leave open work
+TXT,
             ],
             'resolved>closed' => [
-                "Closing {case} (resolved → closed).\n\nRequester confirmation / monitoring window complete for {device}. No reopen signals. Archiving the case after resolve verification in the demonstration environment.",
-                "Final close for {case}.\n\nResolved work on \"{subject}\" stayed stable. Closing to keep the open queue honest; history and device link remain available for audit.",
+                <<<'TXT'
+[{pack}]
+Internal close checklist — resolved → closed
+
+• Case: {case}
+• Why close now: requester confirmation / monitoring window complete for {device}
+• Evidence: no reopen signals after resolve
+• Interconnections documented: {related}
+• Archive: history + device link remain for audit
+TXT,
+                <<<'TXT'
+[{pack}]
+Internal close checklist — {case}
+
+• Stage: resolved → closed
+• Subject: "{subject}" stayed stable post-fix
+• Device retained on case: {device}
+• Interconnections documented: {related}
+• Closing to keep the open queue honest
+TXT,
             ],
         ];
 
@@ -287,7 +515,16 @@ class EventCatalog
         }
 
         return [
-            "Advancing {case} from {from} → {to}.\n\nReason: continuing the ICT workflow for \"{subject}\" on {device} at {location}. {owner} remains accountable for the next verification step. This note records why the stage changed so the Activity and Notes panels stay aligned.",
+            <<<'TXT'
+[{pack}]
+Internal stage checklist — {from} → {to}
+
+• Case: {case} — "{subject}"
+• Device: {device} @ {location}
+• Why: continuing ICT workflow; {owner} accountable for next verification
+• Interconnections documented: {related}
+• Notes + Activity must stay aligned on this stage change
+TXT,
         ];
     }
 
@@ -405,21 +642,23 @@ class EventCatalog
     }
 
     /**
+     * Requester-facing / resolution_notes field (still multi-line, but shorter than internals).
+     *
      * @return list<string>
      */
     public static function resolveNotes(): array
     {
         return [
-            "Resolved {case}: root cause for \"{subject}\" confirmed and restored in the demonstration environment on {device} at {location}. Monitoring for recurrence this shift; no further ICT action unless the symptom returns.",
-            "Resolved {case}: replaced or reseated the failing component on {device}. Service verified with the area contact. Asset history retained for audit.",
-            "Resolved {case}: configuration corrected and validated for {device}. Closing path opened after acknowledgement in the demo thread.",
-            "Resolved {case}: hot-spare cutover completed; PackLabel / device jobs ACK again on the replacement path. Original unit tagged for vendor collection.",
-            "Resolved {case}: trusted location / preference restored. Workbooks and macros open cleanly on the linked desktop. Confirm once more if anything regresses after the next Office patch cycle.",
-            "Resolved {case}: patch lead replaced and CRC growth stopped on the path to {device}. Short monitoring window complete with no further flaps.",
-            "Resolved {case}: worker concurrency capped and memory pressure stayed under the warning line through the afternoon wave affecting this service.",
-            "Resolved {case}: share path remapped after DNS suffix fix. Templates open normally from the lab desktop linked to this case.",
-            "Resolved {case}: shared mailbox permissions rebuilt and Outlook profiles re-added. Mail flow restored in the simulation.",
-            "Resolved {case}: scanner separation pad cleaned and thickness adjusted on {device}. Finance confirmed clean single-sheet feeds on flat stock.",
+            "Resolved {case} — \"{subject}\".\n\nRoot cause confirmed and restored on {device} at {location}. Monitoring for recurrence this shift; reopen only if the symptom returns.",
+            "Resolved {case}.\n\nReplaced or reseated the failing component on {device}. Service verified with the area contact. Asset history retained.",
+            "Resolved {case}.\n\nConfiguration corrected and validated for {device}. Closing path opened after acknowledgement in the demo thread.",
+            "Resolved {case}.\n\nHot-spare cutover completed; jobs ACK again on the replacement path. Original unit tagged for vendor collection.",
+            "Resolved {case}.\n\nTrusted location / preference restored on the linked desktop. Macros and workbooks open cleanly.",
+            "Resolved {case}.\n\nPatch lead replaced; CRC growth stopped toward {device}. Short monitoring window complete with no further flaps.",
+            "Resolved {case}.\n\nWorker concurrency capped; memory pressure stayed under warning through the afternoon wave.",
+            "Resolved {case}.\n\nShare path remapped after DNS suffix fix. Templates open normally from the lab desktop on this case.",
+            "Resolved {case}.\n\nShared mailbox permissions rebuilt; Outlook profiles re-added. Mail flow restored in the simulation.",
+            "Resolved {case}.\n\nScanner separation pad cleaned and adjusted on {device}. Finance confirmed clean single-sheet feeds on flat stock.",
         ];
     }
 }
