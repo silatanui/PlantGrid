@@ -20,6 +20,7 @@ import { initPlantMap } from './plant-map';
 import { initNavBack } from './nav-back';
 import { initPartnersSummary } from './partners-summary';
 import { initCaseWorkspace } from './case-workspace';
+import { initAuditLog } from './audit-log';
 
 Chart.register(...registerables);
 Chart.defaults.font.family = 'system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
@@ -51,6 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
         initPlantMap();
         initNavBack();
         initPartnersSummary();
+        initAuditLog(refreshIcons);
         refreshRightRailChrome();
         shellLayout.applyRailWidths();
         bootCharts();
