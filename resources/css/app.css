@@ -36,7 +36,7 @@
     --pg-globalbar: 48px;
     --pg-navrow: 40px;
     --pg-topbar: calc(var(--pg-globalbar) + var(--pg-navrow));
-    --pg-footer: 44px;
+    --pg-footer: 28px;
     --pg-left: 232px;
     --pg-right: 288px;
     --pg-shadow: none;
@@ -4796,10 +4796,10 @@ a.pg-dash-kpi:hover {
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 6px 18px;
+    gap: 2px 14px;
     width: 100%;
     min-height: var(--pg-footer);
-    padding: 8px 16px;
+    padding: 3px 14px;
     box-sizing: border-box;
 }
 .pg-app-footer-links {
@@ -4810,11 +4810,11 @@ a.pg-dash-kpi:hover {
 }
 .pg-app-footer-links a {
     position: relative;
-    padding: 0 10px;
+    padding: 0 8px;
     color: var(--pg-navy);
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 400;
-    line-height: 1.2;
+    line-height: 1.15;
     text-decoration: none;
 }
 .pg-app-footer-links a:first-child {
@@ -4826,7 +4826,7 @@ a.pg-dash-kpi:hover {
     top: 50%;
     right: 0;
     width: 1px;
-    height: 11px;
+    height: 9px;
     background: #c2cad2;
     transform: translateY(-50%);
 }
@@ -4837,9 +4837,9 @@ a.pg-dash-kpi:hover {
 .pg-app-footer-copy {
     margin: 0;
     color: #5a6773;
-    font-size: 11px;
-    line-height: 1.35;
-    max-width: 72ch;
+    font-size: 10px;
+    line-height: 1.2;
+    max-width: min(92ch, 70%);
 }
 
 .pg-auth-shell {
@@ -6038,13 +6038,13 @@ body.pg-home {
 
 @media (max-width: 760px) {
     :root {
-        --pg-footer: 68px;
+        --pg-footer: 40px;
     }
     .pg-app-footer-bar {
         align-items: flex-start;
         flex-direction: column;
-        gap: 4px;
-        padding: 8px 12px;
+        gap: 2px;
+        padding: 4px 10px;
     }
     .pg-app-footer-copy {
         max-width: none;
