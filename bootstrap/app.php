@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsurePermission;
 use App\Http\Middleware\EnsureUserIsActive;
+use App\Http\Middleware\RefreshDemoTimeline;
 use App\Http\Middleware\TrackLastSeen;
 use App\Http\Middleware\TrackNavigationHistory;
 use App\Http\Middleware\TrackWorkspaceTabs;
@@ -18,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->appendToGroup('web', [
             EnsureUserIsActive::class,
+            RefreshDemoTimeline::class,
             TrackLastSeen::class,
             TrackWorkspaceTabs::class,
             TrackNavigationHistory::class,
