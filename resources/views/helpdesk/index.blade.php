@@ -48,6 +48,7 @@
                 <select class="form-select" id="status" name="status">
                     <option value="">Any</option>
                     <option value="open" @selected(($filters['status'] ?? '') === 'open')>Open (active)</option>
+                    <option value="overdue" @selected(($filters['status'] ?? '') === 'overdue')>Overdue</option>
                     @foreach (['new', 'assigned', 'in_progress', 'pending', 'resolved', 'closed'] as $status)
                         <option value="{{ $status }}" @selected(($filters['status'] ?? '') === $status)>{{ \App\Support\Labels::status($status) }}</option>
                     @endforeach

@@ -35,6 +35,22 @@ class SearchPages
                 'permission' => $ticketPermission,
             ],
             [
+                'title' => 'My overdue cases',
+                'summary' => 'Your open cases past their due or SLA deadline.',
+                'keywords' => [
+                    'my overdue cases',
+                    'my overdue case',
+                    'overdue cases',
+                    'overdue tickets',
+                    'past due cases',
+                    'sla breached',
+                    'breached cases',
+                    'late cases',
+                ],
+                'url' => route('helpdesk.index', ['scope' => 'mine', 'status' => 'overdue']),
+                'permission' => $ticketPermission,
+            ],
+            [
                 'title' => 'My closed cases',
                 'summary' => 'Your closed cases (requested, owned, or partnered).',
                 'keywords' => ['my closed cases', 'my closed tickets', 'closed cases'],
@@ -61,6 +77,13 @@ class SearchPages
                 'keywords' => ['my in progress cases', 'my in-progress cases', 'in progress cases', 'working cases'],
                 'url' => route('helpdesk.index', ['scope' => 'mine', 'status' => 'in_progress']),
                 'permission' => $ticketPermission,
+            ],
+            [
+                'title' => 'My assigned overdue cases',
+                'summary' => 'Open cases you own that are past due.',
+                'keywords' => ['my assigned overdue cases', 'assigned overdue', 'overdue assigned'],
+                'url' => route('helpdesk.index', ['scope' => 'assigned', 'status' => 'overdue']),
+                'permission' => 'tickets.update',
             ],
             [
                 'title' => 'Assigned to me',
@@ -159,6 +182,11 @@ class SearchPages
             return null;
         }
 
+        $mentionsCases = str_contains($needle, 'case')
+            || str_contains($needle, 'ticket')
+            || str_contains($needle, 'request')
+            || str_contains($needle, 'queue');
+
         $isMine = str_contains($needle, 'my case')
             || str_contains($needle, 'my ticket')
             || str_contains($needle, 'cases i opened')
@@ -167,15 +195,23 @@ class SearchPages
             || str_contains($needle, 'my closed')
             || str_contains($needle, 'my resolved')
             || str_contains($needle, 'my pending')
+            || str_contains($needle, 'my overdue')
             || str_contains($needle, 'my in progress')
-            || str_contains($needle, 'my in-progress');
+            || str_contains($needle, 'my in-progress')
+            || (str_contains($needle, 'my ') && $mentionsCases);
+
+        $isOverdue = str_contains($needle, 'overdue')
+            || str_contains($needle, 'past due')
+            || str_contains($needle, 'pastdue')
+            || str_contains($needle, 'sla breach')
+            || str_contains($needle, 'breached');
 
         $isAssigned = str_contains($needle, 'assigned to me')
             || str_contains($needle, 'my assigned')
             || str_contains($needle, 'owned cases')
-            || (str_contains($needle, 'assigned') && str_contains($needle, 'case'));
+            || (str_contains($needle, 'assigned') && ($mentionsCases || $isOverdue));
 
-        if (! $isMine && ! $isAssigned) {
+        if (! $isMine && ! $isAssigned && ! ($isOverdue && $mentionsCases)) {
             return null;
         }
 
@@ -183,14 +219,17 @@ class SearchPages
         if ($isAssigned && (str_contains($needle, 'assigned') || str_contains($needle, 'owned'))) {
             $scope = 'assigned';
         }
-        if ($isMine && ! str_contains($needle, 'assigned') && ! str_contains($needle, 'owned')) {
+        if (($isMine || $isOverdue) && ! str_contains($needle, 'assigned') && ! str_contains($needle, 'owned')) {
             $scope = 'mine';
         }
 
         $status = null;
         $label = $scope === 'assigned' ? 'Assigned to me' : 'My cases';
 
-        if (str_contains($needle, 'open') || str_contains($needle, 'active')) {
+        if ($isOverdue) {
+            $status = 'overdue';
+            $label = $scope === 'assigned' ? 'My assigned overdue cases' : 'My overdue cases';
+        } elseif (str_contains($needle, 'open') || str_contains($needle, 'active')) {
             $status = 'open';
             $label = $scope === 'assigned' ? 'My assigned open cases' : 'My open cases';
         } elseif (str_contains($needle, 'closed') || str_contains($needle, 'close')) {
@@ -205,6 +244,9 @@ class SearchPages
         } elseif (str_contains($needle, 'in progress') || str_contains($needle, 'in-progress')) {
             $status = 'in_progress';
             $label = $scope === 'assigned' ? 'My assigned in-progress cases' : 'My in-progress cases';
+        } elseif (str_contains($needle, 'new')) {
+            $status = 'new';
+            $label = $scope === 'assigned' ? 'My assigned new cases' : 'My new cases';
         }
 
         return [
@@ -234,6 +276,20 @@ class SearchPages
             return $query->whereIn('status', self::OPEN_STATUSES);
         }
 
+        if ($status === 'overdue') {
+            return $query
+                ->whereIn('status', self::OPEN_STATUSES)
+                ->where(function ($inner) {
+                    $inner->whereNotNull('sla_due_at')->where('sla_due_at', '<', now())
+                        ->orWhere(function ($due) {
+                            $due->whereNull('sla_due_at')
+                                ->whereNotNull('due_at')
+                                ->where('due_at', '<', now());
+                        })
+                        ->orWhereNotNull('sla_breached_at');
+                });
+        }
+
         return $query->where('status', $status);
     }
 
@@ -241,6 +297,7 @@ class SearchPages
     {
         return match ($status) {
             'open' => 'Open',
+            'overdue' => 'Overdue',
             'closed' => 'Closed',
             'resolved' => 'Resolved',
             'pending' => 'Pending',

@@ -57,14 +57,17 @@ class HelpdeskController extends Controller
 
         $pageTitle = match (true) {
             $scope === 'mine' && $statusFilter === 'open' => 'My open cases',
+            $scope === 'mine' && $statusFilter === 'overdue' => 'My overdue cases',
             $scope === 'mine' && $statusFilter === 'closed' => 'My closed cases',
             $scope === 'mine' && $statusFilter === 'resolved' => 'My resolved cases',
             $scope === 'mine' && $statusFilter === 'pending' => 'My pending cases',
             $scope === 'mine' && $statusFilter === 'in_progress' => 'My in-progress cases',
             $scope === 'mine' => 'My cases',
             $scope === 'assigned' && $statusFilter === 'open' => 'Assigned open cases',
+            $scope === 'assigned' && $statusFilter === 'overdue' => 'Assigned overdue cases',
             $scope === 'assigned' => 'Assigned to me',
             $statusFilter === 'new' && $request->boolean('unassigned') => 'New cases',
+            $statusFilter === 'overdue' => 'Overdue cases',
             $statusFilter === 'open' => 'Open case queue',
             default => $employeeView ? 'My cases' : 'Cases',
         };

@@ -230,7 +230,7 @@ class SearchController extends Controller
                 if (($caseIntent['scope'] ?? 'mine') === 'assigned') {
                     $ticketsQuery->where('assigned_to', $user->id);
                 } else {
-                    $ticketsQuery->where('requester_id', $user->id);
+                    $ticketsQuery->involving($user);
                 }
                 SearchPages::applyStatusFilter($ticketsQuery, $caseIntent['status'] ?? null);
                 $tickets = $ticketsQuery->latest('reported_at')->limit($limit)->get();
