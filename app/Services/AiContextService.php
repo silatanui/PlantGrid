@@ -89,9 +89,9 @@ class AiContextService
             'Case counts by status: '.$this->formatCounts($byStatus),
             'Open cases: '.$open->count().' (high/critical: '.$openCritical->count().')',
             'Resolved+closed: '.$done->count(),
-            'All cases solved?: '.($open->isEmpty() ? 'YES — no open cases in this viewer scope' : 'NO — '.$open->count().' still open'),
+            'All cases solved?: '.($open->isEmpty() ? 'YES - no open cases in this viewer scope' : 'NO - '.$open->count().' still open'),
             'Assets total: '.$assets->count().' · by status: '.$this->formatCounts($assetStatusCounts),
-            'All assets active?: '.($inactiveAssets->isEmpty() ? 'YES' : 'NO — '.$inactiveAssets->count().' not active'),
+            'All assets active?: '.($inactiveAssets->isEmpty() ? 'YES' : 'NO - '.$inactiveAssets->count().' not active'),
             'Network devices total: '.$devices->count().' · by status: '.$this->formatCounts($deviceStatusCounts),
             'All network devices active?: '.($devices->where('status', '!=', 'active')->isEmpty() ? 'YES' : 'NO'),
             'Open monitoring alerts: '.$alerts->count(),
@@ -174,7 +174,7 @@ class AiContextService
             '',
             'Module paths: Dashboard, Cases (Helpdesk), Documentation (/docs), Assets, Network, Servers, Monitoring, Maintenance, Production, Security, Backups, Reports, Branding (admin), Admin.',
             '',
-            'In-app documentation guides (Documentation module — these ARE the product docs; never say there are no docs):',
+            'In-app documentation guides (Documentation module - these ARE the product docs; never say there are no docs):',
             ...DocumentationCatalog::collection()->map(fn (array $doc) => sprintf(
                 '- %s · %s · audience: %s · /docs/%s',
                 $doc['title'],
@@ -231,7 +231,7 @@ class AiContextService
 
         foreach ($matches as $doc) {
             $lines[] = sprintf(
-                '- Guide: %s — %s (/docs/%s)',
+                '- Guide: %s - %s (/docs/%s)',
                 $doc['title'],
                 $doc['summary'],
                 $doc['slug']

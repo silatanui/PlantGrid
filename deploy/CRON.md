@@ -10,16 +10,16 @@ Laravel’s scheduler must run every minute so Live Pulse, SLA checks, and metri
 
 In cPanel → **Cron Jobs**, add that command with timing **Once Per Minute**.
 
-Paste only the command body into the cPanel “Command” field — do **not** paste the five asterisks into SSH Terminal.
+Paste only the command body into the cPanel “Command” field - do **not** paste the five asterisks into SSH Terminal.
 
 ## What the scheduler runs
 
-- `plantgrid:collect-metrics` — every 5 minutes  
-- `plantgrid:check-sla` — every 5 minutes (marks breached cases)  
-- `plantgrid:live-pulse` — every minute (autonomous demo desk through 31 Dec 2026; often idle 3–6 minutes between bursts)  
-- `plantgrid:monitoring-pulse` — every minute (rare simulated outages ~weekly; short red-alert demo after each deploy trigger)  
-- `plantgrid:refresh-demo-timeline` — daily (keeps overdue gaps frozen)  
-- `plantgrid:prune-metrics` — daily  
+- `plantgrid:collect-metrics` - every 5 minutes  
+- `plantgrid:check-sla` - every 5 minutes (marks breached cases)  
+- `plantgrid:live-pulse` - every minute (autonomous demo desk through 31 Dec 2026; often idle 3-6 minutes between bursts)  
+- `plantgrid:monitoring-pulse` - every minute (rare simulated outages ~weekly; short red-alert demo after each deploy trigger)  
+- `plantgrid:refresh-demo-timeline` - daily (keeps overdue gaps frozen)  
+- `plantgrid:prune-metrics` - daily  
 
 ## Live Pulse
 

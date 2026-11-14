@@ -31,18 +31,18 @@
                 <dt>Status</dt>
                 <dd>{!! \App\Support\Labels::badge($system->status) !!}</dd>
                 <dt>Department</dt>
-                <dd>{{ $system->department->name ?? '—' }}</dd>
+                <dd>{{ $system->department->name ?? '-' }}</dd>
                 <dt>Business owner</dt>
                 <dd>
                     @if ($system->owner)
                         <a href="{{ route('people.show', $system->owner) }}">{{ $system->owner->name }}</a>
                         <div class="text-muted small">{{ $system->owner->job_title ?: $system->owner->email }}</div>
                     @else
-                        —
+                        -
                     @endif
                 </dd>
                 <dt>Vendor</dt>
-                <dd>{{ $system->vendor->name ?? '—' }}</dd>
+                <dd>{{ $system->vendor->name ?? '-' }}</dd>
                 <dt>Equipment</dt>
                 <dd>{{ $system->equipment->count() }} linked device{{ $system->equipment->count() === 1 ? '' : 's' }}</dd>
                 <dt>Open incidents</dt>
@@ -82,14 +82,14 @@
                                         <div class="text-muted small">Owner</div>
                                     </div>
                                 @elseif (! $case->requester)
-                                    —
+                                    -
                                 @endif
                             </td>
                             <td>
                                 @if ($case->asset)
                                     <a class="pg-mono" href="{{ route('assets.show', $case->asset) }}">{{ $case->asset->asset_tag }}</a>
                                 @else
-                                    —
+                                    -
                                 @endif
                             </td>
                             <td>
@@ -138,10 +138,10 @@
                                 <a class="pg-mono" href="{{ route('assets.show', $item->asset) }}">{{ $item->asset->asset_tag }}</a>
                                 <div class="text-muted small">{{ $item->asset->name }}</div>
                             @else
-                                —
+                                -
                             @endif
                         </td>
-                        <td>{{ $item->location->name ?? '—' }}</td>
+                        <td>{{ $item->location->name ?? '-' }}</td>
                         <td>{!! \App\Support\Labels::badge($item->status) !!}</td>
                     </tr>
                 @empty
@@ -186,7 +186,7 @@
                                     </div>
                                 @endif
                             @else
-                                —
+                                -
                             @endif
                         </td>
                         <td>{!! \App\Support\Labels::badge($incident->severity) !!}</td>
@@ -199,7 +199,7 @@
                                     </div>
                                 @endif
                             @else
-                                —
+                                -
                             @endif
                         </td>
                         <td>

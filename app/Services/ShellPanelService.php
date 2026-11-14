@@ -40,7 +40,7 @@ class ShellPanelService
 
     private function shortcuts(User $user): array
     {
-        // Keep shortcuts to actions only — module destinations live under Modules.
+        // Keep shortcuts to actions only - module destinations live under Modules.
         $items = [];
 
         if ($user->hasPermission('tickets.create')) {

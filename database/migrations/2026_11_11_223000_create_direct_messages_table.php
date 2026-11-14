@@ -54,7 +54,7 @@ return new class extends Migration
                 'sender_id' => $grace,
                 'recipient_id' => $faith,
                 'subject' => 'QA printer jam follow-up',
-                'body' => 'Hi Faith — the QA lab still sees intermittent jams on PG-PRT-0401 after clearing the tray. Can you advise when you are free?',
+                'body' => 'Hi Faith - the QA lab still sees intermittent jams on PG-PRT-0401 after clearing the tray. Can you advise when you are free?',
                 'read_at' => null,
                 'created_at' => now()->subHour(),
                 'updated_at' => now()->subHour(),

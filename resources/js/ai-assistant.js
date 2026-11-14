@@ -599,7 +599,7 @@ export function initAiAssistant(refreshIcons) {
                 </div>
             `;
             const assistantContent = payload.proposal
-                ? `${payload.reply}\n\n[Proposed: ${payload.proposal.title} — ${payload.proposal.summary}]`
+                ? `${payload.reply}\n\n[Proposed: ${payload.proposal.title} - ${payload.proposal.summary}]`
                 : payload.reply;
             messages.push({
                 role: 'assistant',

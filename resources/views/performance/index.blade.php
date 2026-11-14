@@ -35,7 +35,7 @@
             <h1 class="pg-page-title">Worker performance</h1>
             <p class="pg-page-lead">
                 Throughput, workload, and SLA quality for ICT staff
-                · {{ $board['from']->format('d M Y') }} – {{ $board['to']->format('d M Y') }}
+                · {{ $board['from']->format('d M Y') }} - {{ $board['to']->format('d M Y') }}
                 · {{ rtrim(rtrim(number_format($board['months'], 2), '0'), '.') }} months
             </p>
         </div>
@@ -144,7 +144,7 @@
             <span class="pg-perf-kpi-icon" aria-hidden="true"><i data-lucide="shield-check"></i></span>
             <div>
                 <span class="label">Avg SLA hit</span>
-                <strong>{{ $team['sla_rate'] === null ? '—' : number_format($team['sla_rate'], 1).'%' }}</strong>
+                <strong>{{ $team['sla_rate'] === null ? '-' : number_format($team['sla_rate'], 1).'%' }}</strong>
                 <span class="hint">{{ $team['breaches'] }} breach{{ $team['breaches'] === 1 ? '' : 'es' }}</span>
             </div>
         </div>
@@ -230,10 +230,10 @@
                         <td>{{ $row['intake'] }}</td>
                         <td>{{ $row['resolved'] }}</td>
                         <td><strong>{{ number_format($row['cpm'], 2) }}</strong></td>
-                        <td>{{ $row['avg_hours'] === null ? '—' : number_format($row['avg_hours'], 1) }}</td>
+                        <td>{{ $row['avg_hours'] === null ? '-' : number_format($row['avg_hours'], 1) }}</td>
                         <td>
                             @if ($row['sla_rate'] === null)
-                                —
+                                -
                             @else
                                 <span class="pg-perf-sla {{ $row['sla_rate'] < 85 ? 'is-low' : 'is-ok' }}">{{ number_format($row['sla_rate'], 1) }}%</span>
                             @endif
@@ -257,11 +257,11 @@
                     <h2 class="pg-section-title mb-0">{{ $person['name'] }}</h2>
                     <p class="text-muted small mb-0">
                         CPD {{ number_format($person['cpd'], 2) }}
-                        · Median {{ $person['median_hours'] === null ? '—' : number_format($person['median_hours'], 1).' h' }}
-                        · First response {{ $person['first_response_hours'] === null ? '—' : number_format($person['first_response_hours'], 1).' h' }}
-                        · Notes/case {{ $person['notes_per_case'] === null ? '—' : number_format($person['notes_per_case'], 1) }}
-                        · Critical/high {{ $person['critical_share'] === null ? '—' : number_format($person['critical_share'], 1).'%' }}
-                        · Backlog age {{ $person['backlog_age_hours'] === null ? '—' : number_format($person['backlog_age_hours'], 1).' h' }}
+                        · Median {{ $person['median_hours'] === null ? '-' : number_format($person['median_hours'], 1).' h' }}
+                        · First response {{ $person['first_response_hours'] === null ? '-' : number_format($person['first_response_hours'], 1).' h' }}
+                        · Notes/case {{ $person['notes_per_case'] === null ? '-' : number_format($person['notes_per_case'], 1) }}
+                        · Critical/high {{ $person['critical_share'] === null ? '-' : number_format($person['critical_share'], 1).'%' }}
+                        · Backlog age {{ $person['backlog_age_hours'] === null ? '-' : number_format($person['backlog_age_hours'], 1).' h' }}
                     </p>
                 </div>
                 <div class="d-flex flex-wrap gap-2">

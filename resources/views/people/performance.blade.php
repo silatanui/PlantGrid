@@ -16,7 +16,7 @@
                 <h1 class="pg-page-title mb-1">{{ $person->name }} · Performance</h1>
                 <p class="pg-page-lead mb-0">
                     {{ $person->roleLabel() }} · {{ $person->department->name ?? 'No department' }}
-                    · {{ $snapshot['from']->format('d M Y') }} – {{ $snapshot['to']->format('d M Y') }}
+                    · {{ $snapshot['from']->format('d M Y') }} - {{ $snapshot['to']->format('d M Y') }}
                 </p>
             </div>
         </div>
@@ -96,7 +96,7 @@
             <span class="pg-perf-kpi-icon" aria-hidden="true"><i data-lucide="shield-check"></i></span>
             <div>
                 <div class="pg-perf-kpi-label">SLA %</div>
-                <div class="pg-perf-kpi-value">{{ $metrics['sla_rate'] === null ? '—' : number_format($metrics['sla_rate'], 1).'%' }}</div>
+                <div class="pg-perf-kpi-value">{{ $metrics['sla_rate'] === null ? '-' : number_format($metrics['sla_rate'], 1).'%' }}</div>
             </div>
         </div>
         <div class="pg-perf-kpi">
@@ -109,11 +109,11 @@
     </div>
 
     <p class="text-muted small mb-3">
-        First response {{ $metrics['first_response_hours'] === null ? '—' : number_format($metrics['first_response_hours'], 1).' h' }}
-        · Avg resolve {{ $metrics['avg_hours'] === null ? '—' : number_format($metrics['avg_hours'], 1).' h' }}
-        · Notes/case {{ $metrics['notes_per_case'] === null ? '—' : number_format($metrics['notes_per_case'], 1) }}
+        First response {{ $metrics['first_response_hours'] === null ? '-' : number_format($metrics['first_response_hours'], 1).' h' }}
+        · Avg resolve {{ $metrics['avg_hours'] === null ? '-' : number_format($metrics['avg_hours'], 1).' h' }}
+        · Notes/case {{ $metrics['notes_per_case'] === null ? '-' : number_format($metrics['notes_per_case'], 1) }}
         · Reopen {{ number_format($metrics['reopen_rate'], 1) }}%
-        · Backlog age {{ $metrics['backlog_age_hours'] === null ? '—' : number_format($metrics['backlog_age_hours'], 1).' h' }}
+        · Backlog age {{ $metrics['backlog_age_hours'] === null ? '-' : number_format($metrics['backlog_age_hours'], 1).' h' }}
     </p>
 
     <div class="row g-3">

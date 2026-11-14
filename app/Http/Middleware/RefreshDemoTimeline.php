@@ -20,7 +20,7 @@ class RefreshDemoTimeline
             try {
                 $this->timeline->refreshOncePerDay();
             } catch (Throwable) {
-                // Demo convenience only — never block the console.
+                // Demo convenience only - never block the console.
             }
         }
 

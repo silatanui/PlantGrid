@@ -39,7 +39,7 @@
                     <td class="pg-mono">{{ $person->email }}</td>
                     <td class="small">
                         @if ($person->phone || $person->mobile)
-                            <div>{{ $person->phone ?: '—' }}</div>
+                            <div>{{ $person->phone ?: '-' }}</div>
                             <div class="text-muted">{{ $person->mobile }}</div>
                         @else
                             <span class="text-muted">-</span>
@@ -150,8 +150,8 @@
             <dl class="pg-kv mb-2">
                 <dt>Window</dt><dd>{{ ($livePulse['active'] ?? false) ? 'Active' : 'Inactive' }}</dd>
                 <dt>Open cases</dt><dd>{{ $livePulse['open_cases'] ?? 0 }}</dd>
-                <dt>Last run</dt><dd class="small">{{ $livePulse['last_run'] ?: '—' }}</dd>
-                <dt>Last event</dt><dd class="small">{{ $livePulse['last_event'] ?: '—' }}</dd>
+                <dt>Last run</dt><dd class="small">{{ $livePulse['last_run'] ?: '-' }}</dd>
+                <dt>Last event</dt><dd class="small">{{ $livePulse['last_event'] ?: '-' }}</dd>
             </dl>
             <button class="btn btn-pg" type="submit">Save Live Pulse</button>
         </form>

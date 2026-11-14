@@ -25,7 +25,7 @@
                     @endforeach
                 </dl>
             @endif
-            <p class="pg-device-media-note">Demo reference image for identification — not a live camera feed.</p>
+            <p class="pg-device-media-note">Demo reference image for identification - not a live camera feed.</p>
         </div>
     </section>
 @endif

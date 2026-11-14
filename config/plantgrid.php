@@ -36,11 +36,11 @@ return [
         'use_openai' => (bool) env('PLANTGRID_LIVE_PULSE_OPENAI', false),
         'ends_at' => env('PLANTGRID_LIVE_PULSE_ENDS_AT', '2026-12-31 23:59:59'),
         'timezone' => env('PLANTGRID_LIVE_PULSE_TZ', 'Africa/Nairobi'),
-        // Steady plant desk with natural quiet gaps — not a firehose.
+        // Steady plant desk with natural quiet gaps - not a firehose.
         'open_case_ceiling' => (int) env('PLANTGRID_LIVE_PULSE_OPEN_CEILING', 85),
         'marker' => '[Live pulse]',
         'catch_up_after_minutes' => (int) env('PLANTGRID_LIVE_PULSE_CATCHUP_MINUTES', 8),
-        // After activity, often pause 3–6 minutes before the next tick fires events.
+        // After activity, often pause 3-6 minutes before the next tick fires events.
         'quiet_minutes_min' => (int) env('PLANTGRID_LIVE_PULSE_QUIET_MIN', 3),
         'quiet_minutes_max' => (int) env('PLANTGRID_LIVE_PULSE_QUIET_MAX', 6),
         'quiet_chance_percent' => (int) env('PLANTGRID_LIVE_PULSE_QUIET_CHANCE', 40),

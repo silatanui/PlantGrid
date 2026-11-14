@@ -259,7 +259,7 @@
                 @endforeach
             </nav>
 
-            {{-- Record tabs only: cases/contacts/assets/docs articles — not module links already in primary nav --}}
+            {{-- Record tabs only: cases/contacts/assets/docs articles - not module links already in primary nav --}}
             @if (($workspaceTabs ?? collect())->isNotEmpty())
                 <div
                     class="pg-workspace-strip"

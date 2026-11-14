@@ -175,7 +175,7 @@ class MaintenanceController extends Controller
         $message = $data['status'] === 'completed'
             ? 'Maintenance marked complete.'
             : ($previous === 'completed'
-                ? 'Maintenance reopened — status set to '.\App\Support\Labels::status($data['status']).'.'
+                ? 'Maintenance reopened - status set to '.\App\Support\Labels::status($data['status']).'.'
                 : 'Maintenance status updated.');
 
         return back()->with('status', $message);

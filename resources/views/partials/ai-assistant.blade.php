@@ -83,7 +83,7 @@
                     </span>
                     <div class="pg-ai-msg">
                         <div class="pg-ai-bubble pg-ai-bubble-bot">
-                            <div class="pg-ai-bubble-body">Ask about cases, assets, or Documentation guides — or tell me to open a case. Tag with <strong>@</strong> people and <strong>#</strong> cases/assets/devices. Actions wait for your confirm.</div>
+                            <div class="pg-ai-bubble-body">Ask about cases, assets, or Documentation guides - or tell me to open a case. Tag with <strong>@</strong> people and <strong>#</strong> cases/assets/devices. Actions wait for your confirm.</div>
                         </div>
                         <div class="pg-ai-meta">
                             <span>PlantGrid Assistant</span>

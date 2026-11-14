@@ -131,7 +131,7 @@
                         </span>
                         <strong>{{ $ticket->subject }}</strong>
                         <span>
-                            {{ $ticket->requester->name ?? '—' }}
+                            {{ $ticket->requester->name ?? '-' }}
                             @if ($ticket->assignee)
                                 · {{ $ticket->assignee->name }}
                             @endif
@@ -188,7 +188,7 @@
                     <div class="pg-card-pad d-flex justify-content-between align-items-center gap-2">
                         <div>
                             <h2 class="pg-section-title mb-0">Simulated alerts</h2>
-                            <p class="text-muted small mb-0">Monitoring readings — not live plant signals</p>
+                            <p class="text-muted small mb-0">Monitoring readings - not live plant signals</p>
                         </div>
                         <a class="pg-panel-link" href="{{ route('monitoring.index') }}">Monitoring</a>
                     </div>

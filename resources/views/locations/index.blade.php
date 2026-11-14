@@ -38,7 +38,7 @@
                 <tr>
                     <td><a href="{{ route('locations.show', $place) }}">{{ $place->name }}</a></td>
                     <td class="pg-mono">{{ $place->code }}</td>
-                    <td>{{ $place->department->name ?? '—' }}</td>
+                    <td>{{ $place->department->name ?? '-' }}</td>
                     <td>{{ $place->assets_count }}</td>
                     <td>{{ $place->network_devices_count }}</td>
                 </tr>

@@ -244,7 +244,7 @@ class LivePulseService
         $hour = (int) $local->format('G');
         $weekday = $local->isWeekday();
 
-        // Prefer quiet minutes and at most one or two events — not a burst every cron tick.
+        // Prefer quiet minutes and at most one or two events - not a burst every cron tick.
         if ($weekday && $hour >= 7 && $hour < 19) {
             $roll = mt_rand(1, 100);
             if ($roll <= 50) {
@@ -391,7 +391,7 @@ class LivePulseService
         $asset = $this->pickAssetForCase($requester, $template);
         $description = $template['description'];
         if ($asset) {
-            $deviceLine = trim($asset->asset_tag.' — '.$asset->name.($asset->model ? ' ('.$asset->model.')' : ''));
+            $deviceLine = trim($asset->asset_tag.' - '.$asset->name.($asset->model ? ' ('.$asset->model.')' : ''));
             $description .= "\n\nLinked device: ".$deviceLine
                 .($asset->location?->name ? "\nLocation: ".$asset->location->name : '');
         }
@@ -569,7 +569,7 @@ class LivePulseService
 
     private function eventResolve(): ?string
     {
-        // Only close out work that has already been owned and progressed — not brand-new queue items.
+        // Only close out work that has already been owned and progressed - not brand-new queue items.
         $ticket = SupportTicket::query()
             ->with(['asset.location'])
             ->whereIn('status', ['in_progress', 'pending'])
@@ -724,7 +724,7 @@ class LivePulseService
     {
         $ticket->loadMissing(['asset.location', 'assignee', 'requester', 'department']);
         $device = $ticket->asset
-            ? trim($ticket->asset->asset_tag.' — '.$ticket->asset->name)
+            ? trim($ticket->asset->asset_tag.' - '.$ticket->asset->name)
             : 'no asset linked yet';
         $deviceShort = $ticket->asset?->asset_tag ?: 'unlinked endpoint';
         $location = $ticket->asset?->location?->name
@@ -789,7 +789,7 @@ class LivePulseService
             return 'none yet (standalone in this wave)';
         }
 
-        return $others->implode(', ').' (related plant ICT work — keep outcomes separate)';
+        return $others->implode(', ').' (related plant ICT work - keep outcomes separate)';
     }
 
     private function eventMessage(): ?string
@@ -846,7 +846,7 @@ class LivePulseService
         }
 
         // Keep structured checklists readable; marker stays as a footer for reset scrubbing.
-        return rtrim($text)."\n\n— ".$marker;
+        return rtrim($text)."\n\n- ".$marker;
     }
 
     private function maybePolish(string $text, string $kind): string

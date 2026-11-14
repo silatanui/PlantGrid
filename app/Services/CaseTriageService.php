@@ -590,13 +590,13 @@ class CaseTriageService
         $lines = [
             'AI triage plan for '.$ticket->ticket_number.' ('.$ticket->subject.')',
             '',
-            'Owner: '.($owner['name'] ?? 'Unassigned').($owner['reason'] ?? null ? ' — '.$owner['reason'] : ''),
+            'Owner: '.($owner['name'] ?? 'Unassigned').($owner['reason'] ?? null ? ' - '.$owner['reason'] : ''),
         ];
 
         if ($partners !== []) {
             $lines[] = 'Partners:';
             foreach ($partners as $partner) {
-                $lines[] = '- '.$partner['name'].(empty($partner['reason']) ? '' : ' — '.$partner['reason']);
+                $lines[] = '- '.$partner['name'].(empty($partner['reason']) ? '' : ' - '.$partner['reason']);
             }
         } else {
             $lines[] = 'Partners: none suggested';

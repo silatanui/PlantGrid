@@ -12,7 +12,7 @@
                     · {{ $location->department->name }}
                 @endif
                 @if ($location->description)
-                    — {{ $location->description }}
+                    - {{ $location->description }}
                 @endif
             </p>
         </div>
@@ -117,7 +117,7 @@
                                     @if ($case->asset)
                                         <a class="pg-mono" href="{{ route('assets.show', $case->asset) }}">{{ $case->asset->asset_tag }}</a>
                                     @else
-                                        —
+                                        -
                                     @endif
                                 </td>
                                 <td>{{ $case->assignee->name ?? 'Unassigned' }}</td>

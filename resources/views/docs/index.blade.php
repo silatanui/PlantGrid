@@ -14,7 +14,7 @@
 
     <form class="pg-docs-search mb-3" method="get" action="{{ route('docs.index') }}">
         <label class="visually-hidden" for="docs-q">Search documentation</label>
-        <input class="form-control" id="docs-q" name="q" value="{{ $term }}" placeholder="Search guides — getting started, report issue, SLA…">
+        <input class="form-control" id="docs-q" name="q" value="{{ $term }}" placeholder="Search guides - getting started, report issue, SLA…">
         <button class="btn btn-pg" type="submit">Search</button>
     </form>
 

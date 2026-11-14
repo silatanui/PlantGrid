@@ -10,7 +10,7 @@
             <h1 class="pg-page-title">Production systems</h1>
             <p class="pg-page-lead">
                 Manufacturing technology records, line equipment, and operational incidents.
-                PlantGrid documents impact only — it never sends commands to plant equipment.
+                PlantGrid documents impact only - it never sends commands to plant equipment.
             </p>
         </div>
         <div class="pg-object-home-actions">
@@ -61,7 +61,7 @@
                     <dl class="pg-prod-system-meta">
                         <div>
                             <dt>Department</dt>
-                            <dd>{{ $system->department->name ?? '—' }}</dd>
+                            <dd>{{ $system->department->name ?? '-' }}</dd>
                         </div>
                         <div>
                             <dt>Owner</dt>
@@ -69,13 +69,13 @@
                                 @if ($system->owner)
                                     <span class="pg-prod-linkish">{{ $system->owner->name }}</span>
                                 @else
-                                    —
+                                    -
                                 @endif
                             </dd>
                         </div>
                         <div>
                             <dt>Vendor</dt>
-                            <dd>{{ $system->vendor->name ?? '—' }}</dd>
+                            <dd>{{ $system->vendor->name ?? '-' }}</dd>
                         </div>
                     </dl>
                     <div class="pg-prod-system-foot">
@@ -121,7 +121,7 @@
                                 @if ($item->system)
                                     <a href="{{ route('production.show', $item->system) }}">{{ $item->system->name }}</a>
                                 @else
-                                    —
+                                    -
                                 @endif
                             </td>
                             <td>
@@ -129,10 +129,10 @@
                                     <a class="pg-mono" href="{{ route('assets.show', $item->asset) }}">{{ $item->asset->asset_tag }}</a>
                                     <div class="text-muted small">{{ $item->asset->name }}</div>
                                 @else
-                                    —
+                                    -
                                 @endif
                             </td>
-                            <td>{{ $item->location->name ?? '—' }}</td>
+                            <td>{{ $item->location->name ?? '-' }}</td>
                             <td>{!! \App\Support\Labels::badge($item->status) !!}</td>
                         </tr>
                     @empty
@@ -177,14 +177,14 @@
                                     </div>
                                 @endif
                                 @if (! $case->requester && ! $case->assignee)
-                                    —
+                                    -
                                 @endif
                             </td>
                             <td>
                                 @if ($case->asset)
                                     <a class="pg-mono" href="{{ route('assets.show', $case->asset) }}">{{ $case->asset->asset_tag }}</a>
                                 @else
-                                    —
+                                    -
                                 @endif
                             </td>
                             <td>
@@ -233,7 +233,7 @@
                             @if ($incident->system)
                                 <a href="{{ route('production.show', $incident->system) }}">{{ $incident->system->name }}</a>
                             @else
-                                —
+                                -
                             @endif
                             @if ($incident->equipment)
                                 <div class="small mt-1">
@@ -260,7 +260,7 @@
                                     </div>
                                 @endif
                             @else
-                                —
+                                -
                             @endif
                         </td>
                         <td>

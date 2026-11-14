@@ -22,7 +22,7 @@ class DocumentationCatalog
                 'sections' => [
                     [
                         'heading' => 'What PlantGrid is',
-                        'body' => "PlantGrid is a portfolio demonstration of manufacturing ICT operations. The sample plant is Northridge Processing — packaging halls, intake scales, servers, network gear and helpdesk cases that behave like a real operations console.\n\nYou are not managing a live factory. The data is seeded for learning and walkthroughs, and some activity continues on its own so the desk still feels alive.",
+                        'body' => "PlantGrid is a portfolio demonstration of manufacturing ICT operations. The sample plant is Northridge Processing - packaging halls, intake scales, servers, network gear and helpdesk cases that behave like a real operations console.\n\nYou are not managing a live factory. The data is seeded for learning and walkthroughs, and some activity continues on its own so the desk still feels alive.",
                     ],
                     [
                         'heading' => 'What you can do in a few minutes',
@@ -48,11 +48,11 @@ class DocumentationCatalog
                     ],
                     [
                         'heading' => 'Accounts to try',
-                        'body' => "• System Administrator (Amina Okello) — best starting point for the full console: users, settings, cases, assets.\n• ICT Manager (Daniel Mwangi) — operations view across assets, network, cases and monitoring.\n• ICT Technician (Faith Cheruiyot) — day-to-day case work, notes and ownership.\n• Department Manager (Peter Kamau) — department-facing view of requests and people.\n• General Employee (Grace Wanjiku) — self-service: report issues and follow My cases.\n• Auditor (Helen Achieng) — read-focused review of records and assurance areas.\n\nPassword for every demo account: PlantGrid-Demo.",
+                        'body' => "• System Administrator (Amina Okello) - best starting point for the full console: users, settings, cases, assets.\n• ICT Manager (Daniel Mwangi) - operations view across assets, network, cases and monitoring.\n• ICT Technician (Faith Cheruiyot) - day-to-day case work, notes and ownership.\n• Department Manager (Peter Kamau) - department-facing view of requests and people.\n• General Employee (Grace Wanjiku) - self-service: report issues and follow My cases.\n• Auditor (Helen Achieng) - read-focused review of records and assurance areas.\n\nPassword for every demo account: PlantGrid-Demo.",
                     ],
                     [
                         'heading' => 'How to switch',
-                        'body' => "1. Open your account menu (initials in the app bar) and Sign out.\n2. On the sign-in page, choose another role card — the email fills in automatically.\n3. Sign in again and notice which modules appear in the left navigation.",
+                        'body' => "1. Open your account menu (initials in the app bar) and Sign out.\n2. On the sign-in page, choose another role card - the email fills in automatically.\n3. Sign in again and notice which modules appear in the left navigation.",
                     ],
                 ],
                 'screenshots' => [],
@@ -66,11 +66,11 @@ class DocumentationCatalog
                 'sections' => [
                     [
                         'heading' => 'The main chrome',
-                        'body' => "• Top app bar — PlantGrid logo, global search, online users (when allowed), notifications, messages, alerts and your account menu.\n• Second row — quick tabs such as Dashboard, My cases, Messages and Documentation.\n• Left navigation — modules grouped into Operations, Infrastructure, Assurance and Administration. On a phone, open it with the menu (hamburger) button.\n• Right utility panel — shortcuts and guidance on wider screens; open it with the panel button on smaller screens.\n• Footer — Home, Dashboard, Cases and About links that stay available while you scroll.",
+                        'body' => "• Top app bar - PlantGrid logo, global search, online users (when allowed), notifications, messages, alerts and your account menu.\n• Second row - quick tabs such as Dashboard, My cases, Messages and Documentation.\n• Left navigation - modules grouped into Operations, Infrastructure, Assurance and Administration. On a phone, open it with the menu (hamburger) button.\n• Right utility panel - shortcuts and guidance on wider screens; open it with the panel button on smaller screens.\n• Footer - Home, Dashboard, Cases and About links that stay available while you scroll.",
                     ],
                     [
                         'heading' => 'Search',
-                        'body' => "Type in the top search box to find people, cases, assets, servers, network devices, documentation and named pages. On phones the search box is hidden — use Find from search results pages or open Documentation and search guides there.",
+                        'body' => "Type in the top search box to find people, cases, assets, servers, network devices, documentation and named pages. On phones the search box is hidden - use Find from search results pages or open Documentation and search guides there.",
                     ],
                     [
                         'heading' => 'If a menu item is missing',
@@ -92,7 +92,7 @@ class DocumentationCatalog
                     ],
                     [
                         'heading' => 'Steps',
-                        'body' => "1. Open New case from the left navigation or Cases.\n2. Choose your department if asked.\n3. Pick the closest category (printer, network, access, and so on).\n4. Write a short subject people can scan in a list — for example “Packaging label printer offline”.\n5. In the description, say what you tried, what you see, and how urgent it is for the line or office.\n6. Set priority honestly. Use Critical only when production or safety is blocked now.\n7. Save. Note the case number (for example PG-2026-0180) so you can find it later under My cases.",
+                        'body' => "1. Open New case from the left navigation or Cases.\n2. Choose your department if asked.\n3. Pick the closest category (printer, network, access, and so on).\n4. Write a short subject people can scan in a list - for example “Packaging label printer offline”.\n5. In the description, say what you tried, what you see, and how urgent it is for the line or office.\n6. Set priority honestly. Use Critical only when production or safety is blocked now.\n7. Save. Note the case number (for example PG-2026-0180) so you can find it later under My cases.",
                     ],
                     [
                         'heading' => 'After you submit',
@@ -112,7 +112,7 @@ class DocumentationCatalog
                 'sections' => [
                     [
                         'heading' => 'Views you will see',
-                        'body' => "• My cases — work tied to you (often as requester or assignee, depending on role).\n• Queue — broader open work for ICT staff.\n• Assigned to me — cases you own as the technician.\n\nTabs and badges on the navigation help you jump back without hunting.",
+                        'body' => "• My cases - work tied to you (often as requester or assignee, depending on role).\n• Queue - broader open work for ICT staff.\n• Assigned to me - cases you own as the technician.\n\nTabs and badges on the navigation help you jump back without hunting.",
                     ],
                     [
                         'heading' => 'Reading the list',
@@ -138,7 +138,7 @@ class DocumentationCatalog
                     ],
                     [
                         'heading' => 'What to do with a message',
-                        'body' => "1. Open a message to read the full text.\n2. Follow any case or page links inside it.\n3. Delete a message when you are finished — PlantGrid asks you to confirm before it is removed.\n\nMessages are part of the demonstration story. They are not a real mailbox outside PlantGrid.",
+                        'body' => "1. Open a message to read the full text.\n2. Follow any case or page links inside it.\n3. Delete a message when you are finished - PlantGrid asks you to confirm before it is removed.\n\nMessages are part of the demonstration story. They are not a real mailbox outside PlantGrid.",
                     ],
                 ],
                 'screenshots' => [],
@@ -196,7 +196,7 @@ class DocumentationCatalog
                     ],
                     [
                         'heading' => 'How to respond as a learner',
-                        'body' => "1. Open Monitoring from Operations (permission required).\n2. Read the alert title, severity and related device name.\n3. Open the device or linked case if one exists.\n4. Ask the Assistant something like “Which alerts are open?” if you want a spoken summary.\n\nYou do not need to fix real infrastructure — use the board to practise triage language with the rest of the console.",
+                        'body' => "1. Open Monitoring from Operations (permission required).\n2. Read the alert title, severity and related device name.\n3. Open the device or linked case if one exists.\n4. Ask the Assistant something like “Which alerts are open?” if you want a spoken summary.\n\nYou do not need to fix real infrastructure - use the board to practise triage language with the rest of the console.",
                     ],
                 ],
                 'screenshots' => [],
@@ -210,15 +210,15 @@ class DocumentationCatalog
                 'sections' => [
                     [
                         'heading' => 'Cases and people',
-                        'body' => "• Case / ticket — a tracked request for ICT work, with a number like PG-2026-0150.\n• Requester — the person who reported the issue.\n• Owner / assignee — the technician responsible for the current work.\n• Partner — someone kept in the loop on a case (requester, owner, mentioned people, or added partners).\n• Internal note — ICT-only commentary; not shown to the requester.",
+                        'body' => "• Case / ticket - a tracked request for ICT work, with a number like PG-2026-0150.\n• Requester - the person who reported the issue.\n• Owner / assignee - the technician responsible for the current work.\n• Partner - someone kept in the loop on a case (requester, owner, mentioned people, or added partners).\n• Internal note - ICT-only commentary; not shown to the requester.",
                     ],
                     [
                         'heading' => 'Priority and time',
-                        'body' => "• Priority — Critical, High, Medium or Low. Higher priority means a shorter SLA target.\n• SLA — service level agreement: the target time to handle the case before it is At risk or Breached.\n• Status — where the case sits on the path (New, Assigned, In progress, Pending, Resolved, Closed).",
+                        'body' => "• Priority - Critical, High, Medium or Low. Higher priority means a shorter SLA target.\n• SLA - service level agreement: the target time to handle the case before it is At risk or Breached.\n• Status - where the case sits on the path (New, Assigned, In progress, Pending, Resolved, Closed).",
                     ],
                     [
                         'heading' => 'Plant records',
-                        'body' => "• Asset — a tracked device or equipment item with a tag.\n• Location — a place on the plant map (hall, room, zone).\n• Network device / server — infrastructure records used in Network, Servers and Monitoring.\n• Assistant — the in-app helper that answers from live demo data and can propose actions you must confirm.",
+                        'body' => "• Asset - a tracked device or equipment item with a tag.\n• Location - a place on the plant map (hall, room, zone).\n• Network device / server - infrastructure records used in Network, Servers and Monitoring.\n• Assistant - the in-app helper that answers from live demo data and can propose actions you must confirm.",
                     ],
                 ],
                 'screenshots' => [],
@@ -236,7 +236,7 @@ class DocumentationCatalog
                     ],
                     [
                         'heading' => 'Steps',
-                        'body' => "1. Open Cases from the navigation.\n2. Choose New case.\n3. Select the department that owns the issue (for example Production / Packaging maps to Production).\n4. Pick a category that matches the work (printer, network, production technology, and so on).\n5. Write a short subject and a clear description of impact.\n6. Set priority honestly — critical only when production is blocked.\n7. Link an asset tag when you know it (for example PG-LBL-0142).\n8. Save. PlantGrid assigns a case number such as PG-2026-0150 and starts the SLA clock.",
+                        'body' => "1. Open Cases from the navigation.\n2. Choose New case.\n3. Select the department that owns the issue (for example Production / Packaging maps to Production).\n4. Pick a category that matches the work (printer, network, production technology, and so on).\n5. Write a short subject and a clear description of impact.\n6. Set priority honestly - critical only when production is blocked.\n7. Link an asset tag when you know it (for example PG-LBL-0142).\n8. Save. PlantGrid assigns a case number such as PG-2026-0150 and starts the SLA clock.",
                     ],
                     [
                         'heading' => 'Tips',
@@ -244,7 +244,7 @@ class DocumentationCatalog
                     ],
                 ],
                 'screenshots' => [
-                    ['file' => 'docs-create-case.png', 'caption' => 'New case form — department, category, priority and description'],
+                    ['file' => 'docs-create-case.png', 'caption' => 'New case form - department, category, priority and description'],
                 ],
             ],
             [
@@ -280,7 +280,7 @@ class DocumentationCatalog
                 'sections' => [
                     [
                         'heading' => 'Visibility',
-                        'body' => "• Internal ICT note — only staff with update access see it.\n• Visible to requester — the person who opened the case can read it.",
+                        'body' => "• Internal ICT note - only staff with update access see it.\n• Visible to requester - the person who opened the case can read it.",
                     ],
                     [
                         'heading' => 'Steps',
@@ -328,7 +328,7 @@ class DocumentationCatalog
                 'sections' => [
                     [
                         'heading' => 'Escalation checklist',
-                        'body' => "1. Confirm business impact (line down, safety, compliance, many users).\n2. Raise priority if the current level is too low.\n3. Assign or take ownership so someone is accountable.\n4. Move status to In progress or Pending with a clear resolution / next-step note.\n5. Use Add a note to post an ICT-only update that states why it escalated and who was informed.\n6. Watch the SLA badge — critical cases have a 4-hour target.",
+                        'body' => "1. Confirm business impact (line down, safety, compliance, many users).\n2. Raise priority if the current level is too low.\n3. Assign or take ownership so someone is accountable.\n4. Move status to In progress or Pending with a clear resolution / next-step note.\n5. Use Add a note to post an ICT-only update that states why it escalated and who was informed.\n6. Watch the SLA badge - critical cases have a 4-hour target.",
                     ],
                     [
                         'heading' => 'Escalation note template',
@@ -336,7 +336,7 @@ class DocumentationCatalog
                     ],
                     [
                         'heading' => 'What not to do',
-                        'body' => 'Do not silently change priority without a note. Do not open a second case for the same outage — link or close duplicates instead.',
+                        'body' => 'Do not silently change priority without a note. Do not open a second case for the same outage - link or close duplicates instead.',
                     ],
                 ],
                 'screenshots' => [
@@ -400,7 +400,7 @@ class DocumentationCatalog
                 'sections' => [
                     [
                         'heading' => 'SLA targets',
-                        'body' => "• Critical — 4 hours\n• High — 8 hours\n• Medium — 24 hours\n• Low — 72 hours\n\nTargets start from the reported time. Badges show On track, At risk, or Breached on open cases.",
+                        'body' => "• Critical - 4 hours\n• High - 8 hours\n• Medium - 24 hours\n• Low - 72 hours\n\nTargets start from the reported time. Badges show On track, At risk, or Breached on open cases.",
                     ],
                     [
                         'heading' => 'Notifications',
@@ -446,7 +446,7 @@ class DocumentationCatalog
                     ],
                     [
                         'heading' => 'What the metrics mean',
-                        'body' => "• Open — cases currently assigned and not resolved/closed.\n• Intake — assigned cases reported in the selected range.\n• Resolved / CPM — finished work and Cases Per Month (resolved ÷ months in range).\n• Avg h — average hours from reported_at to resolved_at.\n• SLA % — share of resolved cases finished on or before sla_due_at without a breach.\n• Reopen % — closed/resolved cases that later moved back to an open status.",
+                        'body' => "• Open - cases currently assigned and not resolved/closed.\n• Intake - assigned cases reported in the selected range.\n• Resolved / CPM - finished work and Cases Per Month (resolved ÷ months in range).\n• Avg h - average hours from reported_at to resolved_at.\n• SLA % - share of resolved cases finished on or before sla_due_at without a breach.\n• Reopen % - closed/resolved cases that later moved back to an open status.",
                     ],
                     [
                         'heading' => 'How to use it well',

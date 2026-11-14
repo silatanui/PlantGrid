@@ -97,19 +97,19 @@ class CaseNotesMediaSeeder extends Seeder
                         'author' => 'grace.wanjiku@northridge.example',
                         'visibility' => 'requester_visible',
                         'hours' => 1,
-                        'body' => "Status: Reported from Packaging Hall A\nAsset: PG-LBL-0142 (Zebra ZT411)\nIssue Summary:\nThe packaging label printer powered off mid-shift. Display stays dark; no network light. Finished-goods cases are stacking without barcodes.\nObserved:\n• Power LED dark even after reseating the wall plug.\n• Neighbouring PackLabel terminal still online.\nPlease advise — line lead needs a workaround before the 14:00 dispatch window.",
+                        'body' => "Status: Reported from Packaging Hall A\nAsset: PG-LBL-0142 (Zebra ZT411)\nIssue Summary:\nThe packaging label printer powered off mid-shift. Display stays dark; no network light. Finished-goods cases are stacking without barcodes.\nObserved:\n• Power LED dark even after reseating the wall plug.\n• Neighbouring PackLabel terminal still online.\nPlease advise - line lead needs a workaround before the 14:00 dispatch window.",
                     ],
                     [
                         'author' => 'faith.cheruiyot@northridge.example',
                         'visibility' => 'internal',
                         'hours' => 2,
-                        'body' => "Status: Escalated to floor ICT · awaiting parts confirmation\nAccount: Northridge Processing — Packaging Hall A (Plant demonstration SLA)\nIssue Summary:\nIntermittent / now hard power-loss on PG-LBL-0142 after Tuesday's PackLabel queue spike. Production has not stopped, but outbound cases cannot be labelled.\nTroubleshooting Completed:\n• Verified PackLabel service and print queue on PLT-APP01 — jobs queue cleanly, device never ACKs.\n• Confirmed 230V at the packaging bench outlet; neighbouring PC boots normally.\n• Swapped the IEC lead with a known-good spare — still dark. PSU click is absent.\nNext Steps:\n• ".$mention('brian.otieno')." Please bring the hot-spare ZT411 from ICT cage bay 3 and capture a photo of the PSU label before removal.\n• Do not clear the PackLabel backlog until the spare is online — QA needs the original job IDs.\n• Client Sentiment: Packaging supervisor is firm but fair; update before the 14:00 shift change.\nAttachment: bench photo of the dark printer faceplate.",
+                        'body' => "Status: Escalated to floor ICT · awaiting parts confirmation\nAccount: Northridge Processing - Packaging Hall A (Plant demonstration SLA)\nIssue Summary:\nIntermittent / now hard power-loss on PG-LBL-0142 after Tuesday's PackLabel queue spike. Production has not stopped, but outbound cases cannot be labelled.\nTroubleshooting Completed:\n• Verified PackLabel service and print queue on PLT-APP01 - jobs queue cleanly, device never ACKs.\n• Confirmed 230V at the packaging bench outlet; neighbouring PC boots normally.\n• Swapped the IEC lead with a known-good spare - still dark. PSU click is absent.\nNext Steps:\n• ".$mention('brian.otieno')." Please bring the hot-spare ZT411 from ICT cage bay 3 and capture a photo of the PSU label before removal.\n• Do not clear the PackLabel backlog until the spare is online - QA needs the original job IDs.\n• Client Sentiment: Packaging supervisor is firm but fair; update before the 14:00 shift change.\nAttachment: bench photo of the dark printer faceplate.",
                     ],
                     [
                         'author' => 'brian.otieno@northridge.example',
                         'visibility' => 'internal',
                         'hours' => 4,
-                        'body' => "Status: Spare staged · PSU suspect\nUpdate for ".$mention('faith.cheruiyot').":\nHot-spare ZT411 powered on first try. Original unit shows scorched smell at the PSU intake (photo attached). Logging RMA against Kite Label Systems demo vendor record.\nNext:\n• Cut over PackLabel queue to the spare hostname alias.\n• Keep original offline for vendor collection — do not scrap yet.",
+                        'body' => "Status: Spare staged · PSU suspect\nUpdate for ".$mention('faith.cheruiyot').":\nHot-spare ZT411 powered on first try. Original unit shows scorched smell at the PSU intake (photo attached). Logging RMA against Kite Label Systems demo vendor record.\nNext:\n• Cut over PackLabel queue to the spare hostname alias.\n• Keep original offline for vendor collection - do not scrap yet.",
                     ],
                 ],
                 'images' => [
@@ -130,7 +130,7 @@ class CaseNotesMediaSeeder extends Seeder
                         'author' => 'faith.cheruiyot@northridge.example',
                         'visibility' => 'internal',
                         'hours' => 3,
-                        'body' => "Status: Tier-1 identity check in progress\nAccount: Warehouse Supervision — remote access demo path\nIssue Summary:\nToken rejects at challenge after password OK. On-site work continues; remote coverage is the gap.\nTroubleshooting Completed:\n• Serial in the vault matches the physical fob etched number.\n• AD account unlocked; MFA methods show one stale phone entry.\n• Laptop BIOS clock was 11 minutes ahead of NTP (photo of Windows time dialog attached).\nNext Steps:\n• ".$mention('daniel.mwangi')." Approve temporary SMS MFA for 48h while we re-enrol the token.\n• User to leave the laptop powered overnight for a forced time sync policy.\n• Sentiment: Manager is calm — prefers a temporary workaround over waiting on a couriered spare fob.",
+                        'body' => "Status: Tier-1 identity check in progress\nAccount: Warehouse Supervision - remote access demo path\nIssue Summary:\nToken rejects at challenge after password OK. On-site work continues; remote coverage is the gap.\nTroubleshooting Completed:\n• Serial in the vault matches the physical fob etched number.\n• AD account unlocked; MFA methods show one stale phone entry.\n• Laptop BIOS clock was 11 minutes ahead of NTP (photo of Windows time dialog attached).\nNext Steps:\n• ".$mention('daniel.mwangi')." Approve temporary SMS MFA for 48h while we re-enrol the token.\n• User to leave the laptop powered overnight for a forced time sync policy.\n• Sentiment: Manager is calm - prefers a temporary workaround over waiting on a couriered spare fob.",
                     ],
                 ],
                 'images' => [
@@ -151,7 +151,7 @@ class CaseNotesMediaSeeder extends Seeder
                         'author' => 'faith.cheruiyot@northridge.example',
                         'visibility' => 'internal',
                         'hours' => 2,
-                        'body' => "Status: Closed after physical layer fix (demo)\nAccount: Intake / Processing Hall — FloorWeigh path\nIssue Summary:\nScale PC lost L2 to PLT-SW-PROD; MQTT heartbeats from the scale head stopped.\nTroubleshooting Completed:\n• Switch port Gi1/0/12 showed err-disabled flaps in the demonstration log.\n• Reseated the patch lead at the floor outlet; replaced a crushed clip (photo).\n• FloorWeigh resumed and published weights within 40s.\nNext Steps:\n• ".$mention('kevin.njoroge')." Schedule a weekly visual on intake patch leads — this is the third bend failure this quarter in the demo story.\n• No firmware change required.",
+                        'body' => "Status: Closed after physical layer fix (demo)\nAccount: Intake / Processing Hall - FloorWeigh path\nIssue Summary:\nScale PC lost L2 to PLT-SW-PROD; MQTT heartbeats from the scale head stopped.\nTroubleshooting Completed:\n• Switch port Gi1/0/12 showed err-disabled flaps in the demonstration log.\n• Reseated the patch lead at the floor outlet; replaced a crushed clip (photo).\n• FloorWeigh resumed and published weights within 40s.\nNext Steps:\n• ".$mention('kevin.njoroge')." Schedule a weekly visual on intake patch leads - this is the third bend failure this quarter in the demo story.\n• No firmware change required.",
                     ],
                 ],
                 'images' => [
@@ -167,7 +167,7 @@ class CaseNotesMediaSeeder extends Seeder
                         'author' => 'daniel.mwangi@northridge.example',
                         'visibility' => 'internal',
                         'hours' => 2,
-                        'body' => "Status: Critical disk warning cleared (simulation)\nHost: PLT-FS01 / PG-SRV-0002\nIssue Summary:\nVolume D: crossed 92% during the overnight archive job. Alerts fired to ICT on-call.\nTroubleshooting Completed:\n• Identified duplicate packaging photo packs from 2023 still outside the retention hold.\n• Moved archives older than the retention note to the holding folder on colder storage.\n• Volume returned to 71% in the demonstration metric.\nNext Steps:\n• ".$mention('amina.okello')." Please confirm audit is comfortable with the holding-folder path for the portfolio walkthrough.\n• ".$mention('brian.otieno')." Add a capacity watch for D: at 80% — we should not wait for 92% again.",
+                        'body' => "Status: Critical disk warning cleared (simulation)\nHost: PLT-FS01 / PG-SRV-0002\nIssue Summary:\nVolume D: crossed 92% during the overnight archive job. Alerts fired to ICT on-call.\nTroubleshooting Completed:\n• Identified duplicate packaging photo packs from 2023 still outside the retention hold.\n• Moved archives older than the retention note to the holding folder on colder storage.\n• Volume returned to 71% in the demonstration metric.\nNext Steps:\n• ".$mention('amina.okello')." Please confirm audit is comfortable with the holding-folder path for the portfolio walkthrough.\n• ".$mention('brian.otieno')." Add a capacity watch for D: at 80% - we should not wait for 92% again.",
                     ],
                     [
                         'author' => 'amina.okello@northridge.example',
@@ -188,7 +188,7 @@ class CaseNotesMediaSeeder extends Seeder
                         'author' => 'faith.cheruiyot@northridge.example',
                         'visibility' => 'internal',
                         'hours' => 1,
-                        'body' => "Status: Assigned · hardware jam\nAsset: PG-PRT-0401 QA laboratory printer\nIssue Summary:\nMorning checklist print jammed behind the fuser path. QA cannot sign off intake samples.\nTroubleshooting Completed:\n• Opened the rear door — accordion fold of A4 lodged at the exit roller (photo).\n• Cleared jam; printed a 3-page test set successfully.\nNext Steps:\n• Ask QA to use the 80gsm stock only — the glossy checklist stock is out of printer spec.\n• ".$mention('mercy.chebet')." If jam repeats today, swap the exit roller kit from ICT spares.",
+                        'body' => "Status: Assigned · hardware jam\nAsset: PG-PRT-0401 QA laboratory printer\nIssue Summary:\nMorning checklist print jammed behind the fuser path. QA cannot sign off intake samples.\nTroubleshooting Completed:\n• Opened the rear door - accordion fold of A4 lodged at the exit roller (photo).\n• Cleared jam; printed a 3-page test set successfully.\nNext Steps:\n• Ask QA to use the 80gsm stock only - the glossy checklist stock is out of printer spec.\n• ".$mention('mercy.chebet')." If jam repeats today, swap the exit roller kit from ICT spares.",
                     ],
                 ],
                 'images' => [
@@ -203,7 +203,7 @@ class CaseNotesMediaSeeder extends Seeder
                         'author' => 'kevin.njoroge@northridge.example',
                         'visibility' => 'internal',
                         'hours' => 2,
-                        'body' => "Status: Escalated to Tier 2 platform engineering (demo)\nHost: PLT-APP01 / PG-SRV-0003\nIssue Summary:\nSustained memory >88% through the morning PackLabel + ERP batch window. No outage yet; GC pauses are stretching print jobs.\nTroubleshooting Completed:\n• Confirmed no runaway Windows Update. PackLabel worker count doubled after yesterday's queue change.\n• Captured process list and Performance Monitor screenshot (attached).\n• Restarted the PackLabel worker pool — memory dropped to 64% for 20 minutes, then climbed again.\nNext Steps:\n• ".$mention('daniel.mwangi')." Approve a controlled recycle of the PackLabel app pool at 12:30 before the afternoon wave.\n• ".$mention('lilian.auma')." Review whether v4 worker concurrency should be capped at 4 for this demo host.\n• Sentiment: Production is watching the board; communicate before any recycle.",
+                        'body' => "Status: Escalated to Tier 2 platform engineering (demo)\nHost: PLT-APP01 / PG-SRV-0003\nIssue Summary:\nSustained memory >88% through the morning PackLabel + ERP batch window. No outage yet; GC pauses are stretching print jobs.\nTroubleshooting Completed:\n• Confirmed no runaway Windows Update. PackLabel worker count doubled after yesterday's queue change.\n• Captured process list and Performance Monitor screenshot (attached).\n• Restarted the PackLabel worker pool - memory dropped to 64% for 20 minutes, then climbed again.\nNext Steps:\n• ".$mention('daniel.mwangi')." Approve a controlled recycle of the PackLabel app pool at 12:30 before the afternoon wave.\n• ".$mention('lilian.auma')." Review whether v4 worker concurrency should be capped at 4 for this demo host.\n• Sentiment: Production is watching the board; communicate before any recycle.",
                     ],
                     [
                         'author' => 'daniel.mwangi@northridge.example',
@@ -230,7 +230,7 @@ class CaseNotesMediaSeeder extends Seeder
                         'author' => 'brian.otieno@northridge.example',
                         'visibility' => 'internal',
                         'hours' => 2,
-                        'body' => "Status: RF path under review\nAsset context: Handheld scanners via PG-NET-0006 (PLT-AP-PACK)\nIssue Summary:\nReceiving handhelds drop association when operators walk past the shrink-wrap tunnel.\nTroubleshooting Completed:\n• AP neighbours look clean; channel 36 utilisation spikes when the tunnel heater cycles (demo RF story).\n• One scanner stayed stable when forced to 2.4 GHz — points to 5 GHz attenuation.\nNext Steps:\n• ".$mention('mercy.chebet')." Walk the tunnel with a phone Wi-Fi analyser screenshot at 10:00.\n• Do not wholesale move all scanners to 2.4 GHz — capacity is already tight on that band.",
+                        'body' => "Status: RF path under review\nAsset context: Handheld scanners via PG-NET-0006 (PLT-AP-PACK)\nIssue Summary:\nReceiving handhelds drop association when operators walk past the shrink-wrap tunnel.\nTroubleshooting Completed:\n• AP neighbours look clean; channel 36 utilisation spikes when the tunnel heater cycles (demo RF story).\n• One scanner stayed stable when forced to 2.4 GHz - points to 5 GHz attenuation.\nNext Steps:\n• ".$mention('mercy.chebet')." Walk the tunnel with a phone Wi-Fi analyser screenshot at 10:00.\n• Do not wholesale move all scanners to 2.4 GHz - capacity is already tight on that band.",
                     ],
                 ],
                 'images' => [
@@ -246,13 +246,13 @@ class CaseNotesMediaSeeder extends Seeder
                         'author' => 'faith.cheruiyot@northridge.example',
                         'visibility' => 'internal',
                         'hours' => 1,
-                        'body' => "Status: Escalated to Tier 2 applications + weighing vendor liaison\nAccount: Intake Line — FloorWeigh / PG-SCL-0301\nIssue Summary:\nClient reported weight readings freeze after ~20 minutes. Intake has not stopped, but QA rejection alerts are firing on stale weights.\nTroubleshooting Completed:\n• Verified gateway connectivity and local MQTT broker logs — latency normal (<15ms in the simulation).\n• Confirmed 24V DC at the junction box is steady.\n• Restarted FloorWeigh client on two benches; freeze returned on both after ~22 minutes.\nNext Steps:\n• ".$mention('lilian.auma')." Confirm whether the latest FloorWeigh build introduced a buffer issue under high-frequency polling.\n• Do not authorize a full-line client rollback until Engineering reviews the diagnostic dump named floorweigh_intake_trace.zip (placeholder in demo media).\n• Sentiment: Plant lead is frustrated; update before the 14:00 shift change.",
+                        'body' => "Status: Escalated to Tier 2 applications + weighing vendor liaison\nAccount: Intake Line - FloorWeigh / PG-SCL-0301\nIssue Summary:\nClient reported weight readings freeze after ~20 minutes. Intake has not stopped, but QA rejection alerts are firing on stale weights.\nTroubleshooting Completed:\n• Verified gateway connectivity and local MQTT broker logs - latency normal (<15ms in the simulation).\n• Confirmed 24V DC at the junction box is steady.\n• Restarted FloorWeigh client on two benches; freeze returned on both after ~22 minutes.\nNext Steps:\n• ".$mention('lilian.auma')." Confirm whether the latest FloorWeigh build introduced a buffer issue under high-frequency polling.\n• Do not authorize a full-line client rollback until Engineering reviews the diagnostic dump named floorweigh_intake_trace.zip (placeholder in demo media).\n• Sentiment: Plant lead is frustrated; update before the 14:00 shift change.",
                     ],
                     [
                         'author' => 'grace.wanjiku@northridge.example',
                         'visibility' => 'requester_visible',
                         'hours' => 2,
-                        'body' => "Thank you — we can keep weighing manually for now, but please keep us posted before afternoon dispatch. Stale weights are causing false QA rejects.",
+                        'body' => "Thank you - we can keep weighing manually for now, but please keep us posted before afternoon dispatch. Stale weights are causing false QA rejects.",
                     ],
                 ],
                 'images' => [
@@ -267,7 +267,7 @@ class CaseNotesMediaSeeder extends Seeder
                         'author' => 'amina.okello@northridge.example',
                         'visibility' => 'internal',
                         'hours' => 2,
-                        'body' => "Status: Security monitoring follow-up\nIssue Summary:\nRepeated failed logins against the demonstration service account overnight from an address inside the lab VLAN story.\nTroubleshooting Completed:\n• Account not locked out — threshold alerts only.\n• Source correlates with the QA lab desktop used for certificate macros (related case PG-2026-0168).\nNext Steps:\n• ".$mention('helen.achieng')." For the audit trail, keep this case linked to the macro-block incident.\n• ".$mention('faith.cheruiyot')." Rotate the service account password in the demo vault after confirming no scheduled job depends on the old secret tonight.",
+                        'body' => "Status: Security monitoring follow-up\nIssue Summary:\nRepeated failed logins against the demonstration service account overnight from an address inside the lab VLAN story.\nTroubleshooting Completed:\n• Account not locked out - threshold alerts only.\n• Source correlates with the QA lab desktop used for certificate macros (related case PG-2026-0168).\nNext Steps:\n• ".$mention('helen.achieng')." For the audit trail, keep this case linked to the macro-block incident.\n• ".$mention('faith.cheruiyot')." Rotate the service account password in the demo vault after confirming no scheduled job depends on the old secret tonight.",
                     ],
                 ],
                 'images' => [
@@ -282,7 +282,7 @@ class CaseNotesMediaSeeder extends Seeder
                         'author' => 'brian.otieno@northridge.example',
                         'visibility' => 'internal',
                         'hours' => 2,
-                        'body' => "Status: Critical link flap — packaging fabric\nDevice: PG-NET-0004 / PLT-SW-PACK\nIssue Summary:\nBrief drops on packaging terminals; PackLabel sessions disconnect for 3–5 seconds.\nTroubleshooting Completed:\n• Interface counters show CRC climb on uplink to core.\n• Reseated fibre patch in SRV-RM; CRC growth stopped in the simulation (photo of patch panel).\nNext Steps:\n• ".$mention('daniel.mwangi')." Approve replacement of the suspect LC patch lead from spares.\n• Monitor for 24h before closing.",
+                        'body' => "Status: Critical link flap - packaging fabric\nDevice: PG-NET-0004 / PLT-SW-PACK\nIssue Summary:\nBrief drops on packaging terminals; PackLabel sessions disconnect for 3-5 seconds.\nTroubleshooting Completed:\n• Interface counters show CRC climb on uplink to core.\n• Reseated fibre patch in SRV-RM; CRC growth stopped in the simulation (photo of patch panel).\nNext Steps:\n• ".$mention('daniel.mwangi')." Approve replacement of the suspect LC patch lead from spares.\n• Monitor for 24h before closing.",
                     ],
                     [
                         'author' => 'daniel.mwangi@northridge.example',
@@ -303,7 +303,7 @@ class CaseNotesMediaSeeder extends Seeder
                         'author' => 'mercy.chebet@northridge.example',
                         'visibility' => 'internal',
                         'hours' => 2,
-                        'body' => "Status: Application queue stuck on line 2\nAsset/App: PG-LBL-0142 · PackLabel\nIssue Summary:\nJobs remain Queued and never reach Spooling after the morning reprint storm.\nTroubleshooting Completed:\n• Cleared two zombie jobs stuck in “Rendering”.\n• Printer path pings; device accepts a manual test page from the driver.\nNext Steps:\n• ".$mention('kevin.njoroge')." Correlate with PLT-APP01 memory case PG-2026-0157 — may be the same worker pool.\n• Requester update once queue drains below 20.",
+                        'body' => "Status: Application queue stuck on line 2\nAsset/App: PG-LBL-0142 · PackLabel\nIssue Summary:\nJobs remain Queued and never reach Spooling after the morning reprint storm.\nTroubleshooting Completed:\n• Cleared two zombie jobs stuck in “Rendering”.\n• Printer path pings; device accepts a manual test page from the driver.\nNext Steps:\n• ".$mention('kevin.njoroge')." Correlate with PLT-APP01 memory case PG-2026-0157 - may be the same worker pool.\n• Requester update once queue drains below 20.",
                     ],
                 ],
                 'images' => [
@@ -318,7 +318,7 @@ class CaseNotesMediaSeeder extends Seeder
                         'author' => 'faith.cheruiyot@northridge.example',
                         'visibility' => 'internal',
                         'hours' => 1,
-                        'body' => "Status: New · power-dip aftermath\nAsset: PG-PC-0101 packaging terminal\nIssue Summary:\nBlack screen after morning power dip; no POST beep heard by operators.\nTroubleshooting Completed:\n• External monitor test not yet possible — waiting for a spare display cable.\n• PSU fan spins; motherboard diagnostic LED shows “DRAM” code on this model family (demo).\nNext Steps:\n• ".$mention('brian.otieno')." Reseat RAM and CMOS on site with ESD kit.\n• If no POST, swap with spare desktop from ICT cage and restore the PackLabel shortcut pack.",
+                        'body' => "Status: New · power-dip aftermath\nAsset: PG-PC-0101 packaging terminal\nIssue Summary:\nBlack screen after morning power dip; no POST beep heard by operators.\nTroubleshooting Completed:\n• External monitor test not yet possible - waiting for a spare display cable.\n• PSU fan spins; motherboard diagnostic LED shows “DRAM” code on this model family (demo).\nNext Steps:\n• ".$mention('brian.otieno')." Reseat RAM and CMOS on site with ESD kit.\n• If no POST, swap with spare desktop from ICT cage and restore the PackLabel shortcut pack.",
                     ],
                 ],
                 'images' => [
@@ -333,7 +333,7 @@ class CaseNotesMediaSeeder extends Seeder
                         'author' => 'lilian.auma@northridge.example',
                         'visibility' => 'internal',
                         'hours' => 2,
-                        'body' => "Status: Hardware feed path\nAsset: PG-SCN-0201 (used at AP desk in this demo story)\nIssue Summary:\nDouble-sheet feeds duplicate invoice images.\nTroubleshooting Completed:\n• Cleaned separation pad; reduced thickness setting one notch.\n• Tested 10 invoices — one double-feed remained on curled stock.\nNext Steps:\n• Ask Finance to flatten curled invoices overnight.\n• ".$mention('faith.cheruiyot')." Order a separation-pad kit on the Helio demo vendor account if it repeats tomorrow.",
+                        'body' => "Status: Hardware feed path\nAsset: PG-SCN-0201 (used at AP desk in this demo story)\nIssue Summary:\nDouble-sheet feeds duplicate invoice images.\nTroubleshooting Completed:\n• Cleaned separation pad; reduced thickness setting one notch.\n• Tested 10 invoices - one double-feed remained on curled stock.\nNext Steps:\n• Ask Finance to flatten curled invoices overnight.\n• ".$mention('faith.cheruiyot')." Order a separation-pad kit on the Helio demo vendor account if it repeats tomorrow.",
                     ],
                 ],
                 'images' => [
@@ -348,13 +348,13 @@ class CaseNotesMediaSeeder extends Seeder
                         'author' => 'naomi.wairimu@northridge.example',
                         'visibility' => 'requester_visible',
                         'hours' => 1,
-                        'body' => "Morning checklists from PG-PRT-0401 are too light to sign. Toner was swapped last week — still faint across the whole page.",
+                        'body' => "Morning checklists from PG-PRT-0401 are too light to sign. Toner was swapped last week - still faint across the whole page.",
                     ],
                     [
                         'author' => 'mercy.chebet@northridge.example',
                         'visibility' => 'internal',
                         'hours' => 2,
-                        'body' => "Status: Print path / density\nAsset: PG-PRT-0401 QA laboratory printer\nIssue Summary:\nDensity low on every page; not a single-job artefact.\nTroubleshooting Completed:\n• Printed the HP config page — toner remaining shows ~40% in the demo reading.\n• Drum life is near end-of-life on this model family (photo of supplies page).\nNext Steps:\n• ".$mention('faith.cheruiyot')." Issue a drum kit from ICT stores; keep the faint sample set in the case media for the vendor claim.\n• Requester can use the admin-block copier for today only — remind QA not to leave originals there overnight.",
+                        'body' => "Status: Print path / density\nAsset: PG-PRT-0401 QA laboratory printer\nIssue Summary:\nDensity low on every page; not a single-job artefact.\nTroubleshooting Completed:\n• Printed the HP config page - toner remaining shows ~40% in the demo reading.\n• Drum life is near end-of-life on this model family (photo of supplies page).\nNext Steps:\n• ".$mention('faith.cheruiyot')." Issue a drum kit from ICT stores; keep the faint sample set in the case media for the vendor claim.\n• Requester can use the admin-block copier for today only - remind QA not to leave originals there overnight.",
                     ],
                 ],
                 'images' => [
@@ -369,7 +369,7 @@ class CaseNotesMediaSeeder extends Seeder
                         'author' => 'kevin.njoroge@northridge.example',
                         'visibility' => 'internal',
                         'hours' => 2,
-                        'body' => "Status: App tier + auth path\nApp: Northridge ERP (Demo 4.2)\nIssue Summary:\nTwo finance clerks hit login timeout from the admin block. Warehouse ERP sessions still open.\nTroubleshooting Completed:\n• PLT-APP01 HTTPS responds; AD auth from finance VLAN shows intermittent LDAP bind delays in the simulation log.\n• Cleared stale Kerberos tickets on one clerk PC — improved for that user only.\nNext Steps:\n• ".$mention('lilian.auma')." Check directory replication health on PLT-AD01 before we blame the ERP pool.\n• ".$mention('gladys.wanjiru')." Please retry from a cold browser profile and note the exact error text.",
+                        'body' => "Status: App tier + auth path\nApp: Northridge ERP (Demo 4.2)\nIssue Summary:\nTwo finance clerks hit login timeout from the admin block. Warehouse ERP sessions still open.\nTroubleshooting Completed:\n• PLT-APP01 HTTPS responds; AD auth from finance VLAN shows intermittent LDAP bind delays in the simulation log.\n• Cleared stale Kerberos tickets on one clerk PC - improved for that user only.\nNext Steps:\n• ".$mention('lilian.auma')." Check directory replication health on PLT-AD01 before we blame the ERP pool.\n• ".$mention('gladys.wanjiru')." Please retry from a cold browser profile and note the exact error text.",
                     ],
                 ],
                 'images' => [
@@ -390,7 +390,7 @@ class CaseNotesMediaSeeder extends Seeder
                         'author' => 'brian.otieno@northridge.example',
                         'visibility' => 'internal',
                         'hours' => 3,
-                        'body' => "Status: Share ACL + name resolution\nHost: PLT-FS01 / PG-SRV-0002\nIssue Summary:\nMap fails with “network path not found” from PG-PC-0103 only.\nTroubleshooting Completed:\n• Ping to 10.10.10.12 succeeds; DNS suffix for the QA VLAN was missing the plant.local search list in the demo story.\n• Added the suffix via the desktop script and remapped — share opens.\nNext Steps:\n• ".$mention('helen.achieng')." For the audit pack, keep the before/after IP config screenshot attached.\n• Roll the same suffix fix into the QA desktop image checklist.",
+                        'body' => "Status: Share ACL + name resolution\nHost: PLT-FS01 / PG-SRV-0002\nIssue Summary:\nMap fails with “network path not found” from PG-PC-0103 only.\nTroubleshooting Completed:\n• Ping to 10.10.10.12 succeeds; DNS suffix for the QA VLAN was missing the plant.local search list in the demo story.\n• Added the suffix via the desktop script and remapped - share opens.\nNext Steps:\n• ".$mention('helen.achieng')." For the audit pack, keep the before/after IP config screenshot attached.\n• Roll the same suffix fix into the QA desktop image checklist.",
                     ],
                 ],
                 'images' => [
@@ -406,13 +406,13 @@ class CaseNotesMediaSeeder extends Seeder
                         'author' => 'diana.jepchirchir@northridge.example',
                         'visibility' => 'requester_visible',
                         'hours' => 1,
-                        'body' => "Calibration vendor (Savannah Scale Works contact) visits next Tuesday. They need guest wireless for tablet documentation only — no plant systems.",
+                        'body' => "Calibration vendor (Savannah Scale Works contact) visits next Tuesday. They need guest wireless for tablet documentation only - no plant systems.",
                     ],
                     [
                         'author' => 'samwel.kiprono@northridge.example',
                         'visibility' => 'internal',
                         'hours' => 2,
-                        'body' => "Status: Guest SSID prep (audit-aware)\nIssue Summary:\nTemporary guest access for a scheduled vendor visit.\nControls:\n• Use the existing Guest-Plant SSID with a 48-hour voucher — do not bridge to VLAN 20.\n• ".$mention('amina.okello')." Confirm voucher logging is retained for 90 days per the demo security control.\n• ".$mention('brian.otieno')." Print two vouchers and leave them with Maintenance reception the morning of the visit.\nAttachment: AP coverage photo near the intake bay for the walkthrough.",
+                        'body' => "Status: Guest SSID prep (audit-aware)\nIssue Summary:\nTemporary guest access for a scheduled vendor visit.\nControls:\n• Use the existing Guest-Plant SSID with a 48-hour voucher - do not bridge to VLAN 20.\n• ".$mention('amina.okello')." Confirm voucher logging is retained for 90 days per the demo security control.\n• ".$mention('brian.otieno')." Print two vouchers and leave them with Maintenance reception the morning of the visit.\nAttachment: AP coverage photo near the intake bay for the walkthrough.",
                     ],
                 ],
                 'images' => [
@@ -434,7 +434,7 @@ class CaseNotesMediaSeeder extends Seeder
                         'author' => 'lilian.auma@northridge.example',
                         'visibility' => 'internal',
                         'hours' => 3,
-                        'body' => "Status: Resolved in demo · trusted location restored\nIssue Summary:\nOffice update cleared the QA templates trusted location.\nTroubleshooting Completed:\n• Re-added \\\\PLT-FS01\\qa-templates to Trusted Locations via GPO preference (simulation).\n• Opened the certificate pack on two QA PCs — macros run without the block prompt.\nNext Steps:\n• Linked security follow-up: ".$mention('amina.okello')." see case PG-2026-0164 for the failed-login noise from the same lab desktop during testing.\n• Keep the supplies/desktop photo for the change evidence pack.",
+                        'body' => "Status: Resolved in demo · trusted location restored\nIssue Summary:\nOffice update cleared the QA templates trusted location.\nTroubleshooting Completed:\n• Re-added \\\\PLT-FS01\\qa-templates to Trusted Locations via GPO preference (simulation).\n• Opened the certificate pack on two QA PCs - macros run without the block prompt.\nNext Steps:\n• Linked security follow-up: ".$mention('amina.okello')." see case PG-2026-0164 for the failed-login noise from the same lab desktop during testing.\n• Keep the supplies/desktop photo for the change evidence pack.",
                     ],
                 ],
                 'images' => [
@@ -470,7 +470,7 @@ class CaseNotesMediaSeeder extends Seeder
                         'author' => 'mercy.chebet@northridge.example',
                         'visibility' => 'internal',
                         'hours' => 2,
-                        'body' => "Status: Shared mailbox + send-as\nIssue Summary:\nPassword reset on the shared account broke Outlook profiles that cached the old secret.\nTroubleshooting Completed:\n• Reset mailbox permissions (Full Access + Send As) for the Maintenance distribution list in the demo directory.\n• Asked ".$mention('beatrice.chelagat')." to remove and re-add the mailbox in Outlook.\nNext Steps:\n• Document the reset checklist so the next password rotation does not strand the team.\n• No hardware media — identity-only case.",
+                        'body' => "Status: Shared mailbox + send-as\nIssue Summary:\nPassword reset on the shared account broke Outlook profiles that cached the old secret.\nTroubleshooting Completed:\n• Reset mailbox permissions (Full Access + Send As) for the Maintenance distribution list in the demo directory.\n• Asked ".$mention('beatrice.chelagat')." to remove and re-add the mailbox in Outlook.\nNext Steps:\n• Document the reset checklist so the next password rotation does not strand the team.\n• No hardware media - identity-only case.",
                     ],
                 ],
                 'images' => [],

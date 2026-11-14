@@ -26,7 +26,7 @@ class NavBadges
     }
 
     /**
-     * Open cases under this person (requested, owned, or partner) — not resolved/closed.
+     * Open cases under this person (requested, owned, or partner) - not resolved/closed.
      */
     public static function myCases(User $user): int
     {

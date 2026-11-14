@@ -19,7 +19,7 @@ class WorkspaceTabService
 
     private const MAX_TABS = 12;
 
-    /** Module hubs already live in primary nav — never keep them as record tabs. */
+    /** Module hubs already live in primary nav - never keep them as record tabs. */
     private const MODULE_KEYS = ['messages', 'docs', 'monitoring'];
 
     public function all(): Collection

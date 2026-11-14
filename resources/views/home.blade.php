@@ -98,7 +98,7 @@
                         height="900"
                         loading="lazy"
                     >
-                    <figcaption>Operations desk for plant technology work — the console is where cases, assets and infrastructure meet.</figcaption>
+                    <figcaption>Operations desk for plant technology work - the console is where cases, assets and infrastructure meet.</figcaption>
                 </figure>
             </div>
         </section>
@@ -198,7 +198,7 @@
                         height="900"
                         loading="lazy"
                     >
-                    <figcaption>Infrastructure is documented in place — network and server records stay beside the cases they affect.</figcaption>
+                    <figcaption>Infrastructure is documented in place - network and server records stay beside the cases they affect.</figcaption>
                 </figure>
                 <div class="pg-home-feature-copy">
                     <p class="pg-home-kicker">Infrastructure depth</p>
@@ -209,7 +209,7 @@
                         holds the hostname, management IP, location and linked asset tag.
                     </p>
                     <p>
-                        The AI assistant can answer from that same live demo register — ask about open cases,
+                        The AI assistant can answer from that same live demo register - ask about open cases,
                         asset tags or device status and it replies from the Northridge sample data.
                     </p>
                 </div>

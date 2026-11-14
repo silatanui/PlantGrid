@@ -483,14 +483,14 @@ class WorkerPerformanceService
             ? null
             : round(($slaHits / $slaEligible->count()) * 100, 1);
 
-        $roleName = $worker->roles->pluck('name')->first() ?? '—';
+        $roleName = $worker->roles->pluck('name')->first() ?? '-';
 
         return [
             'user_id' => $worker->id,
             'name' => $worker->name,
             'email' => $worker->email,
             'role' => $roleName,
-            'department' => $worker->department->name ?? '—',
+            'department' => $worker->department->name ?? '-',
             'open' => $openCount,
             'intake' => $intake->count(),
             'resolved' => $resolvedCount,

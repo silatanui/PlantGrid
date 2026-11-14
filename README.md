@@ -22,15 +22,15 @@ Password for every account: `PlantGrid-Demo`
 
 Preferred starting account:
 
-- amina.okello@northridge.example — System Administrator
+- amina.okello@northridge.example - System Administrator
 
 Other roles:
 
-- daniel.mwangi@northridge.example — ICT Manager
-- faith.cheruiyot@northridge.example — ICT Technician
-- peter.kamau@northridge.example — Department Manager
-- grace.wanjiku@northridge.example — General Employee
-- helen.achieng@northridge.example — Auditor
+- daniel.mwangi@northridge.example - ICT Manager
+- faith.cheruiyot@northridge.example - ICT Technician
+- peter.kamau@northridge.example - Department Manager
+- grace.wanjiku@northridge.example - General Employee
+- helen.achieng@northridge.example - Auditor
 
 Grace Wanjiku has an open high-priority ticket, PG-2026-0148, for the packaging barcode label printer. Daniel can assign it and Faith can record the resolution.
 

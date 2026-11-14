@@ -102,7 +102,7 @@
                     <div class="pg-audit-entry-tags">
                         <code class="pg-audit-action" title="{{ $log->action }}">{{ $log->action }}</code>
                         <span class="pg-audit-entity">
-                            <span class="pg-audit-entity-type">{{ $log->entity_type ?: '—' }}</span>
+                            <span class="pg-audit-entity-type">{{ $log->entity_type ?: '-' }}</span>
                             @if ($log->entity_id)
                                 <span class="pg-mono">#{{ $log->entity_id }}</span>
                             @endif

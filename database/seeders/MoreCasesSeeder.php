@@ -155,7 +155,7 @@ class MoreCasesSeeder extends Seeder
             ['PG-2026-0171', 'PRD', 'Hardware', 'PG-PC-0090', null, 'Shift supervisor laptop battery drains quickly', 'The production supervisor laptop drops to 20 percent within an hour even when idle on the desk.', 'low', 'closed', 4, 22, 5, 'Battery health report showed end-of-life. A spare laptop was issued from ICT stock.'],
             ['PG-2026-0172', 'WHS', 'User account and access', null, null, 'New warehouse starter needs system access', 'A new warehouse clerk needs ERP read access and the finished-goods share mapped on day one.', 'medium', 'in_progress', 5, 6, 3],
 
-            // Fresh queue — newly opened, not yet owned
+            // Fresh queue - newly opened, not yet owned
             ['PG-2026-0173', 'PRD', 'Hardware', 'PG-PC-0101', null, 'Packaging laptop keyboard keys stick on shift handover', 'Several keys on the packaging supervisor laptop stick during afternoon handover, slowing dispatch note entry.', 'medium', 'new', null, 1, 1],
             ['PG-2026-0174', 'WHS', 'Printer or scanner', null, null, 'Receiving desk printer offline after overnight reboot', 'The receiving desk printer shows offline in Windows after the overnight power cycle.', 'high', 'new', null, 2, 1],
             ['PG-2026-0175', 'FIN', 'Software', 'PG-PC-0104', null, 'Finance spreadsheet formulas show #REF after copy', 'A clerk reports broken references in the weekly cashflow workbook after copying sheets between months.', 'low', 'new', null, 4, 3],
@@ -169,7 +169,7 @@ class MoreCasesSeeder extends Seeder
             ['PG-2026-0183', 'PRD', 'Server and infrastructure', null, null, 'Shift report share folder missing for packaging team', 'The packaging shift report folder disappeared from the mapped drive overnight.', 'high', 'new', null, 3, 1],
             ['PG-2026-0184', 'MNT', 'Hardware', null, null, 'Workshop tablet will not charge on dock', 'The maintenance workshop tablet stays at 4 percent even when seated on the charging dock.', 'medium', 'new', null, 6, 3],
 
-            // Worked cases — assigned / in progress / pending
+            // Worked cases - assigned / in progress / pending
             ['PG-2026-0185', 'PRD', 'Network connectivity', 'PG-NET-0003', null, 'Processing hall intermittent latency on intake PCs', 'Intake PCs briefly freeze when saving FloorWeigh sessions. Packet loss was seen toward PLT-SW-PROD.', 'high', 'in_progress', 0, 28, 1],
             ['PG-2026-0186', 'WHS', 'Hardware', 'PG-PC-0104', null, 'Warehouse desktop fans run loudly under light load', 'The warehouse desk PC fans ramp constantly even when only the inventory workbook is open.', 'low', 'assigned', 1, 36, 4],
             ['PG-2026-0187', 'FIN', 'ERP and business application', null, 'Northridge ERP', 'Supplier remittance advice email fails from ERP', 'Finance remittance advice emails stay in the ERP outbox and never reach suppliers.', 'high', 'in_progress', 2, 40, 2],
@@ -189,7 +189,7 @@ class MoreCasesSeeder extends Seeder
             ['PG-2026-0201', 'FIN', 'User account and access', null, null, 'Accounts receivable needs shared mailbox add-in', 'AR staff need the shared mailbox visible in Outlook after a role move from AP.', 'low', 'in_progress', 4, 50, 4],
             ['PG-2026-0202', 'ICT', 'Server and infrastructure', 'PG-SRV-0001', null, 'Directory sync delay for new starter accounts', 'New starter accounts appear in AD but take over an hour to sync to the file-share ACL groups.', 'high', 'pending', 5, 55, null],
 
-            // Solved — resolved / closed history across recent weeks
+            // Solved - resolved / closed history across recent weeks
             ['PG-2026-0203', 'PRD', 'Hardware', 'PG-PC-0101', null, 'Packaging laptop overheating on stand', 'The packaging laptop shut down from heat while charging on the metal stand.', 'medium', 'resolved', 0, 96, null, 'Thermal paste was re-applied and the stand was swapped for a ventilated cradle. Temperatures stayed within the demo baseline.'],
             ['PG-2026-0204', 'WHS', 'Network connectivity', null, null, 'Warehouse cannot print to packaging label queue', 'Warehouse clerks could not reach the packaging label print queue across VLANs.', 'high', 'closed', 1, 120, null, 'Firewall rule for print services between warehouse and packaging was corrected in the demonstration policy set.'],
             ['PG-2026-0205', 'FIN', 'ERP and business application', null, 'Northridge ERP', 'Month-end journal import rejected CSV encoding', 'Finance journal import failed on accented supplier names due to CSV encoding.', 'medium', 'resolved', 2, 144, null, 'Import template was switched to UTF-8 and a sample journal posted successfully.'],
@@ -287,7 +287,7 @@ class MoreCasesSeeder extends Seeder
             TicketComment::query()->create([
                 'support_ticket_id' => $ticket->id,
                 'user_id' => $requester->id,
-                'comment' => 'Thanks — we can provide access to the area whenever ICT is on site.',
+                'comment' => 'Thanks - we can provide access to the area whenever ICT is on site.',
                 'visibility' => 'requester_visible',
                 'created_at' => $cursor,
                 'updated_at' => $cursor,

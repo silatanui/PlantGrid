@@ -147,7 +147,7 @@
 
 html, body { min-height: 100%; }
 
-/* Desktop shell: one scrollbar per column — never a document scroll beside the rails. */
+/* Desktop shell: one scrollbar per column - never a document scroll beside the rails. */
 @media (min-width: 1400px) {
     html:has(body.pg-shell),
     body.pg-shell {
@@ -2058,7 +2058,7 @@ body.is-shell-navigating [data-workspace-tabs] {
     list-style: none;
     margin: 0;
     padding: 0;
-    /* Scroll lives on .pg-rail — never nest a second overflow here. */
+    /* Scroll lives on .pg-rail - never nest a second overflow here. */
     max-height: none;
     overflow: visible;
 }

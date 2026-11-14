@@ -54,8 +54,8 @@
                             <a href="{{ route('people.show', $person) }}">{{ $person->name }}</a>
                             <div class="text-muted small pg-mono">{{ $person->email }}</div>
                         </td>
-                        <td>{{ $person->roles->pluck('name')->join(', ') ?: '—' }}</td>
-                        <td>{{ $person->department->name ?? '—' }}</td>
+                        <td>{{ $person->roles->pluck('name')->join(', ') ?: '-' }}</td>
+                        <td>{{ $person->department->name ?? '-' }}</td>
                         <td data-last-seen>{{ \App\Support\Format::date($person->last_seen_at) }}</td>
                         @if ($canAssign)
                             <td style="min-width: 280px;">

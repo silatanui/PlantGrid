@@ -27,7 +27,7 @@ class CatchUpLivePulse
                     $this->monitoringPulse->catchUpIfStale();
                 });
             } catch (Throwable) {
-                // Demo convenience only — never block the console.
+                // Demo convenience only - never block the console.
             }
         }
 

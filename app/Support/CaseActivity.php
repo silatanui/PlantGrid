@@ -79,7 +79,7 @@ class CaseActivity
                 'actor' => $actor->name ?? 'System',
                 'actor_id' => $actor?->id ?? $log->user_id,
                 'actor_url' => $actor ? route('people.show', $actor) : null,
-                // Already viewing this case — omit redundant "on PG-…" suffix.
+                // Already viewing this case - omit redundant "on PG-…" suffix.
                 'label' => self::labelFor($log),
                 'badge' => self::badgeFor($log->action),
                 'body' => $detail,

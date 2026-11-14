@@ -201,29 +201,29 @@ class EventCatalog
         return [
             <<<'TXT'
 [{pack}]
-Internal field checklist — {case}
+Internal field checklist - {case}
 
 • Symptom: "{subject}" still reported against {device} at {location}
 • Checks done: interface counters + physical reseat on the floor patch; neighbour ports healthy
 • Evidence: old lead bagged; faceplate port tagged; counters noted before/after reseat
 • Interconnections documented: {related}
-• Priority: {priority} — watch one full production cycle before permanent lead swap
-• Owner: {owner} — escalate to ICT Manager only if flaps return this shift
+• Priority: {priority} - watch one full production cycle before permanent lead swap
+• Owner: {owner} - escalate to ICT Manager only if flaps return this shift
 TXT,
             <<<'TXT'
 [{pack}]
-Internal impact checklist — {case}
+Internal impact checklist - {case}
 
 • Area contact at {location}: can absorb one truck delay, not two
 • Confirmed endpoint: {device} (neighbouring cabinet kit OK)
-• Workaround: none lasting — keep truck window risk visible to Packaging lead
+• Workaround: none lasting - keep truck window risk visible to Packaging lead
 • Interconnections documented: {related}
 • Next: {owner} posts requester-visible ETA before next dispatch cut-off
 • Do not resolve until after the next production wave proves the link
 TXT,
             <<<'TXT'
 [{pack}]
-Internal diagnostic checklist — {case}
+Internal diagnostic checklist - {case}
 
 • Root cause lean: application-layer freeze under high polling (not dead PSU)
 • Power rail at junction: steady; on-screen state captured before last drop
@@ -235,20 +235,20 @@ Internal diagnostic checklist — {case}
 TXT,
             <<<'TXT'
 [{pack}]
-Internal print-path checklist — {case}
+Internal print-path checklist - {case}
 
 • Root cause lean: jobs leave PackLabel queue but {device} never ACKs
 • Host side: cleared zombie Rendering jobs; memory pressure correlated on app server story
 • Evidence: queue drain timestamps + missing ACK from {device_tag}
 • Interconnections documented: {related}
 • Spare path: prepared; original job IDs stay valid until cutover
-• Owner: {owner} — keep requester updates calm; no resolve until ACK proven under load
+• Owner: {owner} - keep requester updates calm; no resolve until ACK proven under load
 TXT,
             <<<'TXT'
 [{pack}]
-Internal identity checklist — {case}
+Internal identity checklist - {case}
 
-• Root cause lean: stale MFA / account state — not a plant-wide directory outage
+• Root cause lean: stale MFA / account state - not a plant-wide directory outage
 • Host / directory touchpoint: {host}
 • Evidence: warehouse sessions healthy; one stale MFA method still registered
 • Temporary control: SMS offered 48h while primary method cleaned
@@ -257,18 +257,18 @@ Internal identity checklist — {case}
 TXT,
             <<<'TXT'
 [{pack}]
-Internal network checklist — {case}
+Internal network checklist - {case}
 
 • Root cause lean: physical / optics seating on path to {device}
 • Fix so far: LC patch reseated server-room side; CRC growth stopped
 • Evidence: old lead retained; uplink monitoring window started
 • Interconnections documented: {related}
 • If flaps return at intake rush: 2.4 GHz walk-test on edge kit only (not whole fleet)
-• Owner: {owner} — 24h watch before calling physical layer closed
+• Owner: {owner} - 24h watch before calling physical layer closed
 TXT,
             <<<'TXT'
 [{pack}]
-Internal desktop/share checklist — {case}
+Internal desktop/share checklist - {case}
 
 • Root cause lean: search suffix / trusted-location drift after Office update
 • Fix so far: plant suffix added; templates share remapped on linked desktop
@@ -279,13 +279,13 @@ Internal desktop/share checklist — {case}
 TXT,
             <<<'TXT'
 [{pack}]
-Internal shift-handoff checklist — {case}
+Internal shift-handoff checklist - {case}
 
 • Status narrative: work documented against {device}; pending items called out above
-• Do not resolve overnight — next production wave must prove the fix
+• Do not resolve overnight - next production wave must prove the fix
 • Interconnections documented: {related}
 • Evening desk: take ownership if free; ping {owner} only for parts/vendor blockers
-• Requester contact: {requester} — keep visible notes factual, internals detailed
+• Requester contact: {requester} - keep visible notes factual, internals detailed
 TXT,
         ];
     }
@@ -301,7 +301,7 @@ TXT,
             'Temporary workaround: use the spare unit from ICT cage bay 3 until the primary ({device}) is repaired. Keep using your original job references.',
             'Please confirm whether the issue on {device} still occurs after the lunch break restart, then reply on this case.',
             'Guest vouchers will be left at Maintenance reception before 08:30. They remain isolated from the plant VLAN.',
-            'We recycled the PackLabel service briefly to clear memory pressure. Queued jobs for {device} should resume automatically — tell us if labels stay stuck.',
+            'We recycled the PackLabel service briefly to clear memory pressure. Queued jobs for {device} should resume automatically - tell us if labels stay stuck.',
             'Network path restored after reseating the floor patch at {location}. Please retry {device} and reply if it drops again.',
             'Trusted location for QA templates has been restored. Please reopen the certificate workbook and confirm on this case.',
             'Access work for "{subject}" is in progress. You will receive confirmation when ERP read access and the share mapping are ready.',
@@ -317,7 +317,7 @@ TXT,
         return [
             <<<'TXT'
 [{pack}]
-Internal assign checklist — {case}
+Internal assign checklist - {case}
 
 • Stage move: unowned / new → assigned
 • Owner now: {owner}
@@ -325,11 +325,11 @@ Internal assign checklist — {case}
 • Linked device: {device} @ {location}
 • First actions: confirm symptom on the floor, capture device/interface state, post next internal update before another status change
 • Interconnections documented: {related}
-• Rule: either start in progress or park pending with a dated reason — do not leave silent
+• Rule: either start in progress or park pending with a dated reason - do not leave silent
 TXT,
             <<<'TXT'
 [{pack}]
-Internal ownership checklist — {case}
+Internal ownership checklist - {case}
 
 • Assigning "{subject}" to {owner}
 • Scope: {device_tag} / {device} remains linked for Assets + case history
@@ -355,35 +355,35 @@ TXT,
             'assigned>in_progress' => [
                 <<<'TXT'
 [{pack}]
-Internal stage checklist — assigned → in progress
+Internal stage checklist - assigned → in progress
 
-• Case: {case} — "{subject}"
+• Case: {case} - "{subject}"
 • Why advancing: first diagnostic pass complete; symptom reproducible enough for active work
 • Device: {device} @ {location}
 • Evidence: counters / device state captured; spare path identified if hardware fails mid-shift
 • Interconnections documented: {related}
-• Owner: {owner} — requester-visible update if downtime extends past current wave
+• Owner: {owner} - requester-visible update if downtime extends past current wave
 • Next: finish remediation under load, or move pending with a dated blocker (parts / window / confirmation)
 TXT,
                 <<<'TXT'
 [{pack}]
-Internal stage checklist — starting active work
+Internal stage checklist - starting active work
 
 • Case: {case}
 • Stage: assigned → in progress
 • Hands-on now against {device_tag} ({device})
 • Priority: {priority}
 • Interconnections documented: {related}
-• Guardrail: if parts or recycle window required, park pending — do not leave status ambiguous
+• Guardrail: if parts or recycle window required, park pending - do not leave status ambiguous
 • Owner accountable: {owner}
 TXT,
             ],
             'assigned>pending' => [
                 <<<'TXT'
 [{pack}]
-Internal stage checklist — assigned → pending
+Internal stage checklist - assigned → pending
 
-• Case: {case} — "{subject}"
+• Case: {case} - "{subject}"
 • Why parking: external dependency (parts, requester confirmation, or approved change window)
 • Device held: {device} @ {location}
 • Interconnections documented: {related}
@@ -394,7 +394,7 @@ TXT,
             'new>in_progress' => [
                 <<<'TXT'
 [{pack}]
-Internal stage checklist — new → in progress
+Internal stage checklist - new → in progress
 
 • Case: {case} claimed by {owner}
 • Why: skipping idle queue time; floor impact warrants immediate diagnosis
@@ -406,18 +406,18 @@ TXT,
             'in_progress>pending' => [
                 <<<'TXT'
 [{pack}]
-Internal stage checklist — in progress → pending
+Internal stage checklist - in progress → pending
 
-• Case: {case} — "{subject}"
+• Case: {case} - "{subject}"
 • Why pause: waiting on vendor parts, controlled recycle window, or requester confirmation before touching {device} again
 • Floor impact / workaround: understood and noted for Packaging / area lead
 • Evidence so far: filed on prior notes; device {device_tag} still linked
 • Interconnections documented: {related}
-• Next check owner: {owner} — resolve only after dependency clears and production wave looks clean
+• Next check owner: {owner} - resolve only after dependency clears and production wave looks clean
 TXT,
                 <<<'TXT'
 [{pack}]
-Internal hold checklist — pending dependency
+Internal hold checklist - pending dependency
 
 • Case: {case}
 • Stage: in progress → pending
@@ -430,40 +430,40 @@ TXT,
             'pending>in_progress' => [
                 <<<'TXT'
 [{pack}]
-Internal stage checklist — pending → in progress
+Internal stage checklist - pending → in progress
 
 • Case: {case}
 • Why resuming: blocking dependency cleared (parts / window / confirmation)
 • Back on: {device} @ {location} for "{subject}"
 • Interconnections documented: {related}
-• Owner: {owner} — verify under load before any resolve
+• Owner: {owner} - verify under load before any resolve
 TXT,
                 <<<'TXT'
 [{pack}]
-Internal resume checklist — {case}
+Internal resume checklist - {case}
 
 • Stage: pending → in progress
 • Hold lifted; continuing remediation on {device_tag}
 • Interconnections documented: {related}
-• Resolve gate: clean verification pass only — no silent close
+• Resolve gate: clean verification pass only - no silent close
 TXT,
             ],
             'in_progress>resolved' => [
                 <<<'TXT'
 [{pack}]
-Internal wrap checklist — resolve
+Internal wrap checklist - resolve
 
-• Case: {case} — "{subject}"
+• Case: {case} - "{subject}"
 • Root cause: addressed on {device} @ {location} in the demonstration environment
 • Fix: remediation complete; verified under current production conditions
 • Evidence: validation pass + prior diagnostic notes on this case
 • Interconnections documented: {related}
 • Await short monitoring only if useful → then close; asset link retained for history
-• Owner sign-off: {owner} — nothing else outstanding
+• Owner sign-off: {owner} - nothing else outstanding
 TXT,
                 <<<'TXT'
 [{pack}]
-Internal wrap checklist — ready to leave active work
+Internal wrap checklist - ready to leave active work
 
 • Case: {case}
 • Stage: in progress → resolved
@@ -476,20 +476,20 @@ TXT,
             'pending>resolved' => [
                 <<<'TXT'
 [{pack}]
-Internal wrap checklist — pending cleared → resolve
+Internal wrap checklist - pending cleared → resolve
 
 • Case: {case}
 • Root cause / blocker: cleared; final check on {device} succeeded
-• Fix: complete for "{subject}" — not bouncing back through idle assigned/new
+• Fix: complete for "{subject}" - not bouncing back through idle assigned/new
 • Evidence: dependency clearance + verification note
 • Interconnections documented: {related}
-• Owner: {owner} — queue item can leave open work
+• Owner: {owner} - queue item can leave open work
 TXT,
             ],
             'resolved>closed' => [
                 <<<'TXT'
 [{pack}]
-Internal close checklist — resolved → closed
+Internal close checklist - resolved → closed
 
 • Case: {case}
 • Why close now: requester confirmation / monitoring window complete for {device}
@@ -499,7 +499,7 @@ Internal close checklist — resolved → closed
 TXT,
                 <<<'TXT'
 [{pack}]
-Internal close checklist — {case}
+Internal close checklist - {case}
 
 • Stage: resolved → closed
 • Subject: "{subject}" stayed stable post-fix
@@ -517,9 +517,9 @@ TXT,
         return [
             <<<'TXT'
 [{pack}]
-Internal stage checklist — {from} → {to}
+Internal stage checklist - {from} → {to}
 
-• Case: {case} — "{subject}"
+• Case: {case} - "{subject}"
 • Device: {device} @ {location}
 • Why: continuing ICT workflow; {owner} accountable for next verification
 • Interconnections documented: {related}
@@ -575,7 +575,7 @@ TXT,
         return [
             [
                 'subject' => 'Packaging hall update',
-                'body' => 'Quick check — is the labeler still dark after the compressor start, or did it recover?',
+                'body' => 'Quick check - is the labeler still dark after the compressor start, or did it recover?',
             ],
             [
                 'subject' => 'VPN follow-up',
@@ -587,7 +587,7 @@ TXT,
             ],
             [
                 'subject' => 'Guest vouchers',
-                'body' => 'Two Guest-Plant vouchers for the vendor visit — confirm voucher logging is still on 90-day retention.',
+                'body' => 'Two Guest-Plant vouchers for the vendor visit - confirm voucher logging is still on 90-day retention.',
             ],
             [
                 'subject' => 'FloorWeigh link',
@@ -599,7 +599,7 @@ TXT,
             ],
             [
                 'subject' => 'ERP timeout',
-                'body' => 'Finance still sees login timeouts from the admin block. Warehouse sessions look fine — please confirm AD bind health.',
+                'body' => 'Finance still sees login timeouts from the admin block. Warehouse sessions look fine - please confirm AD bind health.',
             ],
             [
                 'subject' => 'Scanner double-feed',
@@ -649,7 +649,7 @@ TXT,
     public static function resolveNotes(): array
     {
         return [
-            "Resolved {case} — \"{subject}\".\n\nRoot cause confirmed and restored on {device} at {location}. Monitoring for recurrence this shift; reopen only if the symptom returns.",
+            "Resolved {case} - \"{subject}\".\n\nRoot cause confirmed and restored on {device} at {location}. Monitoring for recurrence this shift; reopen only if the symptom returns.",
             "Resolved {case}.\n\nReplaced or reseated the failing component on {device}. Service verified with the area contact. Asset history retained.",
             "Resolved {case}.\n\nConfiguration corrected and validated for {device}. Closing path opened after acknowledgement in the demo thread.",
             "Resolved {case}.\n\nHot-spare cutover completed; jobs ACK again on the replacement path. Original unit tagged for vendor collection.",
