@@ -11,8 +11,10 @@ use App\Models\Server;
 use App\Models\SupportTicket;
 use App\Models\TicketCategory;
 use App\Models\User;
+use App\Support\DocumentationCatalog;
 use App\Support\Labels;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 class AiContextService
 {
@@ -170,15 +172,73 @@ class AiContextService
                     optional($row->scheduled_at)?->toDateTimeString() ?? 'unscheduled'
                 ))->all()),
             '',
-            'Module paths: Dashboard, Cases (Helpdesk), Assets, Network, Servers, Monitoring, Maintenance, Production, Security, Backups, Reports, Admin.',
+            'Module paths: Dashboard, Cases (Helpdesk), Documentation (/docs), Assets, Network, Servers, Monitoring, Maintenance, Production, Security, Backups, Reports, Branding (admin), Admin.',
+            '',
+            'In-app documentation guides (Documentation module — these ARE the product docs; never say there are no docs):',
+            ...DocumentationCatalog::collection()->map(fn (array $doc) => sprintf(
+                '- %s · %s · audience: %s · /docs/%s',
+                $doc['title'],
+                $doc['summary'],
+                $doc['audience'] ?? 'All users',
+                $doc['slug']
+            ))->all(),
         ];
 
         $lookups = $this->lookupMentions($message, $assets, $devices, $tickets, $people, $open);
+        $docHits = $this->lookupDocumentation($message);
+        if ($docHits !== []) {
+            array_push($lookups, ...$docHits);
+        }
         if ($lookups !== []) {
             array_push($lines, '', 'LOOKUP HITS for the current question:', ...$lookups);
         }
 
         return implode("\n", $lines);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function lookupDocumentation(string $message): array
+    {
+        $message = trim($message);
+        if ($message === '') {
+            return [];
+        }
+
+        $needle = Str::lower($message);
+        $asksAboutDocs = str_contains($needle, 'doc')
+            || str_contains($needle, 'guide')
+            || str_contains($needle, 'how to')
+            || str_contains($needle, 'help')
+            || str_contains($needle, 'manual')
+            || str_contains($needle, 'tutorial')
+            || str_contains($needle, 'getting started')
+            || str_contains($needle, 'glossary');
+
+        $matches = DocumentationCatalog::search($message, 8);
+        if ($matches->isEmpty() && $asksAboutDocs) {
+            $matches = DocumentationCatalog::collection()->take(8);
+        }
+
+        if ($matches->isEmpty()) {
+            return [];
+        }
+
+        $lines = [
+            '- Documentation is available in the Documentation module (left nav / top tabs → Documentation, path /docs).',
+        ];
+
+        foreach ($matches as $doc) {
+            $lines[] = sprintf(
+                '- Guide: %s — %s (/docs/%s)',
+                $doc['title'],
+                $doc['summary'],
+                $doc['slug']
+            );
+        }
+
+        return $lines;
     }
 
     /**

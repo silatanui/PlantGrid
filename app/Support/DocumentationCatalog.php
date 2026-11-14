@@ -476,9 +476,14 @@ class DocumentationCatalog
         }
 
         $needle = Str::lower($term);
+        $tokens = collect(preg_split('/[^a-z0-9]+/i', $needle) ?: [])
+            ->map(fn ($token) => trim((string) $token))
+            ->filter(fn ($token) => strlen($token) >= 3)
+            ->unique()
+            ->values();
 
         return self::collection()
-            ->map(function (array $doc) use ($needle) {
+            ->map(function (array $doc) use ($needle, $tokens) {
                 $haystack = Str::lower(implode(' ', [
                     $doc['title'],
                     $doc['summary'],
@@ -498,6 +503,18 @@ class DocumentationCatalog
                 }
                 if (str_contains($haystack, $needle)) {
                     $score += 1;
+                }
+
+                foreach ($tokens as $token) {
+                    if (in_array($token, ['doc', 'docs', 'documentation', 'guide', 'guides', 'manual', 'tutorial'], true)) {
+                        $score += 2;
+                        continue;
+                    }
+                    if (str_contains(Str::lower($doc['title']), $token)) {
+                        $score += 2;
+                    } elseif (str_contains($haystack, $token)) {
+                        $score += 1;
+                    }
                 }
 
                 $doc['_score'] = $score;

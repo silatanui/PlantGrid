@@ -13,19 +13,47 @@
     data-ai-paraphrase-url="{{ route('ai.paraphrase') }}"
 >
     <button class="pg-ai-launcher" type="button" data-ai-open aria-expanded="false" aria-controls="pg-ai-panel" title="PlantGrid Assistant">
-        <i data-lucide="sparkles"></i>
+        <span class="pg-ai-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" focusable="false">
+                <rect x="3" y="3" width="12" height="12" rx="3" fill="currentColor" opacity="0.95"/>
+                <rect x="17" y="3" width="12" height="12" rx="3" fill="currentColor" opacity="0.55"/>
+                <rect x="3" y="17" width="12" height="12" rx="3" fill="currentColor" opacity="0.55"/>
+                <path d="M20 18.5c0 4.2 2.4 7 6 8.2-1.1-2.1-1.6-4-1.6-6.2V18.5H20z" fill="currentColor" opacity="0.95"/>
+                <circle cx="24.5" cy="14.5" r="2.2" fill="currentColor"/>
+            </svg>
+        </span>
         <span>Assistant</span>
     </button>
 
     <section class="pg-ai-panel" id="pg-ai-panel" data-ai-panel hidden>
         <header class="pg-ai-head">
-            <div>
-                <strong>PlantGrid Assistant</strong>
-                <span>Live answers · create cases · refine notes</span>
+            <div class="pg-ai-head-brand">
+                <span class="pg-ai-avatar" aria-hidden="true">
+                    <svg viewBox="0 0 32 32" focusable="false">
+                        <rect x="3" y="3" width="12" height="12" rx="3" fill="currentColor" opacity="0.95"/>
+                        <rect x="17" y="3" width="12" height="12" rx="3" fill="currentColor" opacity="0.55"/>
+                        <rect x="3" y="17" width="12" height="12" rx="3" fill="currentColor" opacity="0.55"/>
+                        <path d="M20 18.5c0 4.2 2.4 7 6 8.2-1.1-2.1-1.6-4-1.6-6.2V18.5H20z" fill="currentColor" opacity="0.95"/>
+                        <circle cx="24.5" cy="14.5" r="2.2" fill="currentColor"/>
+                    </svg>
+                </span>
+                <div>
+                    <strong>PlantGrid Assistant</strong>
+                    <span>Live demo answers · confirm before actions</span>
+                </div>
             </div>
             <div class="pg-ai-head-actions">
-                <button class="pg-ai-close" type="button" data-ai-close aria-label="Close assistant">
-                    <i data-lucide="x"></i>
+                <div class="pg-ai-menu" data-ai-menu>
+                    <button class="pg-ai-icon-btn" type="button" data-ai-menu-toggle aria-expanded="false" aria-haspopup="true" aria-label="Assistant options">
+                        <i data-lucide="more-vertical"></i>
+                    </button>
+                    <div class="pg-ai-menu-pop" data-ai-menu-pop hidden>
+                        <button type="button" data-ai-sound-toggle>Sound on</button>
+                        <button type="button" data-ai-clear>Clear chat history</button>
+                    </div>
+                </div>
+                <button class="pg-ai-icon-btn" type="button" data-ai-close aria-label="Minimize assistant">
+                    <i data-lucide="chevron-down"></i>
                 </button>
             </div>
         </header>
@@ -37,12 +65,29 @@
 
         <div class="pg-ai-body" data-ai-view="chat">
             <div class="pg-ai-transcript" data-ai-transcript aria-live="polite">
-                <div class="pg-ai-bubble pg-ai-bubble-bot" data-ai-welcome>
-                    Ask about cases and assets, or tell me to open a case for a department. Actions wait for your confirm.
+                <div class="pg-ai-row pg-ai-row-bot" data-ai-welcome>
+                    <span class="pg-ai-avatar" aria-hidden="true">
+                        <svg viewBox="0 0 32 32" focusable="false">
+                            <rect x="3" y="3" width="12" height="12" rx="3" fill="currentColor" opacity="0.95"/>
+                            <rect x="17" y="3" width="12" height="12" rx="3" fill="currentColor" opacity="0.55"/>
+                            <rect x="3" y="17" width="12" height="12" rx="3" fill="currentColor" opacity="0.55"/>
+                            <path d="M20 18.5c0 4.2 2.4 7 6 8.2-1.1-2.1-1.6-4-1.6-6.2V18.5H20z" fill="currentColor" opacity="0.95"/>
+                            <circle cx="24.5" cy="14.5" r="2.2" fill="currentColor"/>
+                        </svg>
+                    </span>
+                    <div class="pg-ai-msg">
+                        <div class="pg-ai-bubble pg-ai-bubble-bot">
+                            <div class="pg-ai-bubble-body">Ask about cases, assets, or Documentation guides — or tell me to open a case. Actions wait for your confirm.</div>
+                        </div>
+                        <div class="pg-ai-meta">
+                            <span>PlantGrid Assistant</span>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="pg-ai-suggestions" data-ai-suggestions>
                 <button type="button" data-ai-prompt="Have we solved all the cases?">Open cases?</button>
+                <button type="button" data-ai-prompt="Is there any documentation? Which guides should a new user read first?">Docs?</button>
                 <button type="button" data-ai-prompt="Create a case for Packaging: barcode label printer is offline at the packaging bench, priority high, asset PG-LBL-0142">Create packaging case</button>
                 <button type="button" data-ai-prompt="Take ownership of case PG-2026-0148">Take ownership</button>
                 <button type="button" data-ai-prompt="Any critical monitoring alerts right now?">Critical alerts?</button>
@@ -50,16 +95,12 @@
             </div>
             <form class="pg-ai-compose" data-ai-chat-form>
                 <label class="visually-hidden" for="pg-ai-message">Message</label>
-                <textarea id="pg-ai-message" data-ai-input rows="2" placeholder="Ask about cases, alerts, assets…" required></textarea>
-                <button class="btn btn-pg pg-ai-send" type="submit" data-ai-send aria-label="Send">
+                <textarea id="pg-ai-message" data-ai-input rows="1" placeholder="Type your message here…" required></textarea>
+                <button class="pg-ai-send" type="submit" data-ai-send aria-label="Send">
                     <i data-lucide="send"></i>
-                    <span>Send</span>
                 </button>
             </form>
             <div class="pg-ai-clear-zone" data-ai-clear-zone hidden>
-                <button class="pg-ai-clear" type="button" data-ai-clear>
-                    Clear chat history
-                </button>
                 <div class="pg-ai-clear-confirm" data-ai-clear-confirm hidden>
                     <p>Clear this chat? This removes the conversation from this browser.</p>
                     <div class="pg-ai-clear-confirm-actions">

@@ -67,21 +67,56 @@ function formatChatTime(value) {
     if (Number.isNaN(date.getTime())) {
         return '';
     }
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = months[date.getMonth()];
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const day = days[date.getDay()];
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const dayNum = String(date.getDate()).padStart(2, '0');
     const year = date.getFullYear();
-    const hours = String(date.getHours()).padStart(2, '0');
+    let hours = date.getHours();
     const minutes = String(date.getMinutes()).padStart(2, '0');
-    return `${day} ${month} ${year}, ${hours}:${minutes}`;
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    const hourLabel = String(hours).padStart(2, '0');
+    return `${day}, ${month}/${dayNum}/${year}, ${hourLabel}:${minutes} ${ampm}`;
 }
 
-function timeMetaHtml(at) {
+const ASSISTANT_MARK_SVG = `
+    <svg viewBox="0 0 32 32" focusable="false" aria-hidden="true">
+        <rect x="3" y="3" width="12" height="12" rx="3" fill="currentColor" opacity="0.95"/>
+        <rect x="17" y="3" width="12" height="12" rx="3" fill="currentColor" opacity="0.55"/>
+        <rect x="3" y="17" width="12" height="12" rx="3" fill="currentColor" opacity="0.55"/>
+        <path d="M20 18.5c0 4.2 2.4 7 6 8.2-1.1-2.1-1.6-4-1.6-6.2V18.5H20z" fill="currentColor" opacity="0.95"/>
+        <circle cx="24.5" cy="14.5" r="2.2" fill="currentColor"/>
+    </svg>
+`;
+
+function avatarHtml() {
+    return `<span class="pg-ai-avatar" aria-hidden="true">${ASSISTANT_MARK_SVG}</span>`;
+}
+
+function timeMetaHtml(at, { role = 'bot', showName = false } = {}) {
     const label = formatChatTime(at);
-    if (!label) {
+    if (!label && !showName) {
         return '';
     }
-    return `<time class="pg-ai-time" datetime="${escapeHtml(typeof at === 'string' ? at : nowIso())}">${escapeHtml(label)}</time>`;
+    const name = showName ? '<span>PlantGrid Assistant</span>' : '';
+    const time = label
+        ? `<time datetime="${escapeHtml(typeof at === 'string' ? at : nowIso())}">${escapeHtml(label)}</time>`
+        : '';
+    return `<div class="pg-ai-meta">${name}${name && time ? '<span class="pg-ai-meta-dot" aria-hidden="true">·</span>' : ''}${time}</div>`;
+}
+
+function typingHtml() {
+    return `
+        <div class="pg-ai-typing" aria-hidden="true">
+            <span class="pg-ai-typing-pulse"></span>
+            <span class="pg-ai-typing-bars">
+                <i></i><i></i><i></i><i></i>
+            </span>
+            <span class="pg-ai-typing-dots"><i></i><i></i><i></i></span>
+        </div>
+        <span class="pg-ai-typing-label">Thinking through live demo data…</span>
+    `;
 }
 
 function proposalCardHtml(proposal, status = 'pending') {
@@ -118,21 +153,44 @@ function proposalCardHtml(proposal, status = 'pending') {
 }
 
 function appendBubble(transcript, role, text, { pending = false, proposal = null, proposalStatus = 'pending', at = null } = {}) {
-    const bubble = document.createElement('div');
-    bubble.className = `pg-ai-bubble pg-ai-bubble-${role === 'user' ? 'user' : 'bot'}`;
+    const isUser = role === 'user';
+    const row = document.createElement('div');
+    row.className = `pg-ai-row ${isUser ? 'pg-ai-row-user' : 'pg-ai-row-bot'}`;
     const stamped = at || nowIso();
-    bubble.dataset.at = stamped;
+    row.dataset.at = stamped;
+
     if (pending) {
-        bubble.classList.add('is-pending');
-        bubble.innerHTML = '<span class="pg-ai-typing" aria-hidden="true"><i></i><i></i><i></i></span><span>Checking live demo data…</span>';
-    } else if (role === 'user') {
-        bubble.innerHTML = `<div class="pg-ai-bubble-body">${escapeHtml(text)}</div>${timeMetaHtml(stamped)}`;
+        row.classList.add('is-pending');
+        row.innerHTML = `
+            ${avatarHtml()}
+            <div class="pg-ai-msg">
+                <div class="pg-ai-bubble pg-ai-bubble-bot is-pending">${typingHtml()}</div>
+            </div>
+        `;
+    } else if (isUser) {
+        row.innerHTML = `
+            <div class="pg-ai-msg">
+                <div class="pg-ai-bubble pg-ai-bubble-user">
+                    <div class="pg-ai-bubble-body">${escapeHtml(text)}</div>
+                </div>
+                ${timeMetaHtml(stamped, { role: 'user' })}
+            </div>
+        `;
     } else {
-        bubble.innerHTML = `<div class="pg-ai-bubble-body">${formatReply(text)}${proposalCardHtml(proposal, proposalStatus)}</div>${timeMetaHtml(stamped)}`;
+        row.innerHTML = `
+            ${avatarHtml()}
+            <div class="pg-ai-msg">
+                <div class="pg-ai-bubble pg-ai-bubble-bot">
+                    <div class="pg-ai-bubble-body">${formatReply(text)}${proposalCardHtml(proposal, proposalStatus)}</div>
+                </div>
+                ${timeMetaHtml(stamped, { role: 'bot', showName: true })}
+            </div>
+        `;
     }
-    transcript.appendChild(bubble);
+
+    transcript.appendChild(row);
     transcript.scrollTop = transcript.scrollHeight;
-    return bubble;
+    return row;
 }
 
 function setBusy(root, busy) {
@@ -143,6 +201,8 @@ function setBusy(root, busy) {
             || el.hasAttribute('data-ai-open')
             || el.hasAttribute('data-ai-tab')
             || el.hasAttribute('data-ai-clear')
+            || el.hasAttribute('data-ai-menu-toggle')
+            || el.hasAttribute('data-ai-sound-toggle')
         ) {
             return;
         }
@@ -152,6 +212,10 @@ function setBusy(root, busy) {
 
 function storageKey(userId) {
     return `plantgrid.ai.chat.${userId || 'guest'}`;
+}
+
+function soundPrefKey(userId) {
+    return `plantgrid.ai.sound.${userId || 'guest'}`;
 }
 
 function loadChatState(userId) {
@@ -198,6 +262,69 @@ function saveChatState(userId, payload) {
     }
 }
 
+function createSoundboard() {
+    let ctx = null;
+    let unlocked = false;
+
+    const ensure = () => {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) {
+            return null;
+        }
+        if (!ctx) {
+            ctx = new AudioCtx();
+        }
+        if (ctx.state === 'suspended') {
+            ctx.resume().catch(() => {});
+        }
+        unlocked = true;
+        return ctx;
+    };
+
+    const tone = (frequency, start, duration, { type = 'sine', gain = 0.05, slideTo = null } = {}) => {
+        const audio = ensure();
+        if (!audio) {
+            return;
+        }
+        const osc = audio.createOscillator();
+        const amp = audio.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(frequency, audio.currentTime + start);
+        if (slideTo != null) {
+            osc.frequency.linearRampToValueAtTime(slideTo, audio.currentTime + start + duration);
+        }
+        amp.gain.setValueAtTime(0.0001, audio.currentTime + start);
+        amp.gain.exponentialRampToValueAtTime(gain, audio.currentTime + start + 0.02);
+        amp.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + start + duration);
+        osc.connect(amp);
+        amp.connect(audio.destination);
+        osc.start(audio.currentTime + start);
+        osc.stop(audio.currentTime + start + duration + 0.02);
+    };
+
+    return {
+        unlock: ensure,
+        playOpen(enabled) {
+            if (!enabled) {
+                return;
+            }
+            tone(523.25, 0, 0.12, { type: 'triangle', gain: 0.045 });
+            tone(659.25, 0.08, 0.14, { type: 'triangle', gain: 0.04 });
+            tone(783.99, 0.16, 0.18, { type: 'sine', gain: 0.035, slideTo: 880 });
+        },
+        playReply(enabled) {
+            if (!enabled) {
+                return;
+            }
+            tone(880, 0, 0.08, { type: 'sine', gain: 0.04 });
+            tone(659.25, 0.07, 0.16, { type: 'triangle', gain: 0.035, slideTo: 523.25 });
+        },
+        get unlocked() {
+            return unlocked;
+        },
+    };
+}
+
 export function initAiAssistant(refreshIcons) {
     const root = document.querySelector('[data-ai-root]');
     if (!root) {
@@ -213,6 +340,9 @@ export function initAiAssistant(refreshIcons) {
     const clearConfirm = root.querySelector('[data-ai-clear-confirm]');
     const clearCancelBtn = root.querySelector('[data-ai-clear-cancel]');
     const clearConfirmYesBtn = root.querySelector('[data-ai-clear-confirm-yes]');
+    const menuToggle = root.querySelector('[data-ai-menu-toggle]');
+    const menuPop = root.querySelector('[data-ai-menu-pop]');
+    const soundToggle = root.querySelector('[data-ai-sound-toggle]');
     const panel = root.querySelector('[data-ai-panel]');
     const transcript = root.querySelector('[data-ai-transcript]');
     const welcome = root.querySelector('[data-ai-welcome]');
@@ -221,19 +351,46 @@ export function initAiAssistant(refreshIcons) {
     const noteInput = root.querySelector('[data-ai-note]');
     const noteStatus = root.querySelector('[data-ai-note-status]');
     const suggestions = root.querySelector('[data-ai-suggestions]');
-    const welcomeText = welcome?.textContent?.trim()
+    const welcomeText = welcome?.querySelector('.pg-ai-bubble-body')?.textContent?.trim()
+        || welcome?.textContent?.trim()
         || 'Ask about open cases, alerts, or demo roles. I answer from the live Northridge sample data when I can.';
 
     const stored = loadChatState(userId);
     const history = stored?.history ? [...stored.history] : [];
     const messages = stored?.messages ? [...stored.messages] : [];
+    const sounds = createSoundboard();
+    let soundEnabled = true;
+    try {
+        const savedSound = localStorage.getItem(soundPrefKey(userId));
+        if (savedSound === '0') {
+            soundEnabled = false;
+        }
+    } catch {
+        soundEnabled = true;
+    }
+
+    const syncSoundLabel = () => {
+        if (soundToggle) {
+            soundToggle.textContent = soundEnabled ? 'Sound on' : 'Sound off';
+        }
+        root.classList.toggle('is-muted', !soundEnabled);
+    };
+    syncSoundLabel();
+
+    const setMenuOpen = (open) => {
+        if (!menuPop || !menuToggle) {
+            return;
+        }
+        menuPop.hidden = !open;
+        menuToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    };
 
     const hideClearConfirm = () => {
         if (clearConfirm) {
             clearConfirm.hidden = true;
         }
-        if (clearBtn) {
-            clearBtn.hidden = messages.length === 0;
+        if (clearZone) {
+            clearZone.hidden = true;
         }
     };
 
@@ -243,10 +400,6 @@ export function initAiAssistant(refreshIcons) {
             history,
             open: root.classList.contains('is-open'),
         });
-        if (clearZone) {
-            clearZone.hidden = messages.length === 0;
-        }
-        hideClearConfirm();
         if (suggestions) {
             suggestions.hidden = messages.length > 0;
         }
@@ -258,9 +411,17 @@ export function initAiAssistant(refreshIcons) {
         }
         transcript.innerHTML = '';
         const intro = document.createElement('div');
-        intro.className = 'pg-ai-bubble pg-ai-bubble-bot';
+        intro.className = 'pg-ai-row pg-ai-row-bot';
         intro.setAttribute('data-ai-welcome', '');
-        intro.textContent = welcomeText;
+        intro.innerHTML = `
+            ${avatarHtml()}
+            <div class="pg-ai-msg">
+                <div class="pg-ai-bubble pg-ai-bubble-bot">
+                    <div class="pg-ai-bubble-body">${escapeHtml(welcomeText)}</div>
+                </div>
+                <div class="pg-ai-meta"><span>PlantGrid Assistant</span></div>
+            </div>
+        `;
         transcript.appendChild(intro);
 
         messages.forEach((item) => {
@@ -274,15 +435,21 @@ export function initAiAssistant(refreshIcons) {
         persist();
     };
 
-    const setOpen = (open) => {
+    const setOpen = (open, { fromUser = false } = {}) => {
         if (!panel || !openBtn) {
             return;
         }
+        const wasOpen = root.classList.contains('is-open');
         panel.hidden = !open;
         openBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
         root.classList.toggle('is-open', open);
+        setMenuOpen(false);
         persist();
         if (open) {
+            if (fromUser && !wasOpen) {
+                sounds.unlock();
+                sounds.playOpen(soundEnabled);
+            }
             refreshIcons?.();
             const activeView = root.querySelector('[data-ai-view]:not([hidden])');
             activeView?.querySelector('textarea')?.focus();
@@ -310,16 +477,19 @@ export function initAiAssistant(refreshIcons) {
         messages.length = 0;
         history.length = 0;
         hideClearConfirm();
+        setMenuOpen(false);
         renderTranscript();
         chatInput?.focus();
     };
 
     const requestClearChat = () => {
         if (messages.length === 0) {
+            setMenuOpen(false);
             return;
         }
-        if (clearBtn) {
-            clearBtn.hidden = true;
+        setMenuOpen(false);
+        if (clearZone) {
+            clearZone.hidden = false;
         }
         if (clearConfirm) {
             clearConfirm.hidden = false;
@@ -353,7 +523,15 @@ export function initAiAssistant(refreshIcons) {
             const assistantAt = nowIso();
             pending.classList.remove('is-pending');
             pending.dataset.at = assistantAt;
-            pending.innerHTML = `<div class="pg-ai-bubble-body">${formatReply(payload.reply)}${proposalCardHtml(payload.proposal, 'pending')}</div>${timeMetaHtml(assistantAt)}`;
+            pending.innerHTML = `
+                ${avatarHtml()}
+                <div class="pg-ai-msg">
+                    <div class="pg-ai-bubble pg-ai-bubble-bot">
+                        <div class="pg-ai-bubble-body">${formatReply(payload.reply)}${proposalCardHtml(payload.proposal, 'pending')}</div>
+                    </div>
+                    ${timeMetaHtml(assistantAt, { role: 'bot', showName: true })}
+                </div>
+            `;
             const assistantContent = payload.proposal
                 ? `${payload.reply}\n\n[Proposed: ${payload.proposal.title} — ${payload.proposal.summary}]`
                 : payload.reply;
@@ -374,10 +552,18 @@ export function initAiAssistant(refreshIcons) {
             }
             persist();
             bindProposalActions(pending);
+            sounds.playReply(soundEnabled);
         } catch (error) {
             pending.classList.remove('is-pending');
             pending.classList.add('is-error');
-            pending.textContent = error.message || 'AI request failed.';
+            pending.innerHTML = `
+                ${avatarHtml()}
+                <div class="pg-ai-msg">
+                    <div class="pg-ai-bubble pg-ai-bubble-bot is-error">
+                        <div class="pg-ai-bubble-body">${escapeHtml(error.message || 'AI request failed.')}</div>
+                    </div>
+                </div>
+            `;
             messages.pop();
             persist();
         } finally {
@@ -429,6 +615,7 @@ export function initAiAssistant(refreshIcons) {
                         history.shift();
                     }
                     persist();
+                    sounds.playReply(soundEnabled);
                 } catch (error) {
                     card.insertAdjacentHTML('beforeend', `<p class="pg-ai-proposal-error">${escapeHtml(error.message || 'Could not create the case.')}</p>`);
                 } finally {
@@ -462,17 +649,52 @@ export function initAiAssistant(refreshIcons) {
     renderTranscript();
     bindProposalActions(transcript);
     if (stored?.open) {
-        setOpen(true);
+        setOpen(true, { fromUser: false });
     }
 
-    openBtn?.addEventListener('click', () => setOpen(panel?.hidden !== false));
+    openBtn?.addEventListener('click', () => {
+        const opening = panel?.hidden !== false;
+        setOpen(opening, { fromUser: true });
+    });
     closeBtn?.addEventListener('click', () => setOpen(false));
     clearBtn?.addEventListener('click', requestClearChat);
     clearCancelBtn?.addEventListener('click', hideClearConfirm);
     clearConfirmYesBtn?.addEventListener('click', clearChat);
 
+    menuToggle?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        setMenuOpen(menuPop?.hidden !== false);
+    });
+    soundToggle?.addEventListener('click', () => {
+        soundEnabled = !soundEnabled;
+        try {
+            localStorage.setItem(soundPrefKey(userId), soundEnabled ? '1' : '0');
+        } catch {
+            // Ignore storage failures.
+        }
+        syncSoundLabel();
+        if (soundEnabled) {
+            sounds.unlock();
+            sounds.playOpen(true);
+        }
+        setMenuOpen(false);
+    });
+    document.addEventListener('click', (event) => {
+        if (!root.contains(event.target)) {
+            setMenuOpen(false);
+            return;
+        }
+        if (!event.target.closest('[data-ai-menu]')) {
+            setMenuOpen(false);
+        }
+    });
+
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape' && root.classList.contains('is-open')) {
+            if (menuPop && !menuPop.hidden) {
+                setMenuOpen(false);
+                return;
+            }
             setOpen(false);
         }
     });
