@@ -1,13 +1,16 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-2">
-        <div>
-            <h1 class="pg-page-title mb-1">Administration</h1>
-            <p class="pg-page-lead mb-0">Users, roles, departments and the fictional plant name.</p>
+    <section class="pg-page-intro">
+        <div class="pg-page-intro-copy">
+            <div class="pg-object">Administration</div>
+            <h1 class="pg-page-title">Administration</h1>
+            <p class="pg-page-lead">Users, roles, departments and the fictional plant name.</p>
         </div>
-        <a class="btn btn-pg" href="{{ route('admin.online') }}">Online users</a>
-    </div>
+        <div class="pg-page-intro-actions">
+            <a class="btn btn-pg" href="{{ route('admin.online') }}">Online users</a>
+        </div>
+    </section>
 
     <section class="pg-card my-3">
         <div class="pg-card-pad"><h2 class="pg-section-title mb-0">Users</h2></div>

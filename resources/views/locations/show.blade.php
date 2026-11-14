@@ -2,8 +2,8 @@
 
 @section('content')
     @include('partials.nav-back-crumb')
-    <div class="d-flex flex-wrap justify-content-between gap-2 mb-3">
-        <div>
+    <section class="pg-page-intro">
+        <div class="pg-page-intro-copy">
             <div class="pg-object">Location</div>
             <h1 class="pg-page-title">{{ $location->name }}</h1>
             <p class="pg-page-lead">
@@ -16,13 +16,13 @@
                 @endif
             </p>
         </div>
-        <div class="d-flex flex-wrap gap-2">
+        <div class="pg-page-intro-actions">
             <a class="btn btn-pg-line" href="{{ route('locations.index') }}">Full plant map</a>
             @if (auth()->user()->hasPermission('reports.view'))
                 <a class="btn btn-pg-line" href="{{ route('reports.index', ['report' => 'assets']) }}">Reports</a>
             @endif
         </div>
-    </div>
+    </section>
 
     @include('locations.partials.plant-map', [
         'zones' => $zones,

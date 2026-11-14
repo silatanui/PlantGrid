@@ -1,8 +1,13 @@
 @extends('layouts.app')
 
 @section('content')
-    <h1 class="pg-page-title">Search</h1>
-    <p class="pg-page-lead">@if ($term === '') Type a person, tag, ticket number, hostname, page name, or “My cases”. @else Results for “{{ $term }}”. @endif</p>
+    <section class="pg-page-intro">
+        <div class="pg-page-intro-copy">
+            <div class="pg-object">Find</div>
+            <h1 class="pg-page-title">Search</h1>
+            <p class="pg-page-lead">@if ($term === '') Type a person, tag, ticket number, hostname, page name, or “My cases”. @else Results for “{{ $term }}”. @endif</p>
+        </div>
+    </section>
 
     <section class="pg-card my-3">
         <div class="pg-card-pad"><h2 class="pg-section-title mb-0">Pages</h2></div>

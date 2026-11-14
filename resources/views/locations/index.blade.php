@@ -1,16 +1,18 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="d-flex flex-wrap justify-content-between gap-2 mb-3">
-        <div>
+    <section class="pg-page-intro">
+        <div class="pg-page-intro-copy">
             <div class="pg-object">Infrastructure</div>
             <h1 class="pg-page-title">Plant map</h1>
             <p class="pg-page-lead">Campus plan with gardens, paths, and doors. Zoom, pan, and click pins for device details.</p>
         </div>
         @if (auth()->user()->hasPermission('reports.view'))
-            <a class="btn btn-pg-line" href="{{ route('reports.index', ['report' => 'assets']) }}">Asset report</a>
+            <div class="pg-page-intro-actions">
+                <a class="btn btn-pg-line" href="{{ route('reports.index', ['report' => 'assets']) }}">Asset report</a>
+            </div>
         @endif
-    </div>
+    </section>
 
     @include('locations.partials.plant-map', [
         'zones' => $zones,

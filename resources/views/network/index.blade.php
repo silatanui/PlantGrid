@@ -1,14 +1,21 @@
 @extends('layouts.app')
 
 @section('content')
-    <h1 class="pg-page-title">Network</h1>
-    <p class="pg-page-lead">Documented devices, subnets, VLANs and addresses. Nothing is scanned or configured on a live network.</p>
-    <ul class="nav nav-pills gap-2 my-3">
-        @foreach (['devices' => 'Devices', 'subnets' => 'Subnets', 'vlans' => 'VLANs', 'addresses' => 'IP addresses', 'topology' => 'Topology'] as $key => $label)
-            <li class="nav-item"><a class="nav-link {{ $tab === $key ? 'active' : '' }}" href="{{ route('network.index', ['tab' => $key]) }}">{{ $label }}</a></li>
-        @endforeach
-    </ul>
-    <style>.nav-pills .nav-link { border: 1px solid var(--pg-border); border-radius: var(--pg-radius); color: var(--pg-text); background: #fff; } .nav-pills .nav-link.active { background: var(--pg-navy); border-color: var(--pg-navy); color: #fff; }</style>
+    <section class="pg-page-intro">
+        <div class="pg-page-intro-copy">
+            <div class="pg-object">Infrastructure</div>
+            <h1 class="pg-page-title">Network</h1>
+            <p class="pg-page-lead">Documented devices, subnets, VLANs and addresses. Nothing is scanned or configured on a live network.</p>
+        </div>
+    </section>
+    <div class="pg-page-tabs">
+        <ul class="nav nav-pills gap-2">
+            @foreach (['devices' => 'Devices', 'subnets' => 'Subnets', 'vlans' => 'VLANs', 'addresses' => 'IP addresses', 'topology' => 'Topology'] as $key => $label)
+                <li class="nav-item"><a class="nav-link {{ $tab === $key ? 'active' : '' }}" href="{{ route('network.index', ['tab' => $key]) }}">{{ $label }}</a></li>
+            @endforeach
+        </ul>
+    </div>
+    <style>.nav-pills .nav-link { border: 1px solid var(--pg-border); border-radius: var(--pg-radius); color: var(--pg-text); background: #f7f9fb; } .nav-pills .nav-link.active { background: var(--pg-navy); border-color: var(--pg-navy); color: #fff; }</style>
 
     @if ($tab === 'devices')
         <div class="pg-card table-responsive mb-3">

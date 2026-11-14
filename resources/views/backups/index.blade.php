@@ -1,7 +1,13 @@
 @extends('layouts.app')
 
 @section('content')
-    <h1 class="pg-page-title">Backups and recovery</h1>
+    <section class="pg-page-intro">
+        <div class="pg-page-intro-copy">
+            <div class="pg-object">Operations</div>
+            <h1 class="pg-page-title">Backups and recovery</h1>
+            <p class="pg-page-lead">Simulated plans, runs, and recovery tests for the demonstration plant.</p>
+        </div>
+    </section>
     <div class="pg-alert pg-alert-info">Every run on this page is simulated. A successful result means a sample record was stored. PlantGrid did not back up a real server.</div>
     <section class="pg-card mb-3">
         <div class="pg-card-pad"><h2 class="pg-section-title mb-0">Plans</h2></div>

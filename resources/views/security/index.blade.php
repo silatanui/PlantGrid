@@ -1,8 +1,13 @@
 @extends('layouts.app')
 
 @section('content')
-    <h1 class="pg-page-title">Security and compliance</h1>
-    <p class="pg-page-lead">Administration records only. Do not store passwords, recovery codes or private keys here.</p>
+    <section class="pg-page-intro">
+        <div class="pg-page-intro-copy">
+            <div class="pg-object">Governance</div>
+            <h1 class="pg-page-title">Security and compliance</h1>
+            <p class="pg-page-lead">Administration records only. Do not store passwords, recovery codes or private keys here.</p>
+        </div>
+    </section>
     <div class="row g-3 my-1">
         <div class="col-lg-6">
             <section class="pg-card h-100">

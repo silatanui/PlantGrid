@@ -3,7 +3,8 @@
 @section('content')
     <p class="mb-2">
         <a href="{{ route('docs.index') }}" class="pg-docs-back">
-            <i data-lucide="arrow-left"></i> All documentation
+            <i data-lucide="arrow-left"></i>
+            All documentation
         </a>
     </p>
 

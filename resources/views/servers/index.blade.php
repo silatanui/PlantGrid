@@ -1,8 +1,13 @@
 @extends('layouts.app')
 
 @section('content')
-    <h1 class="pg-page-title">Servers</h1>
-    <p class="pg-page-lead">Inventory of fictional servers. PlantGrid does not connect to them.</p>
+    <section class="pg-page-intro">
+        <div class="pg-page-intro-copy">
+            <div class="pg-object">Infrastructure</div>
+            <h1 class="pg-page-title">Servers</h1>
+            <p class="pg-page-lead">Inventory of fictional servers. PlantGrid does not connect to them.</p>
+        </div>
+    </section>
     <div class="pg-card table-responsive my-3">
         <table class="pg-table">
             <thead>

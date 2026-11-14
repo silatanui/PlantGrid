@@ -1,20 +1,21 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="d-flex flex-wrap justify-content-between gap-2 mb-3">
-        <div>
+    <section class="pg-page-intro">
+        <div class="pg-page-intro-copy">
+            <div class="pg-object">Message</div>
             <h1 class="pg-page-title">{{ $message->subject }}</h1>
-            <p class="pg-page-lead mb-0">
+            <p class="pg-page-lead">
                 Conversation with
                 <a href="{{ route('people.show', $counterpart) }}">{{ $counterpart->name }}</a>
                 · {{ $counterpart->roleLabel() }}
             </p>
         </div>
-        <div class="d-flex gap-2">
+        <div class="pg-page-intro-actions">
             <a class="btn btn-pg-line" href="{{ route('messages.index') }}">Back to inbox</a>
             <a class="btn btn-pg" href="{{ route('people.show', $counterpart) }}#contact">Open profile</a>
         </div>
-    </div>
+    </section>
 
     @if (session('status'))
         <div class="alert alert-success py-2">{{ session('status') }}</div>

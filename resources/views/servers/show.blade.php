@@ -2,8 +2,13 @@
 
 @section('content')
     @include('partials.nav-back-crumb')
-    <h1 class="pg-page-title">{{ $server->hostname }}</h1>
-    <p class="pg-page-lead">{{ $server->server_role }} · {{ str_replace('_', ' ', $server->environment) }}</p>
+    <section class="pg-page-intro">
+        <div class="pg-page-intro-copy">
+            <div class="pg-object">Server</div>
+            <h1 class="pg-page-title">{{ $server->hostname }}</h1>
+            <p class="pg-page-lead">{{ $server->server_role }} · {{ str_replace('_', ' ', $server->environment) }}</p>
+        </div>
+    </section>
     @include('partials.device-media', ['media' => \App\Support\DeviceMedia::forServer($server->loadMissing('asset.category'))])
     <section class="pg-card pg-card-pad my-3">
         <dl class="pg-kv">

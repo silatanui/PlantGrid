@@ -1,15 +1,19 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="pg-object">Cases</div>
-    <h1 class="pg-page-title mb-1">New case</h1>
-    <p class="pg-page-lead mb-3">
-        @if (auth()->user()->isEmployeeRequester())
-            Describe the problem. ICT will assign and resolve the case; you can follow progress under My cases.
-        @else
-            Open a support request for the demonstration plant.
-        @endif
-    </p>
+    <section class="pg-page-intro">
+        <div class="pg-page-intro-copy">
+            <div class="pg-object">Cases</div>
+            <h1 class="pg-page-title">New case</h1>
+            <p class="pg-page-lead">
+                @if (auth()->user()->isEmployeeRequester())
+                    Describe the problem. ICT will assign and resolve the case; you can follow progress under My cases.
+                @else
+                    Open a support request for the demonstration plant.
+                @endif
+            </p>
+        </div>
+    </section>
     <form class="pg-card pg-card-pad" method="post" action="{{ route('helpdesk.store') }}">
         @csrf
         <div class="row g-3">

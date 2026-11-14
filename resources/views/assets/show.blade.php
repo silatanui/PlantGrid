@@ -2,15 +2,16 @@
 
 @section('content')
     @include('partials.nav-back-crumb')
-    <div class="d-flex flex-wrap justify-content-between gap-2 mb-3">
-        <div>
+    <section class="pg-page-intro">
+        <div class="pg-page-intro-copy">
+            <div class="pg-object">Asset</div>
             <h1 class="pg-page-title">{{ $asset->asset_tag }}</h1>
             <p class="pg-page-lead">{{ $asset->name }}</p>
             @if (!empty($caseLinkedOnly))
-                <p class="pg-page-lead mb-0">Opened from a case. Your role can view this linked device, but not the full Assets register.</p>
+                <p class="pg-page-lead">Opened from a case. Your role can view this linked device, but not the full Assets register.</p>
             @endif
         </div>
-        <div class="d-flex gap-2">
+        <div class="pg-page-intro-actions">
             @if (auth()->user()->hasPermission('assets.update'))
                 <a class="btn btn-pg-line" href="{{ route('assets.edit', $asset) }}">Edit</a>
             @endif
@@ -21,7 +22,7 @@
                 </form>
             @endif
         </div>
-    </div>
+    </section>
     <div class="row g-3">
         <div class="col-lg-7">
             @include('partials.device-media', ['media' => \App\Support\DeviceMedia::forAsset($asset)])

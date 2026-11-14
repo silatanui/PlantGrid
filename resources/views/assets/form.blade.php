@@ -1,7 +1,12 @@
 @extends('layouts.app')
 
 @section('content')
-    <h1 class="pg-page-title mb-3">{{ $title }}</h1>
+    <section class="pg-page-intro">
+        <div class="pg-page-intro-copy">
+            <div class="pg-object">Assets</div>
+            <h1 class="pg-page-title">{{ $title }}</h1>
+        </div>
+    </section>
     <form class="pg-card pg-card-pad" method="post" action="{{ $asset->exists ? route('assets.update', $asset) : route('assets.store') }}">
         @csrf
         @if ($asset->exists) @method('PUT') @endif

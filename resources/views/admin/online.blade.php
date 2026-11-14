@@ -1,19 +1,22 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
-        <div>
-            <h1 class="pg-page-title mb-1">Online users</h1>
-            <p class="pg-page-lead mb-0">
+    <section class="pg-page-intro">
+        <div class="pg-page-intro-copy">
+            <div class="pg-object">Administration</div>
+            <h1 class="pg-page-title">Online users</h1>
+            <p class="pg-page-lead">
                 People active in the last {{ $onlineWindowSeconds }} seconds.
                 @if ($canAssign)
                     Assign an open case directly from this list.
                 @endif
             </p>
-            <p class="text-muted small mb-0 mt-1" data-presence-status>Live · updates every few seconds</p>
+            <p class="text-muted small mb-0" data-presence-status>Live · updates every few seconds</p>
         </div>
-        <a class="btn btn-pg-line" href="{{ route('admin.index') }}">Back to administration</a>
-    </div>
+        <div class="pg-page-intro-actions">
+            <a class="btn btn-pg-line" href="{{ route('admin.index') }}">Back to administration</a>
+        </div>
+    </section>
 
     @include('partials.flash')
 

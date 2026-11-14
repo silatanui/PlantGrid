@@ -2,8 +2,13 @@
 
 @section('content')
     @include('partials.nav-back-crumb')
-    <h1 class="pg-page-title">{{ $device->hostname }}</h1>
-    <p class="pg-page-lead">{{ \App\Support\Labels::status($device->device_type) }} · documented record</p>
+    <section class="pg-page-intro">
+        <div class="pg-page-intro-copy">
+            <div class="pg-object">Network device</div>
+            <h1 class="pg-page-title">{{ $device->hostname }}</h1>
+            <p class="pg-page-lead">{{ \App\Support\Labels::status($device->device_type) }} · documented record</p>
+        </div>
+    </section>
     @include('partials.device-media', ['media' => \App\Support\DeviceMedia::forNetworkDevice($device->loadMissing('asset.category'))])
     <section class="pg-card pg-card-pad mt-3">
         <dl class="pg-kv">

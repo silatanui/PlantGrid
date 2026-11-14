@@ -1,16 +1,19 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-        <div>
-            <h1 class="pg-page-title mb-1">Notifications</h1>
-            <p class="text-muted mb-0">Case assignments, notes, and SLA alerts.</p>
+    <section class="pg-page-intro">
+        <div class="pg-page-intro-copy">
+            <div class="pg-object">Inbox</div>
+            <h1 class="pg-page-title">Notifications</h1>
+            <p class="pg-page-lead">Case assignments, notes, and SLA alerts.</p>
         </div>
-        <form method="post" action="{{ route('notifications.read-all') }}">
-            @csrf
-            <button class="btn btn-pg-line" type="submit">Mark all read</button>
-        </form>
-    </div>
+        <div class="pg-page-intro-actions">
+            <form method="post" action="{{ route('notifications.read-all') }}">
+                @csrf
+                <button class="btn btn-pg-line" type="submit">Mark all read</button>
+            </form>
+        </div>
+    </section>
 
     <div class="pg-card">
         <ul class="list-group list-group-flush">
