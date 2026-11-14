@@ -69,4 +69,25 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Monitoring Pulse (rare simulated instability)
+    |--------------------------------------------------------------------------
+    |
+    | Flips monitoring into a short outage about once a week and notifies ICT
+    | staff who can view monitoring. Changing `trigger` after a deploy starts
+    | a brief demo outage so you can see the red alert immediately.
+    |
+    */
+
+    'monitoring_pulse' => [
+        'enabled' => (bool) env('PLANTGRID_MONITORING_PULSE', true),
+        'trigger' => env('PLANTGRID_MONITORING_PULSE_TRIGGER', '2026-11-14-outage-demo'),
+        'demo_minutes' => (int) env('PLANTGRID_MONITORING_PULSE_DEMO_MINUTES', 8),
+        'incident_minutes_min' => (int) env('PLANTGRID_MONITORING_PULSE_INCIDENT_MIN', 45),
+        'incident_minutes_max' => (int) env('PLANTGRID_MONITORING_PULSE_INCIDENT_MAX', 120),
+        'interval_days_min' => (int) env('PLANTGRID_MONITORING_PULSE_INTERVAL_MIN', 6),
+        'interval_days_max' => (int) env('PLANTGRID_MONITORING_PULSE_INTERVAL_MAX', 9),
+    ],
+
 ];

@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Services\LivePulse\LivePulseService;
+use App\Services\MonitoringPulseService;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -11,8 +12,10 @@ use Throwable;
 
 class CatchUpLivePulse
 {
-    public function __construct(private readonly LivePulseService $pulse)
-    {
+    public function __construct(
+        private readonly LivePulseService $pulse,
+        private readonly MonitoringPulseService $monitoringPulse,
+    ) {
     }
 
     public function handle(Request $request, Closure $next): Response
@@ -21,6 +24,7 @@ class CatchUpLivePulse
             try {
                 Cache::lock('plantgrid.live_pulse.catchup', 20)->get(function (): void {
                     $this->pulse->catchUpIfStale();
+                    $this->monitoringPulse->catchUpIfStale();
                 });
             } catch (Throwable) {
                 // Demo convenience only — never block the console.
