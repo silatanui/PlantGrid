@@ -6754,7 +6754,8 @@ body.pg-home {
     background: #fff;
     box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
 }
-.pg-ai-compose textarea {
+.pg-ai-compose textarea,
+.pg-ai-compose .pg-ai-chip-input {
     width: 100%;
     min-height: 42px;
     max-height: 120px;
@@ -6765,6 +6766,21 @@ body.pg-home {
     color: var(--pg-text);
     background: transparent;
     outline: none;
+}
+.pg-ai-compose .pg-ai-chip-input {
+    overflow-y: auto;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.pg-ai-compose .pg-ai-chip-input.is-empty::before {
+    content: attr(data-placeholder);
+    color: #8a949e;
+    pointer-events: none;
+}
+.pg-ai-compose .pg-ai-chip-input .pg-mention {
+    margin: 0 2px;
+    vertical-align: baseline;
 }
 .pg-ai-compose:focus-within {
     border-color: var(--pg-navy);

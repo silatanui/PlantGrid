@@ -109,14 +109,15 @@
                 </div>
                 <form class="pg-ai-compose" data-ai-chat-form>
                     <label class="visually-hidden" for="pg-ai-message">Message</label>
-                    <textarea
+                    <div
                         id="pg-ai-message"
+                        class="pg-ai-chip-input is-empty"
                         data-ai-input
-                        data-mentions
-                        rows="1"
-                        placeholder="Message… Use @people or # for cases, assets, devices"
-                        required
-                    ></textarea>
+                        contenteditable="true"
+                        role="textbox"
+                        aria-multiline="true"
+                        data-placeholder="Message… Use @people or # for cases, assets, devices"
+                    ></div>
                     <button class="pg-ai-send" type="submit" data-ai-send aria-label="Send">
                         <i data-lucide="send"></i>
                     </button>

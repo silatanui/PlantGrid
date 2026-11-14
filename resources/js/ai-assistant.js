@@ -1,5 +1,6 @@
 import { linkifyEntities } from './entity-links';
 import { initMentions } from './mentions';
+import { mountChipComposer } from './note-wysiwyg';
 
 function csrfToken() {
     return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
@@ -368,6 +369,44 @@ export function initAiAssistant(refreshIcons) {
     const welcome = root.querySelector('[data-ai-welcome]');
     const chatForm = root.querySelector('[data-ai-chat-form]');
     const chatInput = root.querySelector('[data-ai-input]');
+    let chatUrls = {};
+    try {
+        chatUrls = JSON.parse(root.dataset.aiUrls || '{}');
+    } catch {
+        chatUrls = {};
+    }
+    const chatComposer = chatInput
+        ? mountChipComposer(chatInput, {
+            suggestUrl: document.body.dataset.mentionsUrl || '',
+            urlTemplates: chatUrls,
+        })
+        : null;
+    const readChatDraft = () => (chatComposer ? chatComposer.getMarkup() : String(chatInput?.value || ''));
+    const writeChatDraft = (text) => {
+        if (chatComposer) {
+            chatComposer.setMarkup(text || '');
+            return;
+        }
+        if (chatInput) {
+            chatInput.value = text || '';
+        }
+    };
+    const clearChatDraft = () => {
+        if (chatComposer) {
+            chatComposer.clear();
+            return;
+        }
+        if (chatInput) {
+            chatInput.value = '';
+        }
+    };
+    const focusChatDraft = () => {
+        if (chatComposer) {
+            chatComposer.focus();
+            return;
+        }
+        chatInput?.focus();
+    };
     const noteInput = root.querySelector('[data-ai-note]');
     const noteStatus = root.querySelector('[data-ai-note-status]');
     const suggestions = root.querySelector('[data-ai-suggestions]');
@@ -478,7 +517,11 @@ export function initAiAssistant(refreshIcons) {
             refreshIcons?.();
             scrollTranscriptToLatest(transcript);
             const activeView = root.querySelector('[data-ai-view]:not([hidden])');
-            activeView?.querySelector('textarea')?.focus();
+            if (activeView?.dataset.aiView === 'notes') {
+                activeView.querySelector('textarea')?.focus();
+            } else {
+                focusChatDraft();
+            }
         }
     };
 
@@ -505,7 +548,7 @@ export function initAiAssistant(refreshIcons) {
         hideClearConfirm();
         setMenuOpen(false);
         renderTranscript();
-        chatInput?.focus();
+        focusChatDraft();
     };
 
     const requestClearChat = () => {
@@ -535,7 +578,7 @@ export function initAiAssistant(refreshIcons) {
         const userAt = nowIso();
         messages.push({ role: 'user', content: message, at: userAt });
         appendBubble(transcript, 'user', message, { at: userAt });
-        chatInput.value = '';
+        clearChatDraft();
         persist();
 
         const pending = appendBubble(transcript, 'assistant', '', { pending: true });
@@ -594,7 +637,7 @@ export function initAiAssistant(refreshIcons) {
             persist();
         } finally {
             setBusy(root, false);
-            chatInput.focus();
+            focusChatDraft();
             refreshIcons?.();
         }
     };
@@ -766,7 +809,7 @@ export function initAiAssistant(refreshIcons) {
         if (!ensureEnabled() || !chatInput) {
             return;
         }
-        const text = chatInput.value.trim();
+        const text = readChatDraft().trim();
         if (text.length < 2) {
             showComposeStatus('Type a short draft first.', true);
             return;
@@ -795,12 +838,11 @@ export function initAiAssistant(refreshIcons) {
         setBusy(root, true);
         try {
             const payload = await postJson(rewriteUrl, { text, mode });
-            composeUndoText = chatInput.value;
-            chatInput.value = payload.text || text;
-            chatInput.dispatchEvent(new Event('input', { bubbles: true }));
+            composeUndoText = text;
+            writeChatDraft(payload.text || text);
             syncComposeUndo();
             showComposeStatus(doneLabels[mode] || 'Updated. Review before sending.');
-            chatInput.focus();
+            focusChatDraft();
         } catch (error) {
             showComposeStatus(error.message || 'AI request failed.', true);
         } finally {
@@ -816,30 +858,30 @@ export function initAiAssistant(refreshIcons) {
         if (composeUndoText == null || !chatInput) {
             return;
         }
-        chatInput.value = composeUndoText;
+        writeChatDraft(composeUndoText);
         composeUndoText = null;
         syncComposeUndo();
         showComposeStatus('Restored previous draft.');
-        chatInput.focus();
+        focusChatDraft();
     });
 
     chatForm?.addEventListener('submit', (event) => {
         event.preventDefault();
-        sendChat(chatInput?.value || '');
+        sendChat(readChatDraft());
     });
 
     chatInput?.addEventListener('keydown', (event) => {
         if (event.key === 'Enter' && !event.shiftKey) {
             // Mentions panel handles Enter when open (preventDefault).
-            if (event.defaultPrevented) {
+            if (event.defaultPrevented || chatComposer?.isMentionOpen?.()) {
                 return;
             }
             event.preventDefault();
-            sendChat(chatInput.value);
+            sendChat(readChatDraft());
         }
     });
 
-    // Mentions autocomplete for @people / #cases / assets / devices.
+    // Mentions for the Notes tab textarea (chat uses chip composer above).
     initMentions(root);
 
     root.querySelectorAll('[data-ai-prompt]').forEach((button) => {

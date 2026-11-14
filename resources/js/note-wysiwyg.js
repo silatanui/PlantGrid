@@ -187,41 +187,58 @@ function insertChip(editor, item) {
     editor.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
-export function mountNoteWysiwyg(host, { html = '', suggestUrl = '' } = {}) {
-    host.innerHTML = `
-        <div class="pg-format-host">${toolbarHtml()}</div>
-        <div
-            class="pg-note-wysiwyg pg-rich-note"
-            contenteditable="true"
-            role="textbox"
-            aria-multiline="true"
-            data-note-wysiwyg
-            data-mentions-wysiwyg
-        >${html}</div>
-    `;
-
-    const surface = host.querySelector('[data-note-wysiwyg]');
-    const toolbar = host.querySelector('.pg-format-toolbar');
-    if (!surface) {
-        return { getMarkup: () => '', surface: null };
-    }
-
+function wireMentionChips(surface) {
     surface.querySelectorAll('a.pg-mention, span.pg-mention').forEach((link) => {
         link.contentEditable = 'false';
         link.addEventListener('click', (event) => event.preventDefault());
     });
+}
 
-    toolbar?.querySelectorAll('[data-wysiwyg-format]').forEach((button) => {
-        button.addEventListener('mousedown', (event) => event.preventDefault());
-        button.addEventListener('click', (event) => {
-            event.preventDefault();
-            surface.focus();
-            document.execCommand(button.dataset.wysiwygFormat, false);
-            surface.dispatchEvent(new Event('input', { bubbles: true }));
-        });
-    });
+function urlFromTemplates(templates, type, id) {
+    const template = templates?.[type];
+    if (!template || !id) {
+        return null;
+    }
+    return String(template).replaceAll('__ID__', String(id));
+}
 
-    // Mentions autocomplete for contenteditable — fixed near caret, not over the note.
+/** Turn stored mention tokens into visual chips for contenteditable composers. */
+export function markupToEditorHtml(text, urlTemplates = {}) {
+    const escaped = escapeHtml(String(text ?? '')).replaceAll('\n', '<br>');
+    return escaped
+        .replace(/@\[everyone\]\(everyone\)/giu, () => (
+            '<span class="pg-mention pg-mention-everyone" data-pg-token="@everyone" contenteditable="false">@everyone</span>'
+        ))
+        .replace(
+            /@\[(.*?)\]\((people|user|case|asset|device|server|location|department):(\d+)\)/gu,
+            (_full, label, typeRaw, idRaw) => {
+                const type = typeRaw === 'user' ? 'people' : typeRaw;
+                const id = String(idRaw);
+                const token = `@[${label}](${type}:${id})`;
+                if (type === 'department') {
+                    return `<span class="pg-mention pg-mention-department" data-pg-token="${escapeHtml(token)}" contenteditable="false">@${escapeHtml(label)}</span>`;
+                }
+                const url = urlFromTemplates(urlTemplates, type, id);
+                const shown = type === 'people' ? `@${label}` : label;
+                if (!url) {
+                    return `<span class="pg-mention pg-mention-${escapeHtml(type)}" data-pg-token="${escapeHtml(token)}" contenteditable="false">${escapeHtml(shown)}</span>`;
+                }
+                return `<a class="pg-mention pg-mention-${escapeHtml(type)}" href="${escapeHtml(url)}" data-pg-token="${escapeHtml(token)}" contenteditable="false">${escapeHtml(shown)}</a>`;
+            }
+        );
+}
+
+/**
+ * Shared @/# autocomplete for contenteditable surfaces (notes + chat composer).
+ */
+export function attachMentionAutocomplete(surface, suggestUrl = '') {
+    if (!surface || surface.dataset.mentionAutoReady === '1') {
+        return {
+            isOpen: () => false,
+        };
+    }
+    surface.dataset.mentionAutoReady = '1';
+
     const panel = document.createElement('div');
     panel.className = 'pg-mention-panel';
     panel.hidden = true;
@@ -366,8 +383,6 @@ export function mountNoteWysiwyg(host, { html = '', suggestUrl = '' } = {}) {
             }
 
             latestQuery = parsed.query;
-
-            // Keep the menu open and filter the last catalog while @/# is still active.
             if (catalog.length) {
                 renderPanel(filterItems(catalog, latestQuery), { reposition: !mentionActive });
             }
@@ -379,14 +394,12 @@ export function mountNoteWysiwyg(host, { html = '', suggestUrl = '' } = {}) {
         }
     };
 
-    // Keep focus in the editor when clicking suggestions.
     panel.addEventListener('mousedown', (event) => {
         event.preventDefault();
     });
 
     surface.addEventListener('input', detectMention);
     surface.addEventListener('keyup', (event) => {
-        // Arrow/Enter handled below; still refresh after normal typing.
         if (['ArrowDown', 'ArrowUp', 'Enter', 'Tab', 'Escape'].includes(event.key)) {
             return;
         }
@@ -438,6 +451,44 @@ export function mountNoteWysiwyg(host, { html = '', suggestUrl = '' } = {}) {
         }
     });
 
+    return {
+        isOpen: () => mentionActive && !panel.hidden,
+        close: closePanel,
+    };
+}
+
+export function mountNoteWysiwyg(host, { html = '', suggestUrl = '' } = {}) {
+    host.innerHTML = `
+        <div class="pg-format-host">${toolbarHtml()}</div>
+        <div
+            class="pg-note-wysiwyg pg-rich-note"
+            contenteditable="true"
+            role="textbox"
+            aria-multiline="true"
+            data-note-wysiwyg
+            data-mentions-wysiwyg
+        >${html}</div>
+    `;
+
+    const surface = host.querySelector('[data-note-wysiwyg]');
+    const toolbar = host.querySelector('.pg-format-toolbar');
+    if (!surface) {
+        return { getMarkup: () => '', surface: null };
+    }
+
+    wireMentionChips(surface);
+
+    toolbar?.querySelectorAll('[data-wysiwyg-format]').forEach((button) => {
+        button.addEventListener('mousedown', (event) => event.preventDefault());
+        button.addEventListener('click', (event) => {
+            event.preventDefault();
+            surface.focus();
+            document.execCommand(button.dataset.wysiwygFormat, false);
+            surface.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+    });
+
+    const mentions = attachMentionAutocomplete(surface, suggestUrl);
     placeCaretAtEnd(surface);
 
     return {
@@ -445,10 +496,7 @@ export function mountNoteWysiwyg(host, { html = '', suggestUrl = '' } = {}) {
         getMarkup: () => htmlToMarkup(surface),
         setHtml: (nextHtml) => {
             surface.innerHTML = nextHtml || '';
-            surface.querySelectorAll('a.pg-mention, span.pg-mention').forEach((link) => {
-                link.contentEditable = 'false';
-                link.addEventListener('click', (event) => event.preventDefault());
-            });
+            wireMentionChips(surface);
             surface.dispatchEvent(new Event('input', { bubbles: true }));
         },
         setPlain: (text) => {
@@ -456,6 +504,49 @@ export function mountNoteWysiwyg(host, { html = '', suggestUrl = '' } = {}) {
             surface.dispatchEvent(new Event('input', { bubbles: true }));
         },
         focus: () => surface.focus(),
+        isMentionOpen: () => mentions.isOpen(),
+    };
+}
+
+/**
+ * Compact chip composer for chat (no formatting toolbar).
+ */
+export function mountChipComposer(surface, { suggestUrl = '', urlTemplates = {} } = {}) {
+    if (!surface) {
+        return null;
+    }
+
+    const mentions = attachMentionAutocomplete(surface, suggestUrl);
+
+    const syncEmpty = () => {
+        const empty = htmlToMarkup(surface) === '';
+        surface.classList.toggle('is-empty', empty);
+    };
+
+    surface.addEventListener('input', syncEmpty);
+    surface.addEventListener('blur', syncEmpty);
+    syncEmpty();
+    wireMentionChips(surface);
+
+    return {
+        surface,
+        getMarkup: () => htmlToMarkup(surface),
+        setMarkup: (markup) => {
+            surface.innerHTML = markupToEditorHtml(markup, urlTemplates);
+            wireMentionChips(surface);
+            syncEmpty();
+            placeCaretAtEnd(surface);
+            surface.dispatchEvent(new Event('input', { bubbles: true }));
+        },
+        clear: () => {
+            surface.innerHTML = '';
+            syncEmpty();
+        },
+        focus: () => {
+            surface.focus();
+            placeCaretAtEnd(surface);
+        },
+        isMentionOpen: () => mentions.isOpen(),
     };
 }
 
