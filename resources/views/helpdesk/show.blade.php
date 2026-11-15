@@ -551,11 +551,11 @@
                                         <p class="text-muted small mb-0">Leave blank to close with a written reason. Fill this only when closing as a duplicate.</p>
                                     </div>
                                 @endif
-                                <label class="form-label" for="resolution_notes">Resolution / next-step notes</label>
-                                <p class="text-muted small mb-1">Required when changing status (existing notes are enough when closing a resolved case). Explain what was done, why you are reverting, or why the case is closed.</p>
+                                <label class="form-label" for="resolution_notes">Status update note</label>
+                                <p class="text-muted small mb-1" data-status-note-hint>Posted to Notes as an ICT update. Required when changing status.</p>
                                 <div class="pg-note-wysiwyg-shell mb-2" data-wysiwyg-for="resolution_notes"></div>
-                                <template data-wysiwyg-seed="resolution_notes">{!! \App\Support\RichText::render(old('resolution_notes', $ticket->resolution_notes) ?: '') !!}</template>
-                                <textarea class="form-control mb-2" id="resolution_notes" name="resolution_notes" rows="3" data-ai-assist data-wysiwyg placeholder="What was done, and why this next step is needed…" data-step-evidence hidden>{{ old('resolution_notes', $ticket->resolution_notes) }}</textarea>
+                                <template data-wysiwyg-seed="resolution_notes">{!! \App\Support\RichText::render(old('resolution_notes') ?: '') !!}</template>
+                                <textarea class="form-control mb-2" id="resolution_notes" name="resolution_notes" rows="3" data-ai-assist data-wysiwyg placeholder="What changed, and why this next step is needed…" data-step-evidence hidden>{{ old('resolution_notes') }}</textarea>
                                 @if ($ticket->asset_id)
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" name="record_maintenance" id="record_maintenance" value="1">
@@ -577,17 +577,28 @@
                                 const form = document.querySelector('[data-status-form]');
                                 const select = form?.querySelector('[data-status-select]');
                                 const evidence = form ? [...form.querySelectorAll('[data-step-evidence]')] : [];
+                                const hint = form?.querySelector('[data-status-note-hint]');
                                 const fields = document.querySelector('[data-duplicate-fields]');
                                 const input = document.getElementById('duplicate_of');
                                 const assigned = document.getElementById('assigned_to');
                                 const current = @json($ticket->status);
+                                const hasOfficialResolution = @json(filled($ticket->resolution_notes));
                                 if (!select) return;
                                 const sync = () => {
                                     const next = select.value;
                                     const closingResolved = current === 'resolved' && next === 'closed';
-                                    const hasExistingNotes = evidence.some((field) => (field.value || '').trim().length > 0);
-                                    const needsEvidence = next !== current && !(closingResolved && hasExistingNotes);
+                                    const resolveOrClose = next === 'resolved' || next === 'closed';
+                                    const needsEvidence = next !== current && !(closingResolved && hasOfficialResolution);
                                     evidence.forEach((field) => { field.required = needsEvidence; });
+                                    if (hint) {
+                                        if (closingResolved && hasOfficialResolution) {
+                                            hint.textContent = 'Optional. Posted to Notes if you add one. Existing Resolution is enough to close.';
+                                        } else if (resolveOrClose) {
+                                            hint.textContent = 'Posted to Notes and saved as the official Resolution. Required when changing status.';
+                                        } else {
+                                            hint.textContent = 'Posted to Notes as an ICT update. Required when changing status.';
+                                        }
+                                    }
                                     if (fields) {
                                         fields.hidden = next !== 'closed';
                                         if (input) input.required = false;

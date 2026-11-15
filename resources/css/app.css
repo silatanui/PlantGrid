@@ -4808,6 +4808,23 @@ a.pg-dash-kpi:hover {
     padding: 7px 8px;
     border: 1px solid color-mix(in srgb, var(--pg-border) 80%, transparent);
     background: rgba(255, 255, 255, 0.72);
+    transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.pg-dash-chart-legend li:has(.pg-dash-legend-link) {
+    cursor: pointer;
+}
+
+.pg-dash-chart-legend li:has(.pg-dash-legend-link):hover,
+.pg-dash-chart-legend li:has(.pg-dash-legend-link:focus-visible) {
+    background: color-mix(in srgb, var(--pg-navy) 6%, #fff);
+    border-color: color-mix(in srgb, var(--pg-navy) 22%, var(--pg-border));
+}
+
+.pg-dash-legend-link {
+    display: contents;
+    color: inherit;
+    text-decoration: none;
 }
 
 .pg-dash-legend-copy {

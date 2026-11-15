@@ -280,7 +280,7 @@ class DocumentationCatalog
                 'sections' => [
                     [
                         'heading' => 'Visibility',
-                        'body' => "• Internal ICT note - only staff with update access see it.\n• Visible to requester - the person who opened the case can read it.",
+                        'body' => "• Internal ICT note - only staff with update access see it.\n• Visible to requester - the person who opened the case can read it.\n\nStatus update notes from Update status also appear here: mid-flight updates as ICT notes, Resolved / Closed updates as requester-visible notes (and as the official Resolution on the Request card).",
                     ],
                     [
                         'heading' => 'Steps',
@@ -308,7 +308,7 @@ class DocumentationCatalog
                     ],
                     [
                         'heading' => 'Steps',
-                        'body' => "1. Open the case that should be closed.\n2. Under Update status, choose Closed (duplicate).\n3. Enter the original case number (for example PG-2026-0146).\n4. Add a resolution / next-step note if needed.\n5. Save update. The case shows a Duplicate badge and links to the original.",
+                        'body' => "1. Open the case that should be closed.\n2. Under Update status, choose Closed (duplicate).\n3. Enter the original case number (for example PG-2026-0146).\n4. Add a status update note if needed (it is posted to Notes and saved as Resolution).\n5. Save update. The case shows a Duplicate badge and links to the original.",
                     ],
                     [
                         'heading' => 'Assistant option',
@@ -328,7 +328,7 @@ class DocumentationCatalog
                 'sections' => [
                     [
                         'heading' => 'Escalation checklist',
-                        'body' => "1. Confirm business impact (line down, safety, compliance, many users).\n2. Raise priority if the current level is too low.\n3. Assign or take ownership so someone is accountable.\n4. Move status to In progress or Pending with a clear resolution / next-step note.\n5. Use Add a note to post an ICT-only update that states why it escalated and who was informed.\n6. Watch the SLA badge - critical cases have a 4-hour target.",
+                        'body' => "1. Confirm business impact (line down, safety, compliance, many users).\n2. Raise priority if the current level is too low.\n3. Assign or take ownership so someone is accountable.\n4. Move status to In progress or Pending with a clear status update note (it posts to Notes as an ICT update).\n5. Use Add a note for any extra conversation, @mentions, or attachments.\n6. Watch the SLA badge - critical cases have a 4-hour target.",
                     ],
                     [
                         'heading' => 'Escalation note template',
@@ -360,7 +360,7 @@ class DocumentationCatalog
                     ],
                     [
                         'heading' => 'Resolve and close',
-                        'body' => "• Resolved requires resolution notes.\n• Closed normally follows Resolved.\n• Closed (duplicate) can be used from open statuses when you supply the original case.",
+                        'body' => "• Status changes require a status update note. That note is posted to Notes.\n• Resolved / Closed also save the note as the official Resolution on the Request card.\n• Closed normally follows Resolved (existing Resolution is enough to close).\n• Closed (duplicate) can be used from open statuses when you supply the original case.",
                     ],
                 ],
                 'screenshots' => [

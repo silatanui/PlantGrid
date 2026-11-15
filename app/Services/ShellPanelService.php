@@ -101,7 +101,7 @@ class ShellPanelService
                 'steps' => [
                     'Assign new cases to a technician',
                     'Update status when work starts or stalls',
-                    'Add resolution notes before closing',
+                    'Resolve or close with a clear status update note',
                 ],
             ];
         }

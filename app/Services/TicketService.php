@@ -10,6 +10,7 @@ use App\Models\SupportTicket;
 use App\Models\TicketComment;
 use App\Models\TicketStatusHistory;
 use App\Models\User;
+use App\Support\Labels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -233,19 +234,20 @@ class TicketService
         $previous = $ticket->status;
         $needsStepEvidence = $previous !== $status
             && ! ($previous === 'resolved' && $status === 'closed');
+        $statusUpdateNote = trim((string) ($options['resolution_notes'] ?? ''));
 
-        if ($needsStepEvidence && blank($options['resolution_notes'] ?? null)) {
+        if ($needsStepEvidence && $statusUpdateNote === '') {
             throw ValidationException::withMessages([
-                'resolution_notes' => 'Add a resolution note explaining this next step.',
+                'resolution_notes' => 'Add a status update note explaining this next step.',
             ]);
         }
 
-        return DB::transaction(function () use ($ticket, $user, $status, $options, $previous, $needsStepEvidence) {
+        return DB::transaction(function () use ($ticket, $user, $status, $options, $previous, $statusUpdateNote) {
             $previousAssignee = $ticket->assigned_to;
             $ticket->status = $status;
             $historyNote = filled($options['note'] ?? null)
                 ? $options['note']
-                : ($options['resolution_notes'] ?? null);
+                : ($statusUpdateNote !== '' ? $statusUpdateNote : null);
 
             if ($status === 'assigned') {
                 if (empty($options['assigned_to'])) {
@@ -258,12 +260,6 @@ class TicketService
                 $ticket->assigned_to = $options['assigned_to'];
             }
 
-            if ($needsStepEvidence || $status === 'resolved' || $status === 'closed') {
-                if (filled($options['resolution_notes'] ?? null)) {
-                    $ticket->resolution_notes = $options['resolution_notes'];
-                }
-            }
-
             if ($status === 'new') {
                 $ticket->assigned_to = null;
                 $ticket->resolved_at = null;
@@ -274,12 +270,12 @@ class TicketService
             }
 
             if ($status === 'resolved') {
-                if (blank($options['resolution_notes'] ?? null)) {
+                if ($statusUpdateNote === '') {
                     throw ValidationException::withMessages([
-                        'resolution_notes' => 'Resolution notes are required.',
+                        'resolution_notes' => 'A status update note is required to resolve this case.',
                     ]);
                 }
-                $ticket->resolution_notes = $options['resolution_notes'];
+                $ticket->resolution_notes = $statusUpdateNote;
                 $ticket->close_reason = null;
                 $ticket->duplicate_of_ticket_id = null;
                 $ticket->resolved_at = now();
@@ -292,20 +288,20 @@ class TicketService
                     $original = $this->resolveDuplicateOriginal($ticket, $duplicateRef);
                     $ticket->close_reason = 'duplicate';
                     $ticket->duplicate_of_ticket_id = $original->id;
-                    $ticket->resolution_notes = filled($options['resolution_notes'] ?? null)
-                        ? $options['resolution_notes']
+                    $ticket->resolution_notes = $statusUpdateNote !== ''
+                        ? $statusUpdateNote
                         : 'Closed as a duplicate of '.$original->ticket_number.'.';
                     $historyNote = filled($historyNote)
                         ? $historyNote
                         : 'Closed as duplicate of '.$original->ticket_number.'.';
                 } else {
-                    $closeNotes = $options['resolution_notes'] ?? null;
+                    $closeNotes = $statusUpdateNote !== '' ? $statusUpdateNote : null;
                     if (blank($closeNotes) && $previous === 'resolved' && filled($ticket->resolution_notes)) {
                         $closeNotes = $ticket->resolution_notes;
                     }
                     if (blank($closeNotes)) {
                         throw ValidationException::withMessages([
-                            'resolution_notes' => 'Add a note explaining why this case is being closed.',
+                            'resolution_notes' => 'Add a status update note explaining why this case is being closed.',
                         ]);
                     }
                     $ticket->close_reason = null;
@@ -337,7 +333,7 @@ class TicketService
             $this->history($ticket, $previous, $status, $user, $historyNote);
 
             if (! empty($options['record_maintenance']) && $ticket->asset_id) {
-                $this->recordMaintenance($ticket, $user, $options['resolution_notes'] ?? $options['note'] ?? 'Work recorded from the helpdesk.');
+                $this->recordMaintenance($ticket, $user, $statusUpdateNote !== '' ? $statusUpdateNote : ($options['note'] ?? 'Work recorded from the helpdesk.'));
             }
 
             if (! empty($options['restore_asset']) && $ticket->asset) {
@@ -353,10 +349,25 @@ class TicketService
 
             $fresh = $ticket->fresh();
 
-            // Optional internal note for the Notes panel (history alone is not enough).
-            if ($previous !== $status && filled($options['internal_note'] ?? null)) {
-                $this->comment($fresh, $user, (string) $options['internal_note'], 'internal');
+            // Bridge: status update text always lands in Notes (official Resolution only on resolve/close).
+            if ($previous !== $status && $statusUpdateNote !== '') {
+                $visibility = in_array($status, ['resolved', 'closed'], true) ? 'public' : 'internal';
+                $this->comment(
+                    $fresh,
+                    $user,
+                    $this->formatStatusUpdateNote($status, $statusUpdateNote),
+                    $visibility
+                );
                 $fresh = $fresh->fresh();
+            }
+
+            // Optional extra ICT note (e.g. LivePulse) when it differs from the status update text.
+            if ($previous !== $status && filled($options['internal_note'] ?? null)) {
+                $internalNote = trim((string) $options['internal_note']);
+                if ($internalNote !== '' && $internalNote !== $statusUpdateNote) {
+                    $this->comment($fresh, $user, $internalNote, 'internal');
+                    $fresh = $fresh->fresh();
+                }
             }
 
             $exclude = [];
@@ -372,6 +383,22 @@ class TicketService
 
             return $fresh->fresh(['assignee', 'partners', 'comments']);
         });
+    }
+
+    private function formatStatusUpdateNote(string $status, string $note): string
+    {
+        $label = Labels::status($status);
+        $trimmed = trim($note);
+
+        if ($trimmed === '') {
+            return $trimmed;
+        }
+
+        if (str_contains($trimmed, '<')) {
+            return '<p><strong>Status → '.e($label).'</strong></p>'.$trimmed;
+        }
+
+        return 'Status → '.$label."\n\n".$trimmed;
     }
 
     public function comment(SupportTicket $ticket, User $user, string $comment, string $visibility): TicketComment

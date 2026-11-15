@@ -252,12 +252,23 @@
                             <ul class="pg-dash-chart-legend">
                                 @foreach ($segments as $segment)
                                     <li>
-                                        <span class="pg-dash-swatch" style="--pg-swatch: {{ $toneVar($segment['color']) }}"></span>
-                                        <span class="pg-dash-legend-copy">
-                                            <strong>{{ $segment['label'] }}</strong>
-                                            <em>{{ $segment['pct'] }}%</em>
-                                        </span>
-                                        <span class="pg-dash-legend-value">{{ $segment['value'] }}</span>
+                                        @if (! empty($segment['href']))
+                                            <a class="pg-dash-legend-link" href="{{ $segment['href'] }}">
+                                                <span class="pg-dash-swatch" style="--pg-swatch: {{ $toneVar($segment['color']) }}"></span>
+                                                <span class="pg-dash-legend-copy">
+                                                    <strong>{{ $segment['label'] }}</strong>
+                                                    <em>{{ $segment['pct'] }}%</em>
+                                                </span>
+                                                <span class="pg-dash-legend-value">{{ $segment['value'] }}</span>
+                                            </a>
+                                        @else
+                                            <span class="pg-dash-swatch" style="--pg-swatch: {{ $toneVar($segment['color']) }}"></span>
+                                            <span class="pg-dash-legend-copy">
+                                                <strong>{{ $segment['label'] }}</strong>
+                                                <em>{{ $segment['pct'] }}%</em>
+                                            </span>
+                                            <span class="pg-dash-legend-value">{{ $segment['value'] }}</span>
+                                        @endif
                                     </li>
                                 @endforeach
                             </ul>

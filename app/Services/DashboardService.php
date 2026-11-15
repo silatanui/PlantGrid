@@ -175,6 +175,7 @@ class DashboardService
                     'value' => $value,
                     'pct' => (int) round(($value / $statusTotal) * 100),
                     'color' => $this->statusChartColor($status),
+                    'href' => route('helpdesk.index', ['status' => $status]),
                 ];
             })->all();
 
