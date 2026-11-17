@@ -15,7 +15,15 @@ class TrackWorkspaceTabs
 
     public function handle(Request $request, Closure $next): Response
     {
-        if ($request->user() && $request->isMethod('GET') && ! $request->ajax() && ! $request->expectsJson()) {
+        // Shell soft-navigation fetches full HTML pages with X-Requested-With; they are real page opens.
+        $isShellNav = $request->header('X-PlantGrid-Shell-Nav') === '1';
+
+        if (
+            $request->user()
+            && $request->isMethod('GET')
+            && ($isShellNav || ! $request->ajax())
+            && ! $request->expectsJson()
+        ) {
             $this->tabs->touchFromRequest($request);
         }
 

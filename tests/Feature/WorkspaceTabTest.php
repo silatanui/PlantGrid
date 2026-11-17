@@ -27,6 +27,26 @@ class WorkspaceTabTest extends TestCase
         $this->assertTrue(collect($tabs)->contains(fn ($tab) => ($tab['label'] ?? '') === $ticket->ticket_number));
     }
 
+    public function test_soft_navigation_page_open_adds_a_workspace_tab(): void
+    {
+        $this->seed();
+
+        $user = User::query()->where('email', 'daniel.mwangi@northridge.example')->firstOrFail();
+        $ticket = SupportTicket::query()->firstOrFail();
+
+        $this->actingAs($user)
+            ->withHeaders([
+                'X-Requested-With' => 'XMLHttpRequest',
+                'X-PlantGrid-Shell-Nav' => '1',
+                'Accept' => 'text/html',
+            ])
+            ->get(route('helpdesk.show', $ticket))
+            ->assertOk();
+
+        $tabs = session('workspace.tabs', []);
+        $this->assertTrue(collect($tabs)->contains(fn ($tab) => ($tab['key'] ?? '') === 'case:'.$ticket->id));
+    }
+
     public function test_opening_a_contact_adds_a_workspace_tab_but_modules_do_not(): void
     {
         $this->seed();
